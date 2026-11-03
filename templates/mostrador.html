@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoStock Mayab - Almacén</title>
+    <script src="https://tailwindcss.com"></script>
+    <script src="https://cloudflare.com"></script>
+    <link rel="manifest" href="/static/manifest.json">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased min-h-screen">
+
+    <header class="bg-blue-600 text-white shadow-md px-4 py-3 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold tracking-tight">AutoStock Mayab</h1>
+            <p class="text-xs text-blue-100">Control de Inventario y Consignación</p>
+        </div>
+        <div class="flex items-center gap-3">
+            {% if usuario %}
+                <span class="bg-blue-700 px-3 py-1 rounded text-sm font-semibold">{{ usuario.nombre }} ({{ usuario.rol.value }})</span>
+                <a href="/auth/logout" class="text-xs bg-red-600 text-white font-bold px-2 py-1 rounded hover:bg-red-700">Salir</a>
+            {% else %}
+                <form action="/auth/login" method="POST" class="flex items-center gap-2 text-gray-900">
+                    <input type="text" name="usuario" placeholder="Usuario" required class="px-2 py-1 text-sm rounded bg-white border border-gray-300">
+                    <input type="password" name="contrasena" placeholder="Clave" required class="px-2 py-1 text-sm rounded bg-white border border-gray-300">
+                    <button type="submit" class="bg-emerald-600 text-white font-bold px-3 py-1 rounded text-sm hover:bg-emerald-700">Entrar</button>
+                </form>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 space-y-6">
+        <section class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-4">
+            <div class="flex flex-col md:flex-row gap-3 items-center">
+                <div class="relative w-full flex-1">
+                    <input type="text" id="predictiveSearch" oninput="ejecutarBuscadorPredictivo()" placeholder="Buscar por ID (#1000) o palabras clave..." class="w-full pl-3 pr-40 py-3 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:border-blue-600 text-gray-900 bg-white">
+                    <span id="badgeIdMode" class="hidden absolute right-3 top-3 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider">Modo ID Detectado</span>
+                </div>
+                <button onclick="activarDictadoVoz()" class="w-full md:w-auto bg-slate-700 text-white font-bold px-4 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-slate-800">
+                    🎤 Buscar por Voz (Android)
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">1. Filtrar por Marca</label>
+                    <select id="filtroMarca" onchange="actualizarFiltrosCascada()" class="w-full p-2 bg-white border border-gray-300 rounded text-gray-900 font-medium"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">2. Filtrar por Modelo</label>
+                    <select id="filtroModelo" onchange="aplicarFiltroFinal()" class="w-full p-2 bg-white border border-gray-300 rounded text-gray-900 font-medium" disabled>
+                        <option value="">Selecciona una marca primero</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Limpiar</label>
+                    <button onclick="reiniciarFiltros()" class="w-full py-2 bg-gray-200 text-gray-800 rounded font-bold hover:bg-gray-300 text-sm">Limpiar Filtros</button>
+                </div>
+            </div>
+        </section>
+        {% if usuario and usuario.rol.value == 'Administrador' %}
+        <section class="bg-white p-4 rounded-xl border-2 border-blue-200 shadow-sm grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-lg font-bold text-blue-900 mb-3 border-b pb-1">Alta de Refacciones (Solo Admin)</h3>
+                <form action="/productos/crear" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Categoría</label>
+                        <select name="categoria" class="w-full p-2 border border-gray-300 rounded bg-white text-gray-900">
+                            <option value="Carrocería y Colisión">Carrocería y Colisión</option>
+                            <option value="Iluminación">Iluminación</option>
+                            <option value="Motor y Componentes">Motor y Componentes</option>
+                            <option value="Accesorios de Motor">Accesorios de Motor</option>
+                            <option value="Transmisión y Tren Motriz">Transmisión y Tren Motriz</option>
+                            <option value="Sistema de Frenos">Sistema de Frenos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Nombre de la Refacción</label>
+                        <input type="text" name="nombre_refaccion" required class="w-full p-2 border border-gray-300 rounded bg-white text-gray-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Marca</label>
+                        <select id="formMarca" name="marca" onchange="actualizarFormModelos()" class="w-full p-2 border border-gray-300 rounded bg-white text-gray-900"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Modelo</label>
+                        <select id="formModelo" name="modelo" class="w-full p-2 border border-gray-300 rounded bg-white text-gray-900"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Grupo de Años</label>
+                        <select name="ano_grupo" class="w-full p-2 border border-gray-300 rounded bg-white text-gray-900">
+                            <option value="1990-1995">1990-1995</option>
+                            <option value="1996-2000">1996-2000</option>
+                            <option value="2001-2005">2001-2005</option>
+                            <option value="2006-2010">2006-2010</option>
+                            <option value="2011-2015">2011-2015</option>
+                            <option value="2016-2020">2016-2020</option>
+                            <option value="2021-2026">2021-2026</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Ubicación Física</label>
+                        <input type="text" name="ubicacion_fisica" placeholder="ej: Pasillo B" required class="w-full p-2 border border-gray-300 rounded bg-white text-gray-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Dueño de la pieza</label>
+                        <select name="dueno_id" class="w-full p-2 border border-gray-300 rounded bg-white text-gray-900">
+                            {% for u in usuarios %}
+                                <option value="{{ u.id }}">{{ u.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Foto Cámara</label>
+                        <input type="file" accept="image/*" capture="environment" onchange="procesarFotoCanvas(event)" class="w-full text-xs text-gray-700">
+                        <input type="hidden" name="url_imagen" id="hiddenUrlImagen" value="">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Precio Costo</label>
+                        <input type="number" step="0.01" name="precio_real" required class="w-full p-2 border border-gray-300 rounded bg-white text-gray-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase">Precio Público</label>
+                        <input type="number" step="0.01" name="precio_sugerido" required class="w-full p-2 border border-gray-300 rounded bg-white text-gray-900">
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded shadow hover:bg-blue-700 uppercase">Registrar Entrada</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="border-t lg:border-t-0 lg:border-l border-gray-200 lg:pl-6 space-y-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 border-b pb-1">Corte Semanal de Consignaciones</h3>
+                {% if liquidaciones %}
+                    {% for dueno_id, data in liquidaciones.items() %}
+                    <div class="bg-gray-100 p-3 rounded-lg border border-gray-300 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-900">{{ data.dueno }}</p>
+                            <p class="text-sm text-gray-700">Saldo acumulado: ${{ data.saldo }} MXN</p>
+                        </div>
+                        <form action="/liquidaciones/procesar/{{ dueno_id }}" method="POST">
+                            <input type="hidden" name="ids_ventas" value="{{ data.items|join(',') }}">
+                            <button type="submit" class="bg-emerald-600 text-white px-3 py-1 text-xs font-bold rounded uppercase hover:bg-emerald-700">Liquidar</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-sm text-gray-600">No hay saldos acumulados por liquidar esta semana.</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+        <section class="space-y-4">
+            <h2 class="text-xl font-black text-gray-900 uppercase tracking-tight">Inventario Físico Compartido</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="contenedorTarjetas">
+                {% for p in productos %}
+                <div class="card-producto bg-white p-4 rounded-xl border border-gray-300 shadow-sm flex flex-col justify-between space-y-3" data-id="{{ p.id }}" data-marca="{{ p.marca }}" data-modelo="{{ p.modelo }}">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded">ID #{{ p.id }}</span>
+                            <span class="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded font-medium">{{ p.categoria.value }}</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mt-2">{{ p.nombre_refaccion }}</h3>
+                        <p class="text-sm text-gray-700 font-semibold">Aplicación: {{ p.marca }} {{ p.modelo }} [{{ p.ano_grupo }}]</p>
+                        
+                        {% if p.compatibilidad %}
+                            <p class="text-xs text-gray-600 mt-1 italic">Notas: {{ p.compatibilidad }}</p>
+                        {% endif %}
+
+                        {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor') %}
+                        <div class="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded text-xs space-y-1">
+                            <p class="text-emerald-900 font-bold">📍 Ubicación: {{ p.ubicacion_fisica }}</p>
+                            <p class="text-gray-700 font-medium">💰 Costo Dueño: ${{ p.precio_real }} MXN</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="pt-2 border-t border-gray-200 flex flex-col space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-gray-600 uppercase">Precio Venta</span>
+                            <span class="text-xl font-black text-blue-600">${{ p.precio_sugerido }} MXN</span>
+                        </div>
+
+                        {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor') %}
+                        <form action="/productos/vender/{{ p.id }}" method="POST">
+                            <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-2 rounded text-sm uppercase tracking-wider hover:bg-emerald-700">Marcar como Vendido</button>
+                        </form>
+                        {% endif %}
+
+                        {% if usuario and usuario.rol.value == 'Administrador' %}
+                        <div class="mt-2 p-2 bg-gray-100 rounded border border-gray-300 flex flex-col items-center space-y-1">
+                            <span class="text-[10px] font-bold text-gray-700 uppercase">Etiqueta de Almacén</span>
+                            <div id="qrcode-{{ p.id }}"></div>
+                            <button onclick="window.print()" class="text-[10px] font-bold text-blue-600 underline">Imprimir</button>
+                        </div>
+                        <script>
+                            try {
+                                new QRCode(document.getElementById("qrcode-{{ p.id }}"), {
+                                    text: "{{ p.id }}",
+                                    width: 64,
+                                    height: 64
+                                });
+                            } catch(e) { console.log(e); }
+                        </script>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const VEHICULOS = {{ dict_vehiculos|safe }};
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const marcaFiltro = document.getElementById('filtroMarca');
+            const marcaForm = document.getElementById('formMarca');
+            let opciones = '<option value="">-- Todas las Marcas --</option>';
+            let opcionesForm = '<option value="">-- Seleccionar --</option>';
+            Object.keys(VEHICULOS).sort().forEach(m => {
+                opciones += `<option value="${m}">${m}</option>`;
+                opcionesForm += `<option value="${m}">${m}</option>`;
+            });
+            if(marcaFiltro) marcaFiltro.innerHTML = opciones;
+            if(marcaForm) {
+                marcaForm.innerHTML = opcionesForm;
+                actualizarFormModelos();
+            }
+        });
+
+        function actualizarFormModelos() {
+            const marca = document.getElementById('formMarca').value;
+            const modeloForm = document.getElementById('formModelo');
+            if(!marca) {
+                if(modeloForm) modeloForm.innerHTML = '<option value="">-- Elige marca primero --</option>';
+                return;
+            }
+            let opciones = '';
+            VEHICULOS[marca].forEach(mod => {
+                opciones += `<option value="${mod}">${mod}</option>`;
+            });
+            if(modeloForm) modeloForm.innerHTML = opciones;
+        }
+
+        function actualizarFiltrosCascada() {
+            const marcaSeleccionada = document.getElementById('filtroMarca').value;
+            const modeloFiltro = document.getElementById('filtroModelo');
+            if (!marcaSeleccionada) {
+                modeloFiltro.innerHTML = '<option value="">Selecciona una marca primero</option>';
+                modeloFiltro.disabled = true;
+                aplicarFiltroFinal();
+                return;
+            }
+            let opciones = '<option value="">-- Todos los Modelos --</option>';
+            VEHICULOS[marcaSeleccionada].forEach(m => {
+                opciones += `<option value="${m}">${m}</option>`;
+            });
+            modeloFiltro.innerHTML = opciones;
+            modeloFiltro.disabled = false;
+            aplicarFiltroFinal();
+        }
+
+        function aplicarFiltroFinal() {
+            const m = document.getElementById('filtroMarca').value.toLowerCase();
+            const mod = document.getElementById('filtroModelo').value.toLowerCase();
+            const tarjetas = document.querySelectorAll('.card-producto');
+            tarjetas.forEach(t => {
+                const tMarca = t.getAttribute('data-marca').toLowerCase();
+                const tModelo = t.getAttribute('data-modelo').toLowerCase();
+                const matchMarca = !m || tMarca === m;
+                const matchModelo = !mod || tModelo === mod;
+                t.style.display = (matchMarca && matchModelo) ? "flex" : "none";
+            });
+        }
+
+        function reiniciarFiltros() {
+            document.getElementById('filtroMarca').value = "";
+            document.getElementById('filtroModelo').innerHTML = '<option value="">Selecciona una marca primero</option>';
+            document.getElementById('filtroModelo').disabled = true;
+            document.getElementById('predictiveSearch').value = "";
+            document.getElementById('badgeIdMode').classList.add('hidden');
+            aplicarFiltroFinal();
+        }
+
+        function ejecutarBuscadorPredictivo() {
+            const entrada = document.getElementById('predictiveSearch').value.trim();
+            const badge = document.getElementById('badgeIdMode');
+            const tarjetas = document.querySelectorAll('.card-producto');
+            if(!entrada) {
+                badge.classList.add('hidden');
+                aplicarFiltroFinal();
+                return;
+            }
+            if(/^\d+$/.test(entrada)) {
+                badge.classList.remove('hidden');
+                tarjetas.forEach(t => {
+                    const id = t.getAttribute('data-id');
+                    t.style.display = id.startsWith(entrada) ? "flex" : "none";
+                });
+            } else {
+                badge.classList.add('hidden');
+                const query = entrada.toLowerCase();
+                tarjetas.forEach(t => {
+                    const texto = t.textContent.toLowerCase();
+                    t.style.display = texto.includes(query) ? "flex" : "none";
+                });
+            }
+        }
+
+        function activarDictadoVoz() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("La búsqueda por voz no es soportada.");
+                return;
+            }
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'es-MX';
+            recognition.start();
+            recognition.onresult = (event) => {
+                document.getElementById('predictiveSearch').value = event.results.transcript;
+                ejecutarBuscadorPredictivo();
+            };
+        }
+
+        function procesarFotoCanvas(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 600;
+                    canvas.height = 400;
+                    ctx.drawImage(img, 0, 0, 600, 400);
+                    document.getElementById('hiddenUrlImagen').value = canvas.toDataURL('image/jpeg', 0.7);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
+
