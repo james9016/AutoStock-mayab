@@ -98,7 +98,7 @@ class BitacoraAuditoria(Base):
     fecha_hora = Column(DateTime, default=datetime.utcnow)
 
 event.listen(
-    Producto.__table__,
+    Base.metadata,
     "after_create",
     DDL("ALTER SEQUENCE productos_id_seq RESTART WITH 1000;").execute_if(dialect="postgresql")
 )
