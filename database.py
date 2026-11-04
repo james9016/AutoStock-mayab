@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 # Credenciales de Supabase protegidas contra filtros
 DB_USER = "postgres.grnqhgctjjahvhkjckxa"
-DB_PASS = "Jacqui.1118649021"
+DB_PASS = "AutoStockMayab2026"
 
 # Armamos el host usando letras separadas para que GitHub no lo mutile
 PARTE_AWS = "aws-1-us-west-2"
