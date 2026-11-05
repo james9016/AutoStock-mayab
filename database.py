@@ -2,8 +2,8 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Credenciales por defecto (Protegidas)
-DB_USER = "postgres.grnqhgctjjahvhkjctxa"
+# Credenciales por defecto (Corregidas con 'kxa' al final)
+DB_USER = "postgres.grnqhgctjjahvhkjckxa"
 DB_PASS = "AutoStockMayab2026"
 
 PARTE_AWS = "aws-1-us-west-2"
