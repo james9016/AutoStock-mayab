@@ -194,4 +194,33 @@
                         </form>
                     </div>
                 {% endif %}
-                                        
+                    <!-- SECCIÓN DE LIQUIDACIONES (SOLO ADMIN) -->
+                {% if usuario.rol.value == 'Administrador' %}
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
+                        <h2 class="text-lg font-bold text-gray-800 border-b border-gray-100 pb-2">💰 Corte Semanal de Consignaciones</h2>
+                        {% if liquidaciones %}
+                            <div class="space-y-3 max-h-[350px] overflow-y-auto">
+                                {% for key, val in liquidaciones.items() %}
+                                    <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                        <div>
+                                            <p class="font-bold text-gray-900">{{ val.dueno }}</p>
+                                            <p class="text-xs text-gray-500">Saldo acumulado por cobrar</p>
+                                        </div>
+                                        <div class="flex items-center space-x-3 w-full sm:w-auto justify-between">
+                                            <span class="text-base font-extrabold text-emerald-700">${{ val.saldo }}</span>
+                                            <form action="/liquidaciones/procesar/{{ key }}" method="POST">
+                                                <input type="hidden" name="ids_ventas" value="{{ val.items|join(',') }}">
+                                                <button type="submit" class="text-xs bg-emerald-600 text-white font-semibold px-2 py-1 rounded transition hover:bg-emerald-700 shadow-sm">Marcar Liquidado</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-sm text-gray-500 text-center py-4">No hay saldos acumulados por liquidar esta semana.</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </section>
+        {% endif %}
+        
