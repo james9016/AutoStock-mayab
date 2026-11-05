@@ -1,34 +1,3 @@
-# main.py (Inicio modificado para soporte PWA)
-import json
-from fastapi import FastAPI, Depends, Request, Form, HTTPException, status, BackgroundTasks
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-import database
-import models
-import security
-import seed
-
-app = FastAPI(title="AutoStock Mayab")
-
-models.Base.metadata.create_all(bind=database.engine)
-
-@app.get("/static/manifest.json")
-def get_manifest():
-    return FileResponse("static/manifest.json", media_type="application/json")
-
-@app.get("/static/sw.js")
-def get_serviceworker():
-    return FileResponse("static/sw.js", media_type="application/javascript")
-
-@app.on_event("startup")
-def on_startup():
-    db = next(database.get_db())
-    try:
-        seed.seed_database(db)
-    finally:
-        db.close()
 
 import enum
 from datetime import datetime
