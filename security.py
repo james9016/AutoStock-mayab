@@ -14,7 +14,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 480  # Duración de una jornada laboral completa (
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def obtener_password_hash(password: str) -> str:
-    # Truncamos a un máximo de 72 bytes para blindar bcrypt contra caídas por strings largos
+    # Truncamos de forma explícita antes de enviar a passlib
     return pwd_context.hash(password[:72])
 
 def verificar_password(plain_password: str, hashed_password: str) -> bool:
@@ -32,7 +32,7 @@ def obtener_usuario_actual(request: Request, db = Depends(database.get_db)):
         return None
     try:
         if token.startswith("Bearer "):
-            token = token.split(" ")[1]
+            token = token.split(" ")[1] # <-- Corregido para extraer el token adecuadamente
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
