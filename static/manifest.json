@@ -1,1 +1,17 @@
+{
+  "short_name": "AutoStock",
+  "name": "AutoStock Mayab - Inventarios",
+  "icons": [
+    {
+      "src": "https://flaticon.com",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/mostrador",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "theme-color": "#2563eb",
+  "orientation": "portrait"
+}
 
