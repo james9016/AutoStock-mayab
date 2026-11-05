@@ -1,6 +1,6 @@
 import os
+import bcrypt
 from fastapi import Request, HTTPException, Depends, status
-from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import database
@@ -11,15 +11,20 @@ SECRET_KEY = os.getenv("SECRET_KEY", "SUPER_SECRET_COMP_MAYA_2026_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # Duración de una jornada laboral completa (8 horas)
 
-# Desactivamos el error de truncado automático interno de passlib para evitar que colapse en Render
-pwd_context = CryptContext(schemes=["bcrypt"], bcrypt__truncate_error=False, deprecated="auto")
-
 def obtener_password_hash(password: str) -> str:
-    # Truncamos explícitamente a 72 caracteres por límite físico del algoritmo bcrypt
-    return pwd_context.hash(password[:72])
+    # Truncamos explícitamente a un máximo de 72 caracteres por límite físico del algoritmo
+    password_bytes = password[:72].encode('utf-8')
+    salt = bcrypt.gensalt()
+    hash_bytes = bcrypt.hashpw(password_bytes, salt)
+    return hash_bytes.decode('utf-8')
 
 def verificar_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password[:72], hashed_password)
+    try:
+        password_bytes = plain_password[:72].encode('utf-8')
+        hashed_bytes = hashed_password.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
+    except Exception:
+        return False
 
 def crear_token_acceso(data: dict):
     to_encode = data.copy()
@@ -33,8 +38,7 @@ def obtener_usuario_actual(request: Request, db = Depends(database.get_db)):
         return None
     try:
         if token.startswith("Bearer "):
-            # Extraemos la segunda parte (el token puro) usando el índice [1]
-            token = token.split(" ")[1] 
+            token = token.split(" ")[1]
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
