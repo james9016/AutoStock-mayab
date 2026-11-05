@@ -14,10 +14,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 480  # Duración de una jornada laboral completa (
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def obtener_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    # Truncamos a un máximo de 72 bytes para blindar bcrypt contra caídas por strings largos
+    return pwd_context.hash(password[:72])
 
 def verificar_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(plain_password[:72], hashed_password)
 
 def crear_token_acceso(data: dict):
     to_encode = data.copy()
