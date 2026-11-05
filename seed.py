@@ -58,10 +58,11 @@ DICCIONARIO_VEHICULOS = {
 def seed_database(db: Session):
     admin = db.query(models.Usuario).filter(models.Usuario.usuario == "admin").first()
     if not admin:
+        password_segura = "AdminCorp2026*"
         new_admin = models.Usuario(
             nombre="Administrador General",
             usuario="admin",
-            contrasena_hash=obtener_password_hash("AdminCorp2026*"),
+            contrasena_hash=obtener_password_hash(password_segura[:72]),
             rol=models.RolEnum.Administrador,
             telefono_celular="+529990000000"
         )
