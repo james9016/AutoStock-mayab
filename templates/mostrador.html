@@ -341,4 +341,194 @@
             </form>
         </div>
     </div>
-     
+     <!-- LOGICA DE CONTROL E INTERACTIVIDAD EN FRONTEND -->
+    <script>
+        const VEHICULOS = {{ dict_vehiculos|safe }};
+
+        function inicializarFiltrosYFormularios() {
+            const filtroMarca = document.getElementById('filtro-marca');
+            const formMarca = document.getElementById('form-marca');
+            let opcionesMarcas = '<option value="">-- Todas las Marcas --</option>';
+            let opcionesForm = '<option value="">-- Seleccionar --</option>';
+            
+            Object.keys(VEHICULOS).sort().forEach(m => {
+                opcionesMarcas += `<option value="${m}">${m}</option>`;
+                opcionesForm += `<option value="${m}">${m}</option>`;
+            });
+
+            if(filtroMarca) filtroMarca.innerHTML = opcionesMarcas;
+            if(formMarca) formMarca.innerHTML = opcionesForm;
+        }
+
+        const formMarca = document.getElementById('form-marca');
+        if(formMarca) {
+            formMarca.addEventListener('change', function() {
+                const modelos = VEHICULOS[this.value] || [];
+                const formModelo = document.getElementById('form-modelo');
+                let options = '<option value="">-- Seleccionar --</option>';
+                modelos.forEach(mod => { options += `<option value="${mod}">${mod}</option>`; });
+                formModelo.innerHTML = options;
+            });
+        }
+
+        const buscador = document.getElementById('buscador-principal');
+        const badgeModoId = document.getElementById('badge-modo-id');
+        const fMarca = document.getElementById('filtro-marca');
+        const fModelo = document.getElementById('filtro-modelo');
+        const fAno = document.getElementById('filtro-ano');
+        const btnLimpiar = document.getElementById('btn-limpiar');
+
+        function filtrarProductos() {
+            const query = buscador.value.trim().toLowerCase();
+            const esNumerico = /^\d+$/.test(query);
+            const marcaSel = fMarca.value;
+            const modeloSel = fModelo.value;
+            const anoSel = fAno.value;
+
+            if (esNumerico && query.length > 0) {
+                badgeModoId.classList.remove('hidden');
+                fMarca.disabled = fModelo.disabled = fAno.disabled = true;
+            } else {
+                badgeModoId.classList.add('hidden');
+                fMarca.disabled = false;
+            }
+
+            const tarjetas = document.querySelectorAll('.card-refaccion');
+            tarjetas.forEach(card => {
+                const id = card.getAttribute('data-id');
+                const marca = card.getAttribute('data-marca');
+                const modelo = card.getAttribute('data-modelo');
+                const ano = card.getAttribute('data-ano');
+                const texto = card.getAttribute('data-texto').toLowerCase();
+
+                let cumpleQuery = true;
+                if (query.length > 0) {
+                    if (esNumerico) { cumpleQuery = id.startsWith(query); } 
+                    else { cumpleQuery = texto.includes(query); }
+                }
+
+                let cumpleFiltros = true;
+                if(!esNumerico) {
+                    if (marcaSel && marca !== marcaSel) cumpleFiltros = false;
+                    if (modeloSel && modelo !== modeloSel) cumpleFiltros = false;
+                    if (anoSel && ano !== anoSel) cumpleFiltros = false;
+                }
+
+                if (cumpleQuery && cumpleFiltros) { card.classList.remove('hidden'); } 
+                else { card.classList.add('hidden'); }
+            });
+        }
+            if(fMarca) {
+            fMarca.addEventListener('change', function() {
+                const marca = this.value;
+                if(marca) {
+                    fModelo.disabled = false;
+                    let options = '<option value="">-- Todos los Modelos --</option>';
+                    (VEHICULOS[marca] || []).forEach(m => { options += `<option value="${m}">${m}</option>`; });
+                    fModelo.innerHTML = options;
+                } else {
+                    fModelo.disabled = fAno.disabled = true;
+                    fModelo.innerHTML = '<option value="">Selecciona una marca primero</option>';
+                }
+                filtrarProductos();
+            });
+        }
+
+        if(fModelo) {
+            fModelo.addEventListener('change', function() {
+                if(this.value) {
+                    fAno.disabled = false;
+                    let options = '<option value="">-- Todos los Años --</option>';
+                    ["1990-1995", "1996-2000", "2001-2005", "2006-2010", "2011-2015", "2016-2020", "2021-2026"].forEach(a => {
+                        options += `<option value="${a}">${a}</option>`;
+                    });
+                    fAno.innerHTML = options;
+                } else {
+                    fAno.disabled = true;
+                    fAno.innerHTML = '<option value="">Selecciona un modelo primero</option>';
+                }
+                filtrarProductos();
+            });
+        }
+
+        if(fAno) fAno.addEventListener('change', filtrarProductos);
+        buscador.addEventListener('input', filtrarProductos);
+        
+        btnLimpiar.addEventListener('click', () => {
+            buscador.value = '';
+            if(fMarca) fMarca.value = '';
+            if(fModelo) { fModelo.value = ''; fModelo.disabled = true; }
+            if(fAno) { fAno.value = ''; fAno.disabled = true; }
+            badgeModoId.classList.add('hidden');
+            fMarca.disabled = false;
+            filtrarProductos();
+        });
+
+        // RECONOCIMIENTO DE VOZ NATIVO ANDROID
+        const btnVoz = document.getElementById('btn-voz');
+        if (btnVoz) {
+            btnVoz.addEventListener('click', function() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    alert("Tu dispositivo o navegador no soporta búsqueda por voz. Usa Google Chrome en Android.");
+                    return;
+                }
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'es-MX';
+                recognition.start();
+
+                btnVoz.innerText = "⏳";
+                recognition.onresult = function(event) {
+                    const resultadoVoz = event.results[0][0].transcript;
+                    buscador.value = resultadoVoz;
+                    btnVoz.innerText = "🎤";
+                    filtrarProductos();
+                };
+                recognition.onerror = function() {
+                    btnVoz.innerText = "🎤";
+                };
+            });
+        }
+
+        // COMPRESIÓN DE FOTO MEDIANTE CANVAS HTML5
+        const inputFoto = document.getElementById('foto-camara');
+        if(inputFoto) {
+            inputFoto.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if(!file) return;
+
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        const MAX_WIDTH = 1000;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Compresión forzada a JPEG Calidad 70% (Menor a 200KB)
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('url_imagen_string').value = dataUrl;
+                    };
+                };
+            });
+        }
+
+        window.onload = inicializarFiltrosYFormularios;
+    </script>
+</body>
+</html>
+
