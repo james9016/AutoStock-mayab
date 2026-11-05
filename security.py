@@ -11,10 +11,11 @@ SECRET_KEY = os.getenv("SECRET_KEY", "SUPER_SECRET_COMP_MAYA_2026_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # Duración de una jornada laboral completa (8 horas)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Desactivamos el error de truncado automático interno de passlib para evitar que colapse en Render
+pwd_context = CryptContext(schemes=["bcrypt"], bcrypt__truncate_error=False, deprecated="auto")
 
 def obtener_password_hash(password: str) -> str:
-    # Truncamos de forma explícita antes de enviar a passlib
+    # Truncamos explícitamente a 72 caracteres por límite físico del algoritmo bcrypt
     return pwd_context.hash(password[:72])
 
 def verificar_password(plain_password: str, hashed_password: str) -> bool:
