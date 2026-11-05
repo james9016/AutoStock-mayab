@@ -32,7 +32,8 @@ def obtener_usuario_actual(request: Request, db = Depends(database.get_db)):
         return None
     try:
         if token.startswith("Bearer "):
-            token = token.split(" ")[1] # <-- Corregido para extraer el token adecuadamente
+            # Extraemos la segunda parte (el token puro) usando el índice [1]
+            token = token.split(" ")[1] 
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
