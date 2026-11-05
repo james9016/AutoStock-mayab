@@ -46,3 +46,152 @@
                 <a href="/mostrador" class="text-emerald-900 font-bold text-lg">&times;</a>
             </div>
         {% endif %}
+        <!-- SECCIÓN: BUSCADOR AVANZADO HÍBRIDO -->
+        <section class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
+            <h2 class="text-lg font-bold text-gray-800 flex items-center space-x-2">
+                <span>🔍</span> <span>Panel de Búsqueda Predictiva</span>
+            </h2>
+            
+            <div class="flex flex-col md:flex-row gap-3 items-center">
+                <!-- Barra de búsqueda con Lupa Integrada -->
+                <div class="relative w-full flex-1">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </span>
+                    <input type="text" id="buscador-principal" placeholder="Escribe un ID numérico o palabras clave (Ej: Alternador)..." 
+                           class="w-full pl-10 pr-12 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-base shadow-inner">
+                    <!-- Botón de Voz -->
+                    <button type="button" id="btn-voz" class="absolute inset-y-0 right-0 flex items-center pr-3 text-xl hover:scale-110 transition" title="Buscar por voz">
+                        🎤
+                    </button>
+                </div>
+                
+                <!-- Badge Dinámico del Modo ID -->
+                <div id="badge-modo-id" class="hidden bg-amber-100 border border-amber-400 text-amber-900 px-3 py-2 rounded-lg font-bold text-sm text-center w-full md:w-auto shadow-sm">
+                    ⚠️ Modo ID Detectado
+                </div>
+                <button type="button" id="btn-limpiar" class="w-full md:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2.5 rounded-lg transition border border-gray-300 shadow-sm text-sm">
+                    Limpiar Filtros
+                </button>
+            </div>
+
+            <!-- Selectores en Cascada Dinámicos -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">1. Filtrar por Marca</label>
+                    <select id="filtro-marca" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:bg-white shadow-sm"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">2. Filtrar por Modelo</label>
+                    <select id="filtro-modelo" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:bg-white shadow-sm" disabled>
+                        <option value="">Selecciona una marca primero</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">3. Filtrar por Año</label>
+                    <select id="filtro-ano" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:bg-white shadow-sm" disabled>
+                        <option value="">Selecciona un modelo primero</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+            <!-- PANEL DE CONTROL DE OPERACIONES (ADMIN Y VENDEDOR) -->
+        {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor') %}
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- FORMULARIO DE ALTA (SOLO ADMIN) -->
+                {% if usuario.rol.value == 'Administrador' %}
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
+                        <h2 class="text-lg font-bold text-gray-800 border-b border-gray-100 pb-2">📦 Alta de Refacciones (Solo Admin)</h2>
+                        <form action="/productos/crear" method="POST" class="space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Categoría</label>
+                                    <select name="categoria" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                                        <option value="carroceria">Carrocería y Colisión</option>
+                                        <option value="iluminacion">Iluminación</option>
+                                        <option value="motor">Motor y Componentes</option>
+                                        <option value="accesorios">Accesorios de Motor</option>
+                                        <option value="transmision">Transmisión y Tren Motriz</option>
+                                        <option value="suspension">Suspensión y Dirección</option>
+                                        <option value="frenos">Sistema de Frenos</option>
+                                        <option value="enfriamiento">Enfriamiento y Calefacción</option>
+                                        <option value="escape">Escape y Combustible</option>
+                                        <option value="electrica">Eléctrica y Módulos</option>
+                                        <option value="interiores">Interiores y Plásticos</option>
+                                        <option value="cristales">Cristales y Vidrios</option>
+                                        <option value="llantas">Llantas y Rines</option>
+                                        <option value="seguridad">Seguridad (Airbags)</option>
+                                        <option value="audio">Audio e Infoentretenimiento</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nombre Refacción</label>
+                                    <input type="text" name="nombre_refaccion" placeholder="Ej: Marcha de Arranque" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Marca</label>
+                                    <select id="form-marca" name="marca" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-xs text-gray-900" required></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Modelo</label>
+                                    <select id="form-modelo" name="modelo" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-xs text-gray-900" required>
+                                        <option value="">Elige Marca</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Año Grupo</label>
+                                    <select name="ano_grupo" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-xs text-gray-900" required>
+                                        <option value="1990-1995">1990-1995</option>
+                                        <option value="1996-2000">1996-2000</option>
+                                        <option value="2001-2005">2001-2005</option>
+                                        <option value="2006-2010">2006-2010</option>
+                                        <option value="2011-2015">2011-2015</option>
+                                        <option value="2016-2020">2016-2020</option>
+                                        <option value="2021-2026">2021-2026</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Ubicación Física</label>
+                                    <input type="text" name="ubicacion_fisica" placeholder="Ej: Pasillo B" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Dueño</label>
+                                    <select name="dueno_id" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                                        {% for u in usuarios %}
+                                            <option value="{{ u.id }}">{{ u.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Precio Costo</label>
+                                    <input type="number" step="0.01" name="precio_real" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Precio Venta</label>
+                                    <input type="number" step="0.01" name="precio_sugerido" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Foto Cámara</label>
+                                <input type="file" id="foto-camara" accept="image/*" capture="environment" class="w-full text-xs text-gray-700 bg-gray-50 p-2 border rounded">
+                                <input type="hidden" name="url_imagen" id="url_imagen_string">
+                            </div>
+
+                            <button type="submit" class="w-full bg-blue-600 text-white font-bold p-2 rounded transition">Registrar Entrada</button>
+                        </form>
+                    </div>
+                {% endif %}
+                                        
