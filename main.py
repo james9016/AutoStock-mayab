@@ -5,14 +5,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import database
-from models import Base
 import models
 import security
 import seed
 
 app = FastAPI(title="AutoStock Mayab")
-
-Base.metadata.create_all(bind=database.engine)
 
 @app.get("/static/manifest.json")
 def get_manifest():
@@ -24,6 +21,9 @@ def get_serviceworker():
 
 @app.on_event("startup")
 def on_startup():
+    # Creamos las tablas AQUÍ adentro, asegurando que todos los módulos ya se importaron por completo
+    models.Base.metadata.create_all(bind=database.engine)
+    
     db = next(database.get_db())
     try:
         seed.seed_database(db)
