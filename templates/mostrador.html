@@ -223,4 +223,122 @@
                 {% endif %}
             </section>
         {% endif %}
-        
+        <!-- SECCIÓN: INVENTARIO FÍSICO COMPARTIDO -->
+        <section class="space-y-4">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
+                <span>📦</span> <span>Inventario Disponible</span>
+            </h2>
+            
+            <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for p in productos %}
+                    {# Cálculo dinámico para el Semáforo de Estancamiento (90 días) #}
+                    {% set dias_almacen = ((p.fecha_ingreso.utcnow() - p.fecha_ingreso).days) %}
+                    {% set es_estancado = dias_almacen > 90 %}
+                    
+                    <div class="card-refaccion bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col transition hover:shadow-md {{ 'border-red-400 bg-red-50 text-red-950' if es_estancado }}"
+                         data-id="{{ p.id }}" 
+                         data-marca="{{ p.marca }}" 
+                         data-modelo="{{ p.modelo }}" 
+                         data-ano="{{ p.ano_grupo }}"
+                         data-texto="{{ p.nombre_refaccion }} {{ p.marca }} {{ p.modelo }} {{ p.compatibilidad if p.compatibilidad else '' }}">
+                        
+                        <div class="p-4 space-y-2 flex-1">
+                            <div class="flex justify-between items-start">
+                                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded">ID #{{ p.id }}</span>
+                                <span class="text-[10px] font-bold text-gray-500 uppercase bg-gray-100 px-2 py-0.5 rounded tracking-wide">{{ p.categoria.value }}</span>
+                            </div>
+
+                            <h3 class="font-bold text-gray-900 text-base leading-tight mt-1">{{ p.nombre_refaccion }}</h3>
+                            <p class="text-sm font-semibold text-slate-700">🚘 {{ p.marca }} {{ p.modelo }} <span class="text-xs text-gray-500 font-normal">({{ p.ano_grupo }})</span></p>
+                            
+                            {% if p.compatibilidad %}
+                                <p class="text-xs bg-gray-50 text-gray-700 p-2 rounded border border-gray-100">🛠️ <span class="font-bold">Compatibilidad:</span> {{ p.compatibilidad }}</p>
+                            {% endif %}
+
+                            {# Alerta visual si la pieza supera los 90 días #}
+                            {% if es_estancado %}
+                                <div class="text-[11px] font-bold text-red-700 bg-red-100/60 p-1.5 rounded border border-red-200 flex items-center space-x-1">
+                                    <span>⚠️ Refacción Estancada (+{{ dias_almacen }} días en bodega)</span>
+                                </div>
+                            {% endif %}
+
+                            {# Información Protegida Oculta al Público General #}
+                            {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor') %}
+                                <div class="mt-2 bg-emerald-50 border border-emerald-200 text-emerald-950 p-2 rounded-lg text-xs space-y-1 shadow-inner">
+                                    <p class="font-bold">📍 UBICACIÓN EN BODEGA: <span class="underline text-emerald-800">{{ p.ubicacion_fisica }}</span></p>
+                                    {% if usuario.rol.value == 'Administrador' %}
+                                        <p class="font-medium text-gray-600">💰 Costo Liquidación Dueño: <span class="font-bold text-gray-900">${{ p.precio_real }}</span></p>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="bg-gray-50 px-4 py-3 border-t border-gray-100 flex items-center justify-between mt-auto">
+                            <div>
+                                <span class="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Precio Venta</span>
+                                <span class="text-lg font-black text-blue-600">${{ p.precio_sugerido }}</span>
+                            </div>
+                            
+                            {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor') %}
+                                <form action="/productos/vender/{{ p.id }}" method="POST">
+                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm transition">
+                                        ⚡ Marcar Vendido
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+       <!-- MODAL DE INICIO DE SESIÓN -->
+    <div id="modal-login" class="fixed inset-0 bg-black/50 hidden target:flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl border border-gray-200 p-6 max-w-sm w-full space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-900">🔐 Acceso Operadores</h3>
+                <a href="/mostrador" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</a>
+            </div>
+            <form action="/auth/login" method="POST" class="space-y-3">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Usuario de Sistema</label>
+                    <input type="text" name="usuario" placeholder="Ej: admin" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" name="contrasena" placeholder="••••••••" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-sm shadow transition">Entrar al Panel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE REGISTRO PÚBLICO GENERAL -->
+    <div id="modal-registro" class="fixed inset-0 bg-black/50 hidden target:flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl border border-gray-200 p-6 max-w-sm w-full space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-900">📝 Registro Público General</h3>
+                <a href="/mostrador" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</a>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 p-2.5 rounded text-xs text-blue-900 font-medium">
+                Al registrarte de manera externa, tu cuenta se creará con el rol de <strong>Público General</strong> de forma automática.
+            </div>
+            <form action="/auth/login" method="POST" class="space-y-3">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nombre Completo</label>
+                    <input type="text" placeholder="Ej: Juan Pérez" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Usuario</label>
+                    <input type="text" placeholder="Ej: juan99" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Celular (WhatsApp)</label>
+                    <input type="text" placeholder="+529991234567" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900" required>
+                </div>
+                <div class="bg-gray-100 p-2.5 text-center text-xs font-bold text-gray-600 border rounded-md">Registro controlado: Solicita la activación al Administrador.</div>
+                <a href="/mostrador" class="block text-center w-full bg-gray-600 text-white font-bold py-2 rounded-lg text-sm shadow hover:bg-gray-700 transition">Cerrar Ventana</a>
+            </form>
+        </div>
+    </div>
+     
