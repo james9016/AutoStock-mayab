@@ -28,3 +28,28 @@
         </div>
     </header>
     <main class="max-w-7xl mx-auto p-4 space-y-6">
+        <section class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
+            <h2 class="text-lg font-bold text-gray-800 flex items-center space-x-2"><span>🔍</span> <span>Panel de Búsqueda Predictiva</span></h2>
+            <div class="flex flex-col md:flex-row gap-3 items-center">
+                <div class="relative w-full flex-1">
+                    <input type="text" id="buscador-principal" placeholder="Escribe un ID numérico o palabras clave..." class="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <button type="button" id="btn-voz" class="absolute inset-y-0 right-0 flex items-center pr-4 text-xl hover:scale-110 transition">🎤</button>
+                </div>
+                <div id="badge-modo-id" class="hidden bg-amber-100 border border-amber-400 text-amber-900 px-3 py-2 rounded-lg font-bold text-sm">⚠️ Modo ID Detectado</div>
+                <button type="button" id="btn-limpiar" class="w-full md:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2.5 rounded-lg text-sm">Limpiar Filtros</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">1. Filtrar por Marca</label>
+                    <select id="filtro-marca" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm font-medium text-gray-900"><option value="">-- Todas las Marcas --</option></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">2. Filtrar por Modelo</label>
+                    <select id="filtro-modelo" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm font-medium text-gray-900" disabled><option value="">Selecciona marca primero</option></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">3. Filtrar por Año</label>
+                    <select id="filtro-ano" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm font-medium text-gray-900" disabled><option value="">Selecciona modelo primero</option></select>
+                </div>
+            </div>
+        </section>
