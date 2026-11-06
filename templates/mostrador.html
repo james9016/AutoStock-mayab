@@ -9,6 +9,8 @@
     <meta name="theme-color" content="#2563eb">
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans min-h-screen">
+
+    <!-- Encabezado Corporativo de Alto Contraste -->
     <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <span class="text-xl font-bold tracking-tight">⚙️ AutoStock Mayab</span>
@@ -27,59 +29,262 @@
             </div>
         </div>
     </header>
+
     <main class="max-w-7xl mx-auto p-4 space-y-6">
-        <section class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
-            <h2 class="text-lg font-bold text-gray-800 flex items-center space-x-2"><span>🔍</span> <span>Panel de Búsqueda Predictiva</span></h2>
-            <div class="flex flex-col md:flex-row gap-3 items-center">
-                <div class="relative w-full flex-1">
-                    <input type="text" id="buscador-principal" placeholder="Escribe un ID numérico o palabras clave..." class="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <button type="button" id="btn-voz" class="absolute inset-y-0 right-0 flex items-center pr-4 text-xl hover:scale-110 transition">🎤</button>
-                </div>
-                <div id="badge-modo-id" class="hidden bg-amber-100 border border-amber-400 text-amber-900 px-3 py-2 rounded-lg font-bold text-sm">⚠️ Modo ID Detectado</div>
-                <button type="button" id="btn-limpiar" class="w-full md:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2.5 rounded-lg text-sm">Limpiar Filtros</button>
+        
+        <!-- Contenedor de Alertas Dinámicas -->
+        {% if request.query_params.get('error') %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-sm flex items-center justify-between">
+                <span class="font-medium">⚠️ {{ request.query_params.get('error') }}</span>
+                <a href="/mostrador" class="text-red-900 font-bold text-lg">&times;</a>
             </div>
+        {% endif %}
+        {% if request.query_params.get('msg') %}
+            <div class="bg-emerald-100 border border-emerald-400 text-emerald-800 px-4 py-3 rounded-lg shadow-sm flex items-center justify-between">
+                <span class="font-medium">✅ {{ request.query_params.get('msg') }}</span>
+                <a href="/mostrador" class="text-emerald-900 font-bold text-lg">&times;</a>
+            </div>
+        {% endif %}
+        <!-- SECCIÓN 1: BUSCADOR AVANZADO HÍBRIDO -->
+        <section class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
+            <h2 class="text-lg font-bold text-gray-800 flex items-center space-x-2">
+                <span>🔍</span> <span>Panel de Búsqueda Predictiva</span>
+            </h2>
+            
+            <div class="flex flex-col md:flex-row gap-3 items-center">
+                <!-- Barra de búsqueda principal para la Bodega -->
+                <div class="relative w-full flex-1">
+                    <input type="text" id="buscador-principal" placeholder="Escribe un ID numérico o palabras clave (Ej: Alternador)..." 
+                           class="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-base shadow-inner font-medium">
+                    <!-- Micrófono para operar con manos libres en almacén -->
+                    <button type="button" id="btn-voz" class="absolute inset-y-0 right-0 flex items-center pr-4 text-xl hover:scale-110 transition" title="Buscar por voz">🎤</button>
+                </div>
+                
+                <!-- Alerta Analógica del "Modo ID" -->
+                <div id="badge-modo-id" class="hidden bg-amber-100 border border-amber-400 text-amber-900 px-3 py-2 rounded-lg font-bold text-sm text-center w-full md:w-auto shadow-sm">
+                    ⚠️ Modo ID Detectado
+                </div>
+                <button type="button" id="btn-limpiar" class="w-full md:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2.5 rounded-lg transition border border-gray-300 shadow-sm text-sm">
+                    Limpiar Filtros
+                </button>
+            </div>
+
+            <!-- Selectores en Cascada Dinámicos basados en el Stock real -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">1. Filtrar por Marca</label>
-                    <select id="filtro-marca" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm font-medium text-gray-900"><option value="">-- Todas las Marcas --</option></select>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">1. Filtrar por Marca</label>
+                    <select id="filtro-marca" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-sm font-medium focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Todas las Marcas --</option>
+                    </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">2. Filtrar por Modelo</label>
-                    <select id="filtro-modelo" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm font-medium text-gray-900" disabled><option value="">Selecciona marca primero</option></select>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">2. Filtrar por Modelo</label>
+                    <select id="filtro-modelo" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-sm font-medium focus:ring-2 focus:ring-blue-500" disabled>
+                        <option value="">Selecciona una marca primero</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">3. Filtrar por Año</label>
-                    <select id="filtro-ano" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm font-medium text-gray-900" disabled><option value="">Selecciona modelo primero</option></select>
+                    <select id="filtro-ano" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-sm font-medium focus:ring-2 focus:ring-blue-500" disabled>
+                        <option value="">Selecciona un modelo primero</option>
+                    </select>
                 </div>
             </div>
         </section>
+
+        <!-- SECCIÓN 2: PANEL DE CONTROL DE OPERACIONES PRIVADAS -->
+        {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor') %}
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 bg-transparent p-0 border-none shadow-none">
+                <!-- FORMULARIO DE ALTA (EXCLUSIVO ADMINISTRADOR) -->
+                {% if usuario.rol.value == 'Administrador' %}
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
+                        <h2 class="text-lg font-bold text-gray-800 border-b border-gray-100 pb-2">📦 Alta de Refacciones (Solo Admin)</h2>
+                        <form action="/productos/crear" method="POST" class="space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Categoría</label>
+                                    <select name="categoria" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium" required>
+                                        <option value="carroceria">Carrocería y Colisión</option>
+                                        <option value="iluminacion">Iluminación</option>
+                                        <option value="motor">Motor y Componentes</option>
+                                        <option value="accesorios">Accesorios de Motor</option>
+                                        <option value="transmision">Transmisión y Tren Motriz</option>
+                                        <option value="suspension">Suspensión y Dirección</option>
+                                        <option value="frenos">Sistema de Frenos</option>
+                                        <option value="enfriamiento">Enfriamiento y Calefacción</option>
+                                        <option value="escape">Escape y Combustible</option>
+                                        <option value="electrica">Eléctrica y Módulos</option>
+                                        <option value="interiores">Interiores y Plásticos</option>
+                                        <option value="cristales">Cristales y Vidrios</option>
+                                        <option value="llantas">Llantas y Rines</option>
+                                        <option value="seguridad">Seguridad (Airbags)</option>
+                                        <option value="audio">Audio e Infoentretenimiento</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre Refacción</label>
+                                    <input type="text" name="nombre_refaccion" placeholder="Ej: Marcha de Arranque" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium" required>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Marca</label>
+                                    <select id="form-marca" name="marca" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-xs text-gray-900 font-medium" required></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Modelo</label>
+                                    <select id="form-modelo" name="modelo" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-xs text-gray-900 font-medium" required>
+                                        <option value="">Elige Marca</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Año Grupo</label>
+                                    <select name="ano_grupo" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-xs text-gray-900 font-medium" required>
+                                        <option value="1990-1995">1990-1995</option>
+                                        <option value="1996-2000">1996-2000</option>
+                                        <option value="2001-2005">2001-2005</option>
+                                        <option value="2006-2010">2006-2010</option>
+                                        <option value="2011-2015">2011-2015</option>
+                                        <option value="2016-2020">2016-2020</option>
+                                        <option value="2021-2026">2021-2026</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Ubicación Física</label>
+                                    <input type="text" name="ubicacion_fisica" placeholder="Ej: Pasillo B - Estante 4" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Dueño / Afiliado</label>
+                                    <select name="dueno_id" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium" required>
+                                        {% for u in usuarios %}
+                                            <option value="{{ u.id }}">{{ u.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Precio Costo (Real)</label>
+                                    <input type="number" step="0.01" name="precio_real" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Precio Venta (Sugerido)</label>
+                                    <input type="number" step="0.01" name="precio_sugerido" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium" required>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Foto Cámara Trasera</label>
+                                <input type="file" id="foto-camara" accept="image/*" capture="environment" class="w-full text-xs text-gray-700 bg-gray-50 p-2 border rounded border-gray-300">
+                                <input type="hidden" name="url_imagen" id="url_imagen_string">
+                            </div>
+
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-2.5 rounded-lg transition shadow-md uppercase text-sm tracking-wider">
+                                Registrar Entrada
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+                <!-- CONTROL DE LIQUIDACIONES CONTABLES (SOLO ADMIN) -->
+                {% if usuario.rol.value == 'Administrador' %}
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
+                        <h2 class="text-lg font-bold text-gray-800 border-b border-gray-100 pb-2">💰 Liquidaciones Semanales</h2>
+                        {% if liquidaciones %}
+                            <div class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                                {% for d_id, data in liquidaciones.items() %}
+                                    <div class="p-3 border border-gray-200 rounded-lg bg-gray-50 flex justify-between items-center shadow-sm">
+                                        <div>
+                                            <p class="font-bold text-gray-900 text-sm">{{ data.dueno }}</p>
+                                            <p class="text-xs text-gray-500 font-medium">Saldo acumulado: <span class="text-blue-600 font-bold">${{ "{:,.2f}".format(data.saldo) }}</span></p>
+                                        </div>
+                                        <form action="/liquidaciones/procesar/{{ d_id }}" method="POST">
+                                            <input type="hidden" name="ids_ventas" value="{{ data.items|join(',') }}">
+                                            <button type="submit" class="text-xs bg-emerald-600 text-white font-semibold px-3 py-2 rounded-lg transition hover:bg-emerald-700 shadow-sm uppercase tracking-wide">
+                                                Marcar Liquidado
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-sm text-gray-500 text-center py-8 font-medium bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                No hay saldos acumulados por liquidar esta semana.
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </section>
+        {% endif %}
+
+        <!-- SECCIÓN: INVENTARIO FÍSICO COMPARTIDO -->
         <section class="space-y-4">
-            <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2"><span>📦</span> <span>Inventario Disponible</span></h2>
+            <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
+                <span>📦</span> <span>Inventario Disponible en Almacén</span>
+            </h2>
+            
             <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {% for p in productos %}
-                    <div class="card-refaccion bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col transition hover:shadow-md" data-id="{{ p.id }}" data-marca="{{ p.marca }}" data-modelo="{{ p.modelo }}" data-ano="{{ p.ano_grupo }}" data-texto="{{ p.nombre_refaccion }} {{ p.marca }} {{ p.modelo }} {{ p.compatibilidad if p.compatibilidad else '' }}">
+                    {# Análisis Analógico para el Semáforo de Estancamiento de 90 Días #}
+                    {% if p.fecha_ingreso %}
+                        {% set dias_almacen = ((datetime.utcnow() - p.fecha_ingreso).days) if datetime else 0 %}
+                    {% else %}
+                        {% set dias_almacen = 0 %}
+                    {% endif %}
+                    {% set es_estancado = dias_almacen > 90 %}
+                    
+                    <div class="card-refaccion border border-gray-200 rounded-xl bg-white flex flex-col justify-between overflow-hidden shadow-sm transition hover:shadow-md {{ 'border-red-400 bg-red-50 text-red-950' if es_estancado }}"
+                         data-id="{{ p.id }}" data-marca="{{ p.marca }}" data-modelo="{{ p.modelo }}" data-ano="{{ p.ano_grupo }}" data-texto="{{ p.nombre_refaccion }} {{ p.marca }} {{ p.modelo }} {{ p.compatibilidad if p.compatibilidad else '' }}">
                         <div class="p-4 space-y-2 flex-1">
                             <div class="flex justify-between items-start">
                                 <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded">ID #{{ p.id }}</span>
-                                <span class="text-[10px] font-bold text-gray-500 uppercase bg-gray-100 px-2 py-0.5 rounded">{{ p.categoria }}</span>
+                                <span class="text-[10px] font-bold text-gray-500 uppercase bg-gray-100 px-2 py-0.5 rounded tracking-wide">{{ p.categoria }}</span>
                             </div>
-                            <h3 class="font-bold text-gray-900 text-base mt-1">{{ p.nombre_refaccion }}</h3>
-                            <p class="text-sm font-semibold text-slate-700">🚘 {{ p.marca }} {{ p.modelo }} <span class="text-xs text-gray-500">({{ p.ano_grupo }})</span></p>
-                            <div class="mt-2 bg-emerald-50 border border-emerald-200 text-emerald-950 p-2.5 rounded-lg text-xs space-y-1">
-                                <p class="flex justify-between"><span class="text-gray-600">📍 Ubicación:</span><span class="font-bold text-emerald-900 underline">{{ p.ubicacion_fisica }}</span></p>
+
+                            <h3 class="font-bold text-gray-900 text-base leading-tight mt-1">{{ p.nombre_refaccion }}</h3>
+                            <p class="text-sm font-semibold text-slate-700">🚘 {{ p.marca }} {{ p.modelo }} <span class="text-xs text-gray-500 font-normal">({{ p.ano_grupo }})</span></p>
+                            
+                            {% if p.compatibilidad %}
+                                <p class="text-xs bg-gray-50 text-gray-700 p-2 rounded border border-gray-100 font-medium">🛠️ <strong>Compatibilidad:</strong> {{ p.compatibilidad }}</p>
+                            {% endif %}
+
+                            {# Alerta visual si la pieza supera los 90 días #}
+                            {% if es_estancado %}
+                                <div class="text-[11px] font-bold text-red-700 bg-red-100/60 p-1.5 rounded border border-red-200 flex items-center space-x-1">
+                                    <span>⚠️ Refacción Estancada (+{{ dias_almacen }} días en bodega)</span>
+                                </div>
+                            {% endif %}
+
+                            {# SEGURIDAD DE PRECIOS DINÁMICOS: Desbloqueo exclusivo con Contraseña / Sesión válida #}
+                            <div class="mt-2 bg-emerald-50 border border-emerald-200 text-emerald-950 p-2.5 rounded-lg text-xs space-y-1 shadow-inner font-medium">
+                                <p class="flex justify-between">
+                                    <span class="text-gray-600">📍 Ubicación Física:</span>
+                                    <span class="font-bold text-emerald-900 underline">{{ p.ubicacion_fisica }}</span>
+                                </p>
                                 {% if p.precio_real %}
-                                    <p class="flex justify-between border-t border-emerald-200 pt-1 mt-1 font-bold"><span class="text-gray-600">💰 Costo Dueño:</span><span class="text-blue-700">${{ "{:,.2f}".format(p.precio_real) }}</span></p>
+                                    <p class="flex justify-between border-t border-emerald-200 pt-1 mt-1 font-bold">
+                                        <span class="text-gray-600">💰 Costo Liquidación Dueño:</span>
+                                        <span class="text-blue-700">${{ "{:,.2f}".format(p.precio_real) }}</span>
+                                    </p>
                                 {% endif %}
                             </div>
                         </div>
+
                         <div class="bg-gray-50 px-4 py-3 border-t border-gray-100 flex items-center justify-between mt-auto">
                             <div>
-                                <span class="block text-[10px] text-gray-400 font-bold uppercase">Precio Venta (PVP)</span>
+                                <span class="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Precio Venta (PVP)</span>
                                 <span class="text-lg font-black text-blue-600">${{ "{:,.2f}".format(p.precio_sugerido) }}</span>
                             </div>
+                            
                             {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor') %}
-                                <form action="/productos/vender/{{ p.id }}" method="POST">
-                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm transition">⚡ Marcar Vendido</button>
+                                <form action="/productos/vender/{{ p.id }}" method="POST" onsubmit="return confirm('¿Confirmar la venta externa de esta refacción?');">
+                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm transition uppercase tracking-wide">
+                                        ⚡ Marcar Vendido
+                                    </button>
                                 </form>
                             {% endif %}
                         </div>
@@ -89,16 +294,189 @@
         </section>
     </main>
 
+    <!-- MODAL DE INICIO DE SESIÓN -->
     <div id="modal-login" class="fixed inset-0 bg-black/50 hidden target:flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-xl p-6 max-w-sm w-full space-y-4 relative">
-            <a href="/mostrador" class="absolute right-4 top-3 text-gray-400 font-bold text-2xl">&times;</a>
-            <h3 class="text-lg font-bold text-gray-900 border-b pb-2"> Exchange Privado</h3>
-            <form action="/auth/login" method="POST" class="space-y-3">
-                <input type="text" name="usuario" placeholder="Usuario" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm" required>
-                <input type="password" name="contrasena" placeholder="Contraseña" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm" required>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg text-sm uppercase">Entrar</button>
+        <div class="bg-white rounded-xl shadow-xl border border-gray-200 p-6 max-w-sm w-full space-y-4 relative">
+            <a href="/mostrador" class="absolute right-4 top-3 text-gray-400 hover:text-gray-600 font-bold text-2xl">&times;</a>
+            <h3 class="text-lg font-bold text-gray-900 border-b pb-2">🔐 Acceso Operadores</h3>
+            <form action="/auth/login" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Usuario de Sistema</label>
+                    <input type="text" name="usuario" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Contraseña</label>
+                    <input type="password" name="contrasena" placeholder="••••••••" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition uppercase tracking-wider">Entrar al Panel</button>
             </form>
         </div>
     </div>
+    <!-- MODAL DE REGISTRO PÚBLICO GENERAL -->
+    <div id="modal-registro" class="fixed inset-0 bg-black/50 hidden target:flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl border border-gray-200 p-6 max-w-sm w-full space-y-4 relative">
+            <a href="/mostrador" class="absolute right-4 top-3 text-gray-400 hover:text-gray-600 font-bold text-2xl">&times;</a>
+            <h3 class="text-lg font-bold text-gray-900 border-b pb-2">📝 Registro Público General</h3>
+            <div class="bg-blue-50 border border-blue-200 p-2.5 rounded text-xs text-blue-900 font-medium">
+                Al registrarte de manera externa, tu cuenta se asignará con el rol de <strong>Público General</strong>.
+            </div>
+            <form action="/auth/login" method="POST" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre Completo</label>
+                    <input type="text" name="nombre" placeholder="Ej: Juan Pérez" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Usuario sugerido</label>
+                    <input type="text" name="usuario" placeholder="Ej: juan99" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Celular (WhatsApp)</label>
+                    <input type="text" name="telefono_celular" placeholder="+529991234567" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="bg-gray-100 p-2.5 text-center text-xs font-bold text-gray-600 border rounded-lg">
+                    Registro controlado: El Administrador debe activar tu cuenta en el panel.
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-sm shadow transition uppercase tracking-wider">Enviar Registro</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MOTOR DE LOGICA AUTOMOTRIZ, FILTRADO E INTERACTIVIDAD EN FRONTEND -->
+    <script>
+        const VEHICULOS = {% if dict_vehiculos %}{{ dict_vehiculos|safe }}{% else %}{}{% endif %};
+
+        function inicializarFiltrosYFormularios() {
+            const filtroMarca = document.getElementById('filtro-marca');
+            const formMarca = document.getElementById('form-marca');
+            let opcionesMarcas = '<option value="">-- Todas las Marcas --</option>';
+            let opcionesForm = '<option value="">-- Seleccionar Marca --</option>';
+            
+            Object.keys(VEHICULOS).sort().forEach(m => {
+                opcionesMarcas += `<option value="${m}">${m}</option>`;
+                opcionesForm += `<option value="${m}">${m}</option>`;
+            });
+
+            if(filtroMarca) filtroMarca.innerHTML = opcionesMarcas;
+            if(formMarca) formMarca.innerHTML = opcionesForm;
+        }
+
+        const formMarca = document.getElementById('form-marca');
+        if(formMarca) {
+            formMarca.addEventListener('change', function() {
+                const modelos = VEHICULOS[this.value] || [];
+                const formModelo = document.getElementById('form-modelo');
+                let options = '<option value="">-- Seleccionar Modelo --</option>';
+                modelos.forEach(mod => { options += `<option value="${mod}">${mod}</option>`; });
+                formModelo.innerHTML = options;
+            });
+        }
+
+        const buscador = document.getElementById('buscador-principal');
+        const badgeModoId = document.getElementById('badge-modo-id');
+        const fMarca = document.getElementById('filtro-marca');
+        const fModelo = document.getElementById('filtro-modelo');
+        const fAno = document.getElementById('filtro-ano');
+        const btnLimpiar = document.getElementById('btn-limpiar');
+
+        function filtrarProductos() {
+            const query = buscador.value.trim().toLowerCase();
+            const esNumerico = /^\d+$/.test(query);
+            const marcaSel = fMarca.value;
+            const modeloSel = fModelo.value;
+            const anoSel = fAno.value;
+
+            if (esNumerico && query.length > 0) {
+                badgeModoId.classList.remove('hidden');
+                if(fMarca) fMarca.disabled = true;
+                if(fModelo) fModelo.disabled = true;
+                if(fAno) fAno.disabled = true;
+            } else {
+                badgeModoId.classList.add('hidden');
+                if(fMarca) fMarca.disabled = false;
+            }
+
+            document.querySelectorAll('.card-refaccion').forEach(card => {
+                const id = card.getAttribute('data-id');
+                const marca = card.getAttribute('data-marca');
+                const modelo = card.getAttribute('data-modelo');
+                const ano = card.getAttribute('data-ano');
+                const texto = card.getAttribute('data-texto').toLowerCase();
+
+                let cumpleQuery = !query || (esNumerico ? id.startsWith(query) : texto.includes(query));
+                let cumpleFiltros = esNumerico || ((!marcaSel || marca === marcaSel) && (!modeloSel || modelo === modeloSel) && (!anoSel || ano === anoSel));
+
+                if (cumpleQuery && cumpleFiltros) { card.classList.remove('hidden'); } else { card.classList.add('hidden'); }
+            });
+        }
+
+        if(fMarca) {
+            fMarca.addEventListener('change', function() {
+                if(this.value) {
+                    fModelo.disabled = false;
+                    let options = '<option value="">-- Todos los Modelos --</option>';
+                    (VEHICULOS[this.value] || []).forEach(m => { options += `<option value="${m}">${m}</option>`; });
+                    fModelo.innerHTML = options;
+                } else { fModelo.disabled = fAno.disabled = true; fModelo.innerHTML = '<option value="">Selecciona</option>'; }
+                filtrarProductos();
+            });
+        }
+
+        if(fModelo) {
+            fModelo.addEventListener('change', function() {
+                if(this.value) {
+                    fAno.disabled = false;
+                    let options = '<option value="">-- Todos los Años --</option>';
+                    ["1990-1995", "1996-2000", "2001-2005", "2006-2010", "2011-2015", "2016-2020", "2021-2026"].forEach(a => { options += `<option value="${a}">${a}</option>`; });
+                    fAno.innerHTML = options;
+                } else { fAno.disabled = true; fAno.innerHTML = '<option value="">Selecciona</option>'; }
+                filtrarProductos();
+            });
+        }
+
+        if(fAno) fAno.addEventListener('change', filtrarProductos);
+        buscador.addEventListener('input', filtrarProductos);
+        
+        btnLimpiar.addEventListener('click', () => {
+            buscador.value = ''; if(fMarca) fMarca.value = '';
+            if(fModelo) { fModelo.value = ''; fModelo.disabled = true; }
+            if(fAno) { fAno.value = ''; fAno.disabled = true; }
+            badgeModoId.classList.add('hidden'); if(fMarca) fMarca.disabled = false;
+            filtrarProductos();
+        });
+
+        // RECONOCIMIENTO DE VOZ NATIVO ANDROID
+        const btnVoz = document.getElementById('btn-voz');
+        if (btnVoz) {
+            btnVoz.addEventListener('click', function() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) return alert("Usa Google Chrome en Android para habilitar voz.");
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'es-MX'; recognition.start(); btnVoz.innerText = "⏳";
+                recognition.onresult = function(event) { buscador.value = event.results[0][0].transcript.replace(/\./g, ''); btnVoz.innerText = "🎤"; filtrarProductos(); };
+                recognition.onerror = () => btnVoz.innerText = "🎤";
+                recognition.onend = () => btnVoz.innerText = "🎤";
+            });
+        }
+
+        // COMPRESIÓN DE FOTO CANVAS PARA ANDROID BODEGA
+        const inputFoto = document.getElementById('foto-camara');
+        if(inputFoto) {
+            inputFoto.addEventListener('change', function(e) {
+                const file = e.target.files[0]; if(!file) return;
+                const reader = new FileReader(); reader.readAsDataURL(file);
+                reader.onload = function(event) {
+                    const img = new Image(); img.src = event.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                        const MAX_WIDTH = 1000; let width = img.width, height = img.height;
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
+                        document.getElementById('url_imagen_string').value = canvas.toDataURL('image/jpeg', 0.7);
+                    };
+                };
+            });
+        }
+        window.onload = inicializarFiltrosYFormularios;
+    </script>
 </body>
 </html>
