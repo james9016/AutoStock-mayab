@@ -3,6 +3,7 @@ import bcrypt
 from fastapi import Request, HTTPException, Depends, status
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
 import database
 import models
 
@@ -28,11 +29,13 @@ def verificar_password(plain_password: str, hashed_password: str) -> bool:
 
 def crear_token_acceso(data: dict):
     to_encode = data.copy()
+    # Usamos datetime.now(timezone.utc) o simplementeutcnow() garantizando consistencia
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def obtener_usuario_actual(request: Request, db = Depends(database.get_db)):
+def obtener_usuario_actual(request: Request, db: Session = Depends(database.get_db)):
+    """Dependencia nativa de FastAPI para extraer el usuario desde la cookie HttpOnly de forma segura"""
     token = request.cookies.get("access_token")
     if not token:
         return None
@@ -45,14 +48,25 @@ def obtener_usuario_actual(request: Request, db = Depends(database.get_db)):
             return None
     except JWTError:
         return None
+        
     usuario = db.query(models.Usuario).filter(models.Usuario.usuario == username).first()
     return usuario
 
-def requerir_rol(roles_permitidos: list):
-    def dependencia(usuario: models.Usuario = Depends(obtener_usuario_actual)):
+class PermisoRol:
+    """Clase decoradora para inyección limpia de dependencias en las rutas de FastAPI"""
+    def __init__(self, roles_permitidos: list):
+        self.roles_permitidos = roles_permitidos
+
+    def __call__(self, usuario: models.Usuario = Depends(obtener_usuario_actual)):
         if not usuario:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No autenticado")
-        if usuario.rol.value not in roles_permitidos:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado. Permisos insuficientes.")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                detail="No autenticado. Por favor inicie sesión."
+            )
+        # Evaluamos directamente contra el valor del String Enum
+        if usuario.rol not in self.roles_permitidos:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail="Acceso denegado. Permisos insuficientes para esta operación boticaria."
+            )
         return usuario
-    return dependencia
