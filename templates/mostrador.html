@@ -53,3 +53,52 @@
                 </div>
             </div>
         </section>
+        <section class="space-y-4">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2"><span>📦</span> <span>Inventario Disponible</span></h2>
+            <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for p in productos %}
+                    <div class="card-refaccion bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col transition hover:shadow-md" data-id="{{ p.id }}" data-marca="{{ p.marca }}" data-modelo="{{ p.modelo }}" data-ano="{{ p.ano_grupo }}" data-texto="{{ p.nombre_refaccion }} {{ p.marca }} {{ p.modelo }} {{ p.compatibilidad if p.compatibilidad else '' }}">
+                        <div class="p-4 space-y-2 flex-1">
+                            <div class="flex justify-between items-start">
+                                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded">ID #{{ p.id }}</span>
+                                <span class="text-[10px] font-bold text-gray-500 uppercase bg-gray-100 px-2 py-0.5 rounded">{{ p.categoria }}</span>
+                            </div>
+                            <h3 class="font-bold text-gray-900 text-base mt-1">{{ p.nombre_refaccion }}</h3>
+                            <p class="text-sm font-semibold text-slate-700">🚘 {{ p.marca }} {{ p.modelo }} <span class="text-xs text-gray-500">({{ p.ano_grupo }})</span></p>
+                            <div class="mt-2 bg-emerald-50 border border-emerald-200 text-emerald-950 p-2.5 rounded-lg text-xs space-y-1">
+                                <p class="flex justify-between"><span class="text-gray-600">📍 Ubicación:</span><span class="font-bold text-emerald-900 underline">{{ p.ubicacion_fisica }}</span></p>
+                                {% if p.precio_real %}
+                                    <p class="flex justify-between border-t border-emerald-200 pt-1 mt-1 font-bold"><span class="text-gray-600">💰 Costo Dueño:</span><span class="text-blue-700">${{ "{:,.2f}".format(p.precio_real) }}</span></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 border-t border-gray-100 flex items-center justify-between mt-auto">
+                            <div>
+                                <span class="block text-[10px] text-gray-400 font-bold uppercase">Precio Venta (PVP)</span>
+                                <span class="text-lg font-black text-blue-600">${{ "{:,.2f}".format(p.precio_sugerido) }}</span>
+                            </div>
+                            {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor') %}
+                                <form action="/productos/vender/{{ p.id }}" method="POST">
+                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm transition">⚡ Marcar Vendido</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <div id="modal-login" class="fixed inset-0 bg-black/50 hidden target:flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full space-y-4 relative">
+            <a href="/mostrador" class="absolute right-4 top-3 text-gray-400 font-bold text-2xl">&times;</a>
+            <h3 class="text-lg font-bold text-gray-900 border-b pb-2"> Exchange Privado</h3>
+            <form action="/auth/login" method="POST" class="space-y-3">
+                <input type="text" name="usuario" placeholder="Usuario" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm" required>
+                <input type="password" name="contrasena" placeholder="Contraseña" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-md text-sm" required>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg text-sm uppercase">Entrar</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
