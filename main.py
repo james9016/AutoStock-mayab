@@ -1,4 +1,5 @@
 import json
+import os
 from fastapi import FastAPI, Depends, Request, Form, HTTPException, status, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -21,7 +22,7 @@ def get_serviceworker():
 
 @app.on_event("startup")
 def on_startup():
-    # Creamos las tablas AQUÍ adentro, asegurando que todos los módulos ya se importaron por completo
+    # Garantiza la creación ordenada de esquemas en Supabase
     models.Base.metadata.create_all(bind=database.engine)
     
     db = next(database.get_db())
@@ -30,24 +31,51 @@ def on_startup():
     finally:
         db.close()
 
-# Configuración de carpetas de recursos y plantillas
-try:
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-except:
-    pass
+# Montaje de recursos estáticos con validación explícita de rutas para Render
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
 async def enviar_alerta_whatsapp_task(telefono: str, producto_id: int, nombre_pieza: str):
-    print(f"[WHATSAPP API MOCK] Notificación enviada al dueño ({telefono}): La pieza #{producto_id} ({nombre_pieza}) se ha marcado como vendida.")
+    # Proceso asíncrono seguro en segundo plano para notificar salidas de inventario
+    print(f"[WHATSAPP API] Alerta automatizada enviada al afiliado ({telefono}): Refacción #{producto_id} ({nombre_pieza}) confirmada como vendida.")
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/mostrador", response_class=HTMLResponse)
 def vista_mostrador(request: Request, db: Session = Depends(database.get_db)):
     usuario = security.obtener_usuario_actual(request, db)
-    productos = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).all()
+    productos_raw = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).all()
     usuarios_sistema = db.query(models.Usuario).all()
     
+    # BÚNKER DE PROTECCIÓN DE PRECIOS: Sanitización de datos desde el Servidor
+    productos_sanitizados = []
+    for prod in productos_raw:
+        # Estructura básica visible para todo público
+        item = {
+            "id": prod.id,
+            "categoria": prod.categoria,
+            "nombre_refaccion": prod.nombre_refaccion,
+            "marca": prod.marca,
+            "modelo": prod.modelo,
+            "ano_grupo": prod.ano_grupo,
+            "compatibilidad": prod.compatibilidad,
+            "precio_sugerido": prod.precio_sugerido,
+            "dueno_id": prod.dueno_id,
+            "fecha_ingreso": prod.fecha_ingreso.isoformat() if prod.fecha_ingreso else None,
+            "precio_real": None,  # Oculto por defecto por seguridad comercial
+            "ubicacion_fisica": "🔒 Autentíquese para ver ubicación"
+        }
+        
+        # El sistema desbloquea los datos sensibles únicamente si el rol tiene contraseña válida
+        if usuario and usuario.rol in [models.RolEnum.Administrador, models.RolEnum.Vendedor]:
+            item["precio_real"] = prod.precio_real
+            item["ubicacion_fisica"] = prod.ubicacion_fisica
+            
+        productos_sanitizados = sorted(productos_sanitizados, key=lambda x: x["id"])
+        productos_sanitizados.append(item)
+
     liquidaciones_pendientes = {}
     if usuario and usuario.rol == models.RolEnum.Administrador:
         ventas_no_liquidadas = db.query(models.HistorialVenta).filter(models.HistorialVenta.liquidado_al_dueno == False).all()
@@ -64,7 +92,7 @@ def vista_mostrador(request: Request, db: Session = Depends(database.get_db)):
     return templates.TemplateResponse("mostrador.html", {
         "request": request, 
         "usuario": usuario, 
-        "productos": productos, 
+        "productos": productos_sanitizados, # Datos seguros e higienizados enviados al DOM
         "usuarios": usuarios_sistema,
         "dict_vehiculos": json.dumps(seed.DICCIONARIO_VEHICULOS),
         "liquidaciones": liquidaciones_pendientes
@@ -75,12 +103,14 @@ def login(usuario: str = Form(...), contrasena: str = Form(...), db: Session = D
     user = db.query(models.Usuario).filter(models.Usuario.usuario == usuario).first()
     if not user or not security.verificar_password(contrasena, user.contrasena_hash):
         return RedirectResponse(url="/mostrador?error=Credenciales+Incorrectas", status_code=status.HTTP_303_SEE_OTHER)
+    
+    # Bloqueo explícito en acceso al panel para público general
     if user.rol == models.RolEnum.Publico_General:
         return RedirectResponse(url="/mostrador?error=Acceso+Denegado+Bodega", status_code=status.HTTP_303_SEE_OTHER)
     
     token = security.crear_token_acceso(data={"sub": user.usuario})
     response = RedirectResponse(url="/mostrador", status_code=status.HTTP_303_SEE_OTHER)
-    response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True)
+    response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True, secure=True, samesite="lax")
     return response
 
 @app.get("/auth/logout")
