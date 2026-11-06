@@ -1,4 +1,3 @@
-
 import enum
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Enum, event, DDL
@@ -38,7 +37,8 @@ class Usuario(Base):
     nombre = Column(String, nullable=False)
     usuario = Column(String, unique=True, nullable=False, index=True)
     contrasena_hash = Column(String, nullable=False)
-    rol = Column(Enum(RolEnum), nullable=False)
+    # native_enum=False guarda el valor como VARCHAR en PostgreSQL, evitando fallos de duplicados de tipos en Render
+    rol = Column(Enum(RolEnum, native_enum=False), nullable=False)
     telefono_celular = Column(String, nullable=False)
     fecha_registro = Column(DateTime, default=datetime.utcnow)
     
@@ -47,7 +47,7 @@ class Usuario(Base):
 class Producto(Base):
     __tablename__ = "productos"
     id = Column(Integer, primary_key=True, index=True)
-    categoria = Column(Enum(CategoriaEnum), nullable=False)
+    categoria = Column(Enum(CategoriaEnum, native_enum=False), nullable=False)
     nombre_refaccion = Column(String, nullable=False, index=True)
     marca = Column(String, nullable=False, index=True)
     modelo = Column(String, nullable=False, index=True)
@@ -77,7 +77,7 @@ class HistorialVenta(Base):
     producto_id = Column(Integer, ForeignKey("productos.id"), nullable=False)
     vendedor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     fecha_venta = Column(DateTime, default=datetime.utcnow)
-    estado_venta = Column(Enum(EstadoVentaEnum), nullable=False)
+    estado_venta = Column(Enum(EstadoVentaEnum, native_enum=False), nullable=False)
     precio_costo_dueno = Column(Float, nullable=False)
     precio_venta_publico = Column(Float, nullable=False)
     ganancia_comision = Column(Float, nullable=False)
@@ -98,8 +98,10 @@ class BitacoraAuditoria(Base):
     accion_realizada = Column(String, nullable=False)
     fecha_hora = Column(DateTime, default=datetime.utcnow)
 
+# BLINDAJE LOGÍSTICO: El comando ALTER SEQUENCE se ejecuta única y exclusivamente inmediatamente 
+# después de haber terminado de estructurar la tabla 'productos' en Supabase.
 event.listen(
-    Base.metadata,
+    Producto.__table__,
     "after_create",
     DDL("ALTER SEQUENCE productos_id_seq RESTART WITH 1000;").execute_if(dialect="postgresql")
 )
