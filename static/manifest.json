@@ -1,17 +1,21 @@
 {
+  "name": "AutoStock Mayab - Sistema de Inventario",
   "short_name": "AutoStock",
-  "name": "AutoStock Mayab - Inventarios",
+  "start_url": "/mostrador",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://flaticon.com",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "https://icons8.com",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://icons8.com",
+      "sizes": "512x512",
+      "type": "image/png"
     }
-  ],
-  "start_url": "/mostrador",
-  "background_color": "#ffffff",
-  "display": "standalone",
-  "theme-color": "#2563eb",
-  "orientation": "portrait"
+  ]
 }
-
