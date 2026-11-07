@@ -2,29 +2,24 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Intentar obtener la URL desde las variables de Render
+# Intenta obtener la URL directa configurada en Render
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Si no existe en Render, armamos el respaldo estricto
+# Si por alguna razón la variable está vacía, usamos la URL estricta corregida como respaldo automático
 if not DATABASE_URL:
-    DB_USER = "postgres.grnqhgctjjahvhkjckxa"
-    DB_PASS = "AutoStockMayab2026"
-    DB_HOST = "://supabase.com"
-    DB_PORT = "6543"
-    DB_NAME = "postgres"
-    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
 
-# Asegurar compatibilidad de drivers en Render si inicia con 'postgres://'
+# Forzar compatibilidad de esquemas requerida por SQLAlchemy 2.0 y Render
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Crear motor de base de datos optimizado
+# Crear el motor de conexión
 engine = create_engine(
-    DATABASE_URL, 
-    pool_size=10,             
-    max_overflow=20,          
-    pool_timeout=30,          
-    pool_pre_ping=True        
+    DATABASE_URL,
+    pool_size=10,
+    max_overflow=20,
+    pool_timeout=30,
+    pool_pre_ping=True
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
