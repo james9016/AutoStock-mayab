@@ -1,22 +1,22 @@
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 1. Creamos la URL desglosada apuntando al host real de tu proyecto
-connection_url = URL.create(
-    drivername="postgresql+psycopg2",
-    username="postgres.grnqhgctjjahvhkjckxa",
-    password="AutoStockMayab2026",
-    host="aws-0-us-east-1.pooler.supabase.com", # <-- Tu servidor real de Supabase
-    port=6543,
-    database="postgres"
-)
+# 1. Intentamos leer la variable de entorno directa de Render
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# 2. Inicializar el motor de la base de datos de forma segura
+# 2. Si por alguna razón Render no la inyecta, armamos el respaldo dinámico
+if not DATABASE_URL:
+    # Cambiamos el host al pooler directo de Supabase
+    DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres"
+
+# 3. Forzar el driver correcto compatible con SQLAlchemy 2.x
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# 4. Inicializar motor optimizado para producción
 engine = create_engine(
-    connection_url,
-    connect_args={"sslmode": "require"}, 
+    DATABASE_URL,
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
