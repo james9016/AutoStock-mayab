@@ -3,21 +3,20 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 1. Creamos la URL desglosada de forma estricta como un objeto de SQLAlchemy
-# Esto obliga al sistema a leer el puerto como un número entero real (6543)
+# 1. Creamos la URL desglosada apuntando al host real de tu proyecto
 connection_url = URL.create(
     drivername="postgresql+psycopg2",
     username="postgres.grnqhgctjjahvhkjckxa",
     password="AutoStockMayab2026",
-    host="://supabase.com",
+    host="aws-0-us-east-1.pooler.supabase.com", # <-- Tu servidor real de Supabase
     port=6543,
     database="postgres"
 )
 
-# 2. Inicializar el motor de la base de datos usando la URL estructural segura
+# 2. Inicializar el motor de la base de datos de forma segura
 engine = create_engine(
     connection_url,
-    connect_args={"sslmode": "require"}, # Requerido para la seguridad de Supabase
+    connect_args={"sslmode": "require"}, 
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
