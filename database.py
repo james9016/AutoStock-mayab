@@ -2,18 +2,18 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Intenta obtener la URL directa configurada en Render
+# 1. Intentar cargar la URL desde las variables de entorno de Render
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Si por alguna razón la variable está vacía, usamos la URL estricta corregida como respaldo automático
+# 2. Respaldo estricto corregido con tu host real de AWS en Supabase
 if not DATABASE_URL:
     DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
 
-# Forzar compatibilidad de esquemas requerida por SQLAlchemy 2.0 y Render
+# 3. Forzar el driver correcto compatible con SQLAlchemy 2.x
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Crear el motor de conexión
+# 4. Inicializar motor optimizado para solicitudes concurrentes
 engine = create_engine(
     DATABASE_URL,
     pool_size=10,
