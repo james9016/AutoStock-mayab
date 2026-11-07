@@ -45,11 +45,7 @@ async def enviar_alerta_whatsapp_task(telefono: str, producto_id: int, nombre_pi
 @app.get("/", response_class=HTMLResponse)
 @app.get("/mostrador", response_class=HTMLResponse)
 def vista_mostrador(request: Request, db: Session = Depends(database.get_db)):
-    usuario = security.obtener_usuario_actual(request, db)
-    productos_raw = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).all()
-    usuarios_sistema = db.query(models.Usuario).all()
-    
-    # BÚNKER DE PROTECCIÓN DE PRECIOS: Sanitización de datos desde el Servidor
+        # BÚNKER DE PROTECCIÓN DE PRECIOS: Sanitización de datos desde el Servidor
     productos_sanitizados = []
     for prod in productos_raw:
         # Estructura básica visible para todo público
@@ -72,6 +68,13 @@ def vista_mostrador(request: Request, db: Session = Depends(database.get_db)):
         if usuario and usuario.rol in [models.RolEnum.Administrador, models.RolEnum.Vendedor]:
             item["precio_real"] = prod.precio_real
             item["ubicacion_fisica"] = prod.ubicacion_fisica
+            
+        # ✅ Primero guardamos el artículo en la lista
+        productos_sanitizados.append(item)
+
+    # ✅ Al terminar el ciclo 'for', ordenamos la lista completa por ID
+    productos_sanitizados = sorted(productos_sanitizados, key=lambda x: x["id"])
+
             
         productos_sanitizados = sorted(productos_sanitizados, key=lambda x: x["id"])
         productos_sanitizados.append(item)
