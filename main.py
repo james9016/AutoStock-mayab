@@ -45,7 +45,11 @@ async def enviar_alerta_whatsapp_task(telefono: str, producto_id: int, nombre_pi
 @app.get("/", response_class=HTMLResponse)
 @app.get("/mostrador", response_class=HTMLResponse)
 def vista_mostrador(request: Request, db: Session = Depends(database.get_db)):
-        # BÚNKER DE PROTECCIÓN DE PRECIOS: Sanitización de datos desde el Servidor
+    usuario = security.obtener_usuario_actual(request, db)
+    productos_raw = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).all()
+    usuarios_sistema = db.query(models.Usuario).all()
+    
+    # BÚNKER DE PROTECCIÓN DE PRECIOS: Sanitización de datos desde el Servidor
     productos_sanitizados = []
     for prod in productos_raw:
         # Estructura básica visible para todo público
@@ -69,15 +73,11 @@ def vista_mostrador(request: Request, db: Session = Depends(database.get_db)):
             item["precio_real"] = prod.precio_real
             item["ubicacion_fisica"] = prod.ubicacion_fisica
             
-        # ✅ Primero guardamos el artículo en la lista
+        # ✅ Corrección: Primero añadimos el elemento a la lista
         productos_sanitizados.append(item)
 
-    # ✅ Al terminar el ciclo 'for', ordenamos la lista completa por ID
+    # ✅ Corrección: Ordenamos la lista completa UNA SOLA VEZ fuera del ciclo for
     productos_sanitizados = sorted(productos_sanitizados, key=lambda x: x["id"])
-
-            
-        productos_sanitizados = sorted(productos_sanitizados, key=lambda x: x["id"])
-        productos_sanitizados.append(item)
 
     liquidaciones_pendientes = {}
     if usuario and usuario.rol == models.RolEnum.Administrador:
@@ -177,22 +177,3 @@ def marcar_como_vendido(id: int, request: Request, bg_tasks: BackgroundTasks, db
     db.commit()
     
     dueno = db.query(models.Usuario).filter(models.Usuario.id == prod.dueno_id).first()
-    if dueno and dueno.telefono_celular:
-        bg_tasks.add_task(enviar_alerta_whatsapp_task, dueno.telefono_celular, prod.id, prod.nombre_refaccion)
-        
-    return RedirectResponse(url="/mostrador?msg=Venta+Registrada+Exitosamente", status_code=status.HTTP_303_SEE_OTHER)
-
-@app.post("/liquidaciones/procesar/{dueno_id}")
-def procesar_liquidacion(dueno_id: int, request: Request, ids_ventas: str = Form(...), db: Session = Depends(database.get_db)):
-    admin = security.requerir_rol(["Administrador"])(security.obtener_usuario_actual(request, db))
-    lista_ids = [int(x) for x in ids_ventas.split(",") if x]
-    
-    db.query(models.HistorialVenta).filter(models.HistorialVenta.id.in_(lista_ids)).update(
-        {models.HistorialVenta.liquidado_al_dueno: True, models.HistorialVenta.saldo_por_cobrar: 0.0},
-        synchronize_session=False
-    )
-    
-    audit = models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"Corte y liquidación procesada al dueño ID {dueno_id}")
-    db.add(audit)
-    db.commit()
-    return RedirectResponse(url="/mostrador?msg=Liquidacion+Completada", status_code=status.HTTP_303_SEE_OTHER)
