@@ -2,17 +2,18 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Credenciales y subdominios estructurados limpiamente
+# 🛑 CONFIGURACIÓN DE RESPALDO (LOCAL / SEGURO)
+# Reemplaza "TU_HOST_DE_SUPABASE" por el Host real que te da Supabase en la sección "Database Settings"
 DB_USER = "postgres.grnqhgctjjahvhkjckxa"
 DB_PASS = "AutoStockMayab2026"
-DB_HOST = "://supabase.com"
+DB_HOST = os.getenv("DB_HOST", "aws-0-us-east-1.pooler.supabase.com") # <-- Cambia esto por tu Host real
 DB_PORT = "6543"
 DB_NAME = "postgres"
 
-# URL base limpia. Agregamos parámetros explícitos para el pooling y SSL directo compatible con Render
+# URL base limpia estructurada correctamente
 DEFAULT_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
 
-# Render inyecta automáticamente la variable DATABASE_URL en producción
+# Render inyecta automáticamente la variable DATABASE_URL si la configuras en su panel
 DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
 
 # Asegurar compatibilidad de drivers si Render inyecta la URL vieja que inicia con 'postgres://'
