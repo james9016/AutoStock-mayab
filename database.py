@@ -1,26 +1,15 @@
 import os
-import socket
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 1. Host oficial transaccional de Supabase
-DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres"
+# Forzamos la conexión a través del pooler directo de AWS optimizado para redes IPv4 en Render
+DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
 
-# 2. Asegurar el driver postgresql:// correcto en Render
+# Asegurar compatibilidad de drivers en Render
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# 3. PARCHE DEFINITIVO DE RED: Forzamos la resolución de DNS estrictamente a IPv4
-# Esto evita que Render intente usar IPv6 y devuelva "Network is unreachable".
-original_getaddrinfo = socket.getaddrinfo
-
-def forced_ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-    # Forzar AF_INET (IPv4) e ignorar AF_INET6
-    return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-
-socket.getaddrinfo = forced_ipv4_getaddrinfo
-
-# 4. Inicializar motor optimizado para producción
+# Inicializar motor de base de datos transaccional estable
 engine = create_engine(
     DATABASE_URL,
     connect_args={"sslmode": "require"}, 
