@@ -2,7 +2,7 @@ import os
 import bcrypt
 from fastapi import Request, HTTPException, Depends, status
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 import database
 import models
@@ -29,8 +29,8 @@ def verificar_password(plain_password: str, hashed_password: str) -> bool:
 
 def crear_token_acceso(data: dict):
     to_encode = data.copy()
-    # Usamos datetime.now(timezone.utc) o simplementeutcnow() garantizando consistencia
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # ✅ Corregido: Uso de timezone-aware datetime para evitar advertencias de depreciación
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -67,6 +67,7 @@ class PermisoRol:
         if usuario.rol not in self.roles_permitidos:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, 
-                detail="Acceso denegado. Permisos insuficientes para esta operación boticaria."
+                # ✅ Corregido: Mensaje adaptado al contexto de AutoStock Mayab
+                detail="Acceso denegado. Permisos insuficientes para esta operación comercial."
             )
         return usuario
