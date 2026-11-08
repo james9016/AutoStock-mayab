@@ -3,17 +3,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Construcción estructural limpia sobre el host transaccional IPv4 directo
+# Construcción estructural con IP IPv4 directa para saltar el bloqueo de red de Render
 connection_url = URL.create(
     drivername="postgresql+psycopg2",
     username="postgres.grnqhgctjjahvhkjckxa",
     password="AutoStockMayab2026",
-    host="db.grnqhgctjjahvhkjckxa.supabase.co",
+    host="44.216.29.125",  # <-- IP IPv4 directa de tu base de datos
     port=5432,
     database="postgres"
 )
 
-# Inicializar motor de base de datos desactivando la resolución IPv6 forzada
+# Inicializar motor de base de datos estable
 engine = create_engine(
     connection_url,
     connect_args={"sslmode": "require"}, 
