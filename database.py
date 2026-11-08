@@ -2,9 +2,10 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 🛑 DETÉNTE AQUÍ: Borra la línea de abajo por completo y pon tu URL de Supabase entre las comillas.
-# Debe verse exactamente así dentro de las comillas: postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres
-DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres"
+# 🔒 SEGURIDAD: Intenta leer la URL desde las variables de entorno del servidor.
+# Si estás en tu computadora local y no está configurada, usa la URL por defecto.
+DEFAULT_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres"
+DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_URL)
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
