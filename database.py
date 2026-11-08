@@ -1,17 +1,21 @@
 import os
 from sqlalchemy import create_engine
+from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Host corregido apuntando al Pooler con puerto 6543 para saltar el bloqueo de red
-DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
+# Construcción estructural limpia - Evita por completo fallos de parseo de texto o puertos vacíos
+connection_url = URL.create(
+    drivername="postgresql+psycopg2",
+    username="postgres.grnqhgctjjahvhkjckxa",
+    password="AutoStockMayab2026",
+    host="db.grnqhgctjjahvhkjckxa.supabase.co",
+    port=5432,
+    database="postgres"
+)
 
-# Forzar el esquema correcto compatible con SQLAlchemy 2.x
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-# Inicializar motor de base de datos estable
+# Inicializar motor de base de datos optimizado para Render y Supabase
 engine = create_engine(
-    DATABASE_URL,
+    connection_url,
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
