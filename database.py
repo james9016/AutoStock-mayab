@@ -1,21 +1,16 @@
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Construcción modular con el host correcto asignado a tu ID de proyecto en Supabase
-connection_url = URL.create(
-    drivername="postgresql+psycopg2",
-    username="postgres.grnqhgctjjahvhkjckxa",
-    password="AutoStockMayab2026",
-    host="://supabase.com",  # <-- Tu servidor real del Pooler de Supabase
-    port=6543,                                    # <-- Puerto transaccional obligatorio
-    database="postgres"
-)
+# 🛑 DETÉNTE AQUÍ: Borra la línea de abajo por completo y pon tu URL de Supabase entre las comillas.
+# Debe verse exactamente así dentro de las comillas: postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres
+DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres"
 
-# Inicializar motor de base de datos optimizado para producción en Render
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 engine = create_engine(
-    connection_url,
+    DATABASE_URL,
     connect_args={"sslmode": "require"}, 
     pool_size=10,
     max_overflow=20,
@@ -27,7 +22,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
-    """Dependencia de FastAPI para control transaccional seguro e inyección"""
     db = SessionLocal()
     try:
         yield db
