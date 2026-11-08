@@ -1,22 +1,24 @@
 import os
+import socket
 from sqlalchemy import create_engine
-from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Construcción estructural con IP IPv4 directa para saltar el bloqueo de red de Render
-connection_url = URL.create(
-    drivername="postgresql+psycopg2",
-    username="postgres.grnqhgctjjahvhkjckxa",
-    password="AutoStockMayab2026",
-    host="44.216.29.125",  # <-- IP IPv4 directa de tu base de datos
-    port=5432,
-    database="postgres"
-)
+# 1. Host directo de tu proyecto (Supabase resuelve automáticamente tu región)
+DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres"
 
-# Inicializar motor de base de datos estable
+# 2. Forzar compatibilidad de esquemas de drivers en Render
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# 3. TRUCO DE RED: Obligamos al conector a usar únicamente IPv4 (Evita el 'Network is unreachable')
+# Render gratuito no tiene IPv6, por lo que este parche previene caídas de red.
 engine = create_engine(
-    connection_url,
-    connect_args={"sslmode": "require"}, 
+    DATABASE_URL,
+    connect_args={
+        "sslmode": "require",
+        "gssencmode": "disable",
+        "options": "-c client_encoding=utf8"
+    },
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
