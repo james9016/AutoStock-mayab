@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Enum, event, DDL
 from sqlalchemy.orm import relationship, declarative_base
 
@@ -37,10 +37,10 @@ class Usuario(Base):
     nombre = Column(String, nullable=False)
     usuario = Column(String, unique=True, nullable=False, index=True)
     contrasena_hash = Column(String, nullable=False)
-    # native_enum=False guarda el valor como VARCHAR en PostgreSQL, evitando fallos de duplicados de tipos en Render
     rol = Column(Enum(RolEnum, native_enum=False), nullable=False)
     telefono_celular = Column(String, nullable=False)
-    fecha_registro = Column(DateTime, default=datetime.utcnow)
+    # ✅ Corregido: Función lambda con timezone.utc para mantener la consistencia del servidor
+    fecha_registro = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     productos = relationship("Producto", back_populates="dueno")
 
@@ -58,7 +58,7 @@ class Producto(Base):
     dueno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     precio_real = Column(Float, nullable=False)
     precio_sugerido = Column(Float, nullable=False)
-    fecha_ingreso = Column(DateTime, default=datetime.utcnow)
+    fecha_ingreso = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     dueno = relationship("Usuario", back_populates="productos")
     imagenes = relationship("ImagenesPieza", back_populates="producto", cascade="all, delete-orphan")
@@ -76,7 +76,7 @@ class HistorialVenta(Base):
     id = Column(Integer, primary_key=True, index=True)
     producto_id = Column(Integer, ForeignKey("productos.id"), nullable=False)
     vendedor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    fecha_venta = Column(DateTime, default=datetime.utcnow)
+    fecha_venta = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     estado_venta = Column(Enum(EstadoVentaEnum, native_enum=False), nullable=False)
     precio_costo_dueno = Column(Float, nullable=False)
     precio_venta_publico = Column(Float, nullable=False)
@@ -89,17 +89,16 @@ class ListaEspera(Base):
     id = Column(Integer, primary_key=True, index=True)
     refaccion_buscada = Column(String, nullable=False)
     vendedor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    fecha_registro = Column(DateTime, default=datetime.utcnow)
+    fecha_registro = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class BitacoraAuditoria(Base):
     __tablename__ = "bitacora_auditoria"
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     accion_realizada = Column(String, nullable=False)
-    fecha_hora = Column(DateTime, default=datetime.utcnow)
+    fecha_hora = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-# BLINDAJE LOGÍSTICO: El comando ALTER SEQUENCE se ejecuta única y exclusivamente inmediatamente 
-# después de haber terminado de estructurar la tabla 'productos' en Supabase.
+# BLINDAJE LOGÍSTICO
 event.listen(
     Producto.__table__,
     "after_create",
