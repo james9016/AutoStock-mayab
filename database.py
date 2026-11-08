@@ -2,9 +2,8 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 🔒 SEGURIDAD: Intenta leer la URL desde las variables de entorno del servidor.
-# Si estás en tu computadora local y no está configurada, usa la URL por defecto.
-DEFAULT_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres"
+# 🔒 CONFIGURACIÓN DE RED: Conexión mediante el Pooler de Supabase (Puerto 6543) para compatibilidad IPv4 en Render
+DEFAULT_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:6543/postgres?sslmode=require"
 DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_URL)
 
 if DATABASE_URL.startswith("postgres://"):
@@ -12,7 +11,6 @@ if DATABASE_URL.startswith("postgres://"):
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"sslmode": "require"}, 
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
