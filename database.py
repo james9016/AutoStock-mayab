@@ -3,13 +3,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Construcción modular con el host correcto asignado a tu ID de proyecto
+# Construcción modular limpia apuntando al host IPv4 con puerto transaccional 6543
 connection_url = URL.create(
     drivername="postgresql+psycopg2",
     username="postgres.grnqhgctjjahvhkjckxa",
     password="AutoStockMayab2026",
-    host="db.grnqhgctjjahvhkjckxa.supabase.co",  # <-- El host real de tu proyecto
-    port=5432,
+    host="://supabase.com",  # Host del pooler compatible con IPv4
+    port=6543,                                    # Puerto explícito para pooler
     database="postgres"
 )
 
@@ -27,6 +27,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
+    """Dependencia de FastAPI para control transaccional e inyección segura"""
     db = SessionLocal()
     try:
         yield db
