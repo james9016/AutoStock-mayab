@@ -1,17 +1,21 @@
 import os
 from sqlalchemy import create_engine
+from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Dirección de conexión directa corregida sin separación de variables
-DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
+# Construcción estructural - Evita fallos de parseo de strings y asegura el puerto numérico
+connection_url = URL.create(
+    drivername="postgresql+psycopg2",
+    username="postgres.grnqhgctjjahvhkjckxa",
+    password="AutoStockMayab2026",
+    host="://supabase.com",  # Host directo del pooler
+    port=6543,                                    # Puerto entero real
+    database="postgres"
+)
 
-# Forzar el driver correcto compatible con SQLAlchemy 2.x e inyecciones de Render
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-# Inicializar motor de base de datos estable
+# Inicializar motor de base de datos optimizado para Render y Supabase
 engine = create_engine(
-    DATABASE_URL,
+    connection_url,
     connect_args={"sslmode": "require"}, 
     pool_size=10,
     max_overflow=20,
@@ -23,6 +27,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
+    """Dependencia de FastAPI para control transaccional e inyección segura"""
     db = SessionLocal()
     try:
         yield db
