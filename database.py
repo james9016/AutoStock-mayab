@@ -1,21 +1,28 @@
 import os
+import socket
 from sqlalchemy import create_engine
-from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Construcción estructural con IP IPv4 directa para saltar el bloqueo de red de Render
-connection_url = URL.create(
-    drivername="postgresql+psycopg2",
-    username="postgres.grnqhgctjjahvhkjckxa",
-    password="AutoStockMayab2026",
-    host="44.216.29.125",  # <-- IP IPv4 directa de tu base de datos
-    port=5432,
-    database="postgres"
-)
+# 1. Host oficial transaccional de Supabase
+DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres"
 
-# Inicializar motor de base de datos estable
+# 2. Asegurar el driver postgresql:// correcto en Render
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# 3. PARCHE DEFINITIVO DE RED: Forzamos la resolución de DNS estrictamente a IPv4
+# Esto evita que Render intente usar IPv6 y devuelva "Network is unreachable".
+original_getaddrinfo = socket.getaddrinfo
+
+def forced_ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    # Forzar AF_INET (IPv4) e ignorar AF_INET6
+    return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
+socket.getaddrinfo = forced_ipv4_getaddrinfo
+
+# 4. Inicializar motor optimizado para producción
 engine = create_engine(
-    connection_url,
+    DATABASE_URL,
     connect_args={"sslmode": "require"}, 
     pool_size=10,
     max_overflow=20,
