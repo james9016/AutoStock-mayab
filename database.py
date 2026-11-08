@@ -2,19 +2,14 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 1. Intentamos leer la variable de entorno directa de Render
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Host corregido apuntando al Pooler con puerto 6543 para saltar el bloqueo de red
+DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
 
-# 2. Si por alguna razón Render no la inyecta, armamos el respaldo dinámico
-if not DATABASE_URL:
-    # Cambiamos el host al pooler directo de Supabase
-    DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:5432/postgres"
-
-# 3. Forzar el driver correcto compatible con SQLAlchemy 2.x
+# Forzar el esquema correcto compatible con SQLAlchemy 2.x
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# 4. Inicializar motor optimizado para producción
+# Inicializar motor de base de datos estable
 engine = create_engine(
     DATABASE_URL,
     pool_size=10,
