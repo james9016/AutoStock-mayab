@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Construcción estructural limpia - Evita por completo fallos de parseo de texto o puertos vacíos
+# Construcción estructural limpia sobre el host transaccional IPv4 directo
 connection_url = URL.create(
     drivername="postgresql+psycopg2",
     username="postgres.grnqhgctjjahvhkjckxa",
@@ -13,9 +13,10 @@ connection_url = URL.create(
     database="postgres"
 )
 
-# Inicializar motor de base de datos optimizado para Render y Supabase
+# Inicializar motor de base de datos desactivando la resolución IPv6 forzada
 engine = create_engine(
     connection_url,
+    connect_args={"sslmode": "require"}, 
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
