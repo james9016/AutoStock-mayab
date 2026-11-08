@@ -3,17 +3,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Construcción modular limpia apuntando al host IPv4 con puerto transaccional 6543
+# Construcción estructural con el Host del Pooler (Evita fallos de IPv6 en Render)
 connection_url = URL.create(
     drivername="postgresql+psycopg2",
     username="postgres.grnqhgctjjahvhkjckxa",
     password="AutoStockMayab2026",
-    host="://supabase.com",  # Host del pooler compatible con IPv4
-    port=6543,                                    # Puerto explícito para pooler
+    host="://supabase.com",
+    port=6543,
     database="postgres"
 )
 
-# Inicializar motor de base de datos estable
+# Inicializar motor de base de datos optimizado para producción en Render
 engine = create_engine(
     connection_url,
     connect_args={"sslmode": "require"}, 
