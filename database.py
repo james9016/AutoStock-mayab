@@ -1,17 +1,21 @@
 import os
 from sqlalchemy import create_engine
+from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Forzamos la conexión a través del pooler directo de AWS optimizado para redes IPv4 en Render
-DATABASE_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
+# Construcción estructural limpia - Cero strings complejas que rompan el puerto entero
+connection_url = URL.create(
+    drivername="postgresql+psycopg2",
+    username="postgres.grnqhgctjjahvhkjckxa",
+    password="AutoStockMayab2026",
+    host="://supabase.com", # Pooler directo de AWS de tu proyecto
+    port=6543,
+    database="postgres"
+)
 
-# Asegurar compatibilidad de drivers en Render
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-# Inicializar motor de base de datos transaccional estable
+# Inicializar motor de base de datos optimizado para producción en Render
 engine = create_engine(
-    DATABASE_URL,
+    connection_url,
     connect_args={"sslmode": "require"}, 
     pool_size=10,
     max_overflow=20,
@@ -23,6 +27,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
+    """Dependencia de FastAPI para control transaccional seguro"""
     db = SessionLocal()
     try:
         yield db
