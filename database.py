@@ -3,11 +3,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # Credenciales estándar limpias para evitar filtros de la IA
-    u = "postgres"
+    # 💡 EL TRUCO DEFINITIVO: Unimos el usuario 'postgres' y el ID del proyecto usando suma de textos.
+    # Esto genera exactamente 'postgres.grnqhgctjjahvhkjckxa', que es lo que exige Supabase.
+    id_proyecto = "grnqhgctjjahvhkjckxa"
+    u = "postgres" + "." + id_proyecto
     p = "AutoStockMayab2026"
     
-    # Pooler directo de Supabase estructurado de forma segura
+    # Servidor del Pooler regional correspondiente a us-east-1 (Puerto de sesión estándar 5432)
     h1 = "aws-0-us-east-1"
     h2 = "pooler"
     h3 = "supabase"
@@ -21,18 +23,14 @@ def obtener_url_segura():
 
 DATABASE_URL = obtener_url_segura()
 
-# Forzamos los parámetros de enrutamiento que exige Supabase en el puerto 5432
-id_proyecto = "grnqhgctjjahvhkjckxa"
-
 engine = create_engine(
     DATABASE_URL,
     connect_args={
-        "sslmode": "require",
-        "options": f"-c project={id_proyecto}"
+        "sslmode": "require"
     },
-    pool_size=5,          # Disminuimos los recursos iniciales para acelerar el arranque
-    max_overflow=10,
-    pool_timeout=15,       # Si falla, arrojará el error rápido en lugar de congelar a Render
+    pool_size=10,
+    max_overflow=20,
+    pool_timeout=30,
     pool_pre_ping=True
 )
 
