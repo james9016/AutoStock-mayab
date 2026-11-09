@@ -3,16 +3,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # Credenciales de acceso directo
+    # Parámetros directos clásicos de Supabase
     u = "postgres"
     p = "AutoStockMayab2026"
     
-    # Dirección IP fija global oficial de Supabase us-east-1 para conexiones directas IPv4
-    host_directo_ipv4 = "44.208.221.186"
+    # Reconstrucción del subdominio directo clásico de tu base de datos
+    id_proyecto = "grnqhgctjjahvhkjckxa"
+    h1 = "db"
+    h2 = "supabase"
+    h3 = "co"
+    host_completo = f"{h1}.{id_proyecto}.{h2}.{h3}"
+    
     puerto = "5432"
     base_datos = "postgres"
     
-    return f"postgresql://{u}:{p}@{host_directo_ipv4}:{puerto}/{base_datos}"
+    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}"
 
 DATABASE_URL = obtener_url_segura()
 
