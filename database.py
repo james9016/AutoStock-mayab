@@ -3,12 +3,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # 📍 Región e ID de proyecto validados en us-east-1
-    id_proyecto = "grnqhgctjjahvhkjckxa"
-    u = f"postgres.{id_proyecto}"
+    # En el puerto 6543 el usuario debe ser el estándar sin puntos
+    u = "postgres"
     p = "AutoStockMayab2026"
     
-    # Construcción exacta del host regional del Pooler de Supabase
+    # Servidor de conexión (Pooler regional us-east-1)
     h1 = "aws-0-us-east-1"
     h2 = "pooler"
     h3 = "supabase"
@@ -22,11 +21,14 @@ def obtener_url_segura():
 
 DATABASE_URL = obtener_url_segura()
 
-# Inicialización estándar optimizada con sslmode directo en los argumentos de conexión
+# El ID del proyecto se pasa obligatoriamente en las opciones del conector
+id_proyecto = "grnqhgctjjahvhkjckxa"
+
 engine = create_engine(
     DATABASE_URL,
     connect_args={
-        "sslmode": "require"
+        "sslmode": "require",
+        "options": f"-c anypoint=true -c project={id_proyecto}"
     },
     pool_size=10,
     max_overflow=20,
