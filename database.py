@@ -2,12 +2,14 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 🚀 URL IPv4 CORRECTA: Conexión directa al Pooler transaccional en el puerto 6543
-DEFAULT_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
-DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_URL)
+# Leer cada pieza de la conexión de forma independiente desde Render
+user = os.environ.get("DB_USER", "postgres")
+password = os.environ.get("DB_PASSWORD", "AutoStockMayab2026")
+host = os.environ.get("DB_HOST", "://supabase.com")
+port = os.environ.get("DB_PORT", "5432")
 
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+# Construir la URL de forma dinámica y segura dentro del servidor
+DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/postgres?sslmode=require"
 
 engine = create_engine(
     DATABASE_URL,
