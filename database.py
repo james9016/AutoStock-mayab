@@ -2,8 +2,8 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 🔒 CONFIGURACIÓN DE RED: Conexión mediante el Pooler de Supabase (Puerto 6543) para compatibilidad IPv4 en Render
-DEFAULT_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@db.grnqhgctjjahvhkjckxa.supabase.co:6543/postgres?sslmode=require"
+# 🚀 SOLUCIÓN DEFINITIVA: IPv4 directa usando la cadena del Pooler en modo transaccional seguro
+DEFAULT_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
 DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_URL)
 
 if DATABASE_URL.startswith("postgres://"):
