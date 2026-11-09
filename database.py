@@ -2,9 +2,10 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Estrategia anti-censura: descifrado de credenciales en tiempo de ejecución
 def obtener_url_segura():
-    u = "postgres"
+    # Supabase requiere que el usuario en el Pooler lleve el ID del proyecto integrado separado por un punto
+    id_proyecto = "grnqhgctjjahvhkjckxa"
+    u = f"postgres.{id_proyecto}"
     p = "AutoStockMayab2026"
     
     # Fragmentos del host oficial del pooler de Supabase
@@ -17,14 +18,19 @@ def obtener_url_segura():
     puerto = "5432"
     base_datos = "postgres"
     
-    # Armado directo e inmune a modificaciones externas
-    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}?sslmode=require"
+    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}"
 
 DATABASE_URL = obtener_url_segura()
 
-# Inicialización limpia del motor de SQLAlchemy
+# Inicialización del motor incluyendo los requerimientos estrictos de SNI de Supabase
 engine = create_engine(
     DATABASE_URL,
+    connect_args={
+        "sslmode": "require",
+        "server_settings": {
+            "application_name": "AutoStockMayab"
+        }
+    },
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
