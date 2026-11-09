@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 🚀 URL IPv4 CORRECTA: Cadena limpia, unida y sin espacios para el pooler de Supabase
+# 🚀 URL IPv4 CORRECTA: Conexión directa al Pooler transaccional en el puerto 6543
 DEFAULT_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
 DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_URL)
 
