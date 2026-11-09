@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 🚀 URL IPv4 CORRECTA: Usando el puerto 5432 del Session Pooler de Supabase para saltar el bloqueo de Render
+# 🚀 URL IPv4 CORRECTA: Cadena limpia, unida y sin espacios para el pooler de Supabase
 DEFAULT_URL = "postgresql://postgres.grnqhgctjjahvhkjckxa:AutoStockMayab2026@://supabase.com"
 DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_URL)
 
