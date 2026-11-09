@@ -3,12 +3,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # Supabase requiere que el usuario en el Pooler lleve el ID del proyecto integrado separado por un punto
+    # El usuario incluye el identificador de inquilino para el Pooler de Supabase
     id_proyecto = "grnqhgctjjahvhkjckxa"
     u = f"postgres.{id_proyecto}"
     p = "AutoStockMayab2026"
     
-    # Fragmentos del host oficial del pooler de Supabase
+    # Fragmentos del host oficial
     h1 = "aws-0-us-west-1"
     h2 = "pooler"
     h3 = "supabase"
@@ -22,14 +22,12 @@ def obtener_url_segura():
 
 DATABASE_URL = obtener_url_segura()
 
-# Inicialización del motor incluyendo los requerimientos estrictos de SNI de Supabase
+# Inicialización limpia usando el parámetro estándar '-c' compatible con psycopg2
 engine = create_engine(
     DATABASE_URL,
     connect_args={
         "sslmode": "require",
-        "server_settings": {
-            "application_name": "AutoStockMayab"
-        }
+        "options": "-c application_name=AutoStockMayab"
     },
     pool_size=10,
     max_overflow=20,
