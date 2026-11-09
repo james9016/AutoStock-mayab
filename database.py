@@ -3,13 +3,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # 💡 EL TRUCO DEFINITIVO: Unimos el usuario 'postgres' y el ID del proyecto usando suma de textos.
-    # Esto genera exactamente 'postgres.grnqhgctjjahvhkjckxa', que es lo que exige Supabase.
+    # 💡 Formato oficial exacto de Supabase para el pooler por puerto 5432:
+    # El usuario base y el ID del proyecto deben separarse estrictamente por dos puntos.
     id_proyecto = "grnqhgctjjahvhkjckxa"
-    u = "postgres" + "." + id_proyecto
+    u = f"postgres:{id_proyecto}"
     p = "AutoStockMayab2026"
     
-    # Servidor del Pooler regional correspondiente a us-east-1 (Puerto de sesión estándar 5432)
+    # Servidor del Pooler regional correspondiente a us-east-1
     h1 = "aws-0-us-east-1"
     h2 = "pooler"
     h3 = "supabase"
