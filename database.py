@@ -3,9 +3,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # El puerto 5432 del pooler exige el formato de usuario: postgres.[id_del_proyecto]
+    # En el puerto 5432 del pooler, el usuario DEBE SER únicamente el ID del proyecto
     id_proyecto = "grnqhgctjjahvhkjckxa"
-    u = f"postgres.{id_proyecto}"
+    u = id_proyecto
     p = "AutoStockMayab2026"
     
     # Servidor del Pooler regional correspondiente a us-east-1
@@ -22,7 +22,7 @@ def obtener_url_segura():
 
 DATABASE_URL = obtener_url_segura()
 
-# Configuración estándar del motor usando SSL obligatorio para Supabase
+# Inicialización limpia con cifrado SSL estándar exigido por Supabase
 engine = create_engine(
     DATABASE_URL,
     connect_args={
