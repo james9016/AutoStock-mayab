@@ -3,31 +3,28 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # En el puerto 6543 (Pooler Transaccional), el identificador del proyecto se pasa
-    # directamente en el campo de usuario usando la nomenclatura: usuario.id_proyecto
-    id_proyecto = "grnqhgctjjahvhkjckxa"
-    u = f"postgres.{id_proyecto}"  
+    # Mantener el usuario base estricto para la autenticación directa
+    u = "postgres"
     p = "AutoStockMayab2026"
     
-    # Servidor del Pooler regional correspondiente a us-east-1
-    h1 = "aws-0-us-east-1"
-    h2 = "pooler"
-    h3 = "supabase"
-    h4 = "com"
-    host_completo = f"{h1}.{h2}.{h3}.{h4}"
+    # Host e infraestructura de Supabase correspondiente a la región us-east-1
+    id_proyecto = "grnqhgctjjahvhkjckxa"
+    host_directo = f"db.{id_proyecto}.supabase.co"
     
-    # Puerto oficial de Supavisor para transacciones estructuradas (Evita errores de SNI)
-    puerto = "6543" 
+    # Puerto de sesión estándar (Permite operaciones DDL como create_all)
+    puerto = "5432"
     base_datos = "postgres"
     
-    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}"
+    return f"postgresql://{u}:{p}@{host_directo}:{puerto}/{base_datos}"
 
 DATABASE_URL = obtener_url_segura()
 
 engine = create_engine(
     DATABASE_URL,
     connect_args={
-        "sslmode": "require"
+        "sslmode": "require",
+        # Inyección forzada del ID del proyecto en las opciones de inicialización del driver
+        "options": "-c project=grnqhgctjjahvhkjckxa"
     },
     pool_size=10,
     max_overflow=20,
