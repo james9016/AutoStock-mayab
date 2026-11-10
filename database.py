@@ -3,12 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # 💡 Formato oficial exacto de Supabase para el pooler por puerto 5432 (Modo Transaccional):
-    # El usuario base y el ID del proyecto deben separarse estrictamente por un PUNTO '.' 
-    # para evitar romper el formateador de URLs de SQLAlchemy (los dos puntos ':' romperían el esquema usuario:contraseña).
-    id_proyecto = "grnqhgctjjahvhkjckxa"
-    u = f"postgres.{id_proyecto}"  # <- Corregido a punto para compatibilidad con SQLAlchemy
+    # El usuario debe ser estrictamente 'postgres' para evitar el error FATAL
+    u = "postgres"
     p = "AutoStockMayab2026"
+    id_proyecto = "grnqhgctjjahvhkjckxa"
     
     # Servidor del Pooler regional correspondiente a us-east-1
     h1 = "aws-0-us-east-1"
@@ -20,8 +18,8 @@ def obtener_url_segura():
     puerto = "5432"
     base_datos = "postgres"
     
-    # URL limpia y perfectamente estructurada para el Pooler
-    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}"
+    # Inyectamos el ID del proyecto a través de las opciones nativas de PostgreSQL (?options=-c project=...)
+    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}?options=-c%20project={id_proyecto}"
 
 DATABASE_URL = obtener_url_segura()
 
@@ -33,8 +31,8 @@ engine = create_engine(
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
-    pool_pre_ping=True,    # Verifica si la conexión sigue viva antes de despacharla
-    pool_recycle=300       # Cierra y renueva las conexiones cada 5 minutos para evitar bloqueos en Render
+    pool_pre_ping=True,
+    pool_recycle=300
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
