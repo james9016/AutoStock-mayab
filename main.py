@@ -172,12 +172,21 @@ def marcar_como_vendido(id: int, request: Request, bg_tasks: BackgroundTasks, db
     )
     db.add(venta)
     
-    audit = models.BitacoraAuditoria(usuario_id=usuario.id, accion_realizada=f"Venta de unidad de producto #{prod.id} - {prod.nombre_refaccion}")
+    # Obtener información del dueño para la notificación automática por WhatsApp
+    dueno = db.query(models.Usuario).filter(models.Usuario.id == prod.dueno_id).first()
+    if dueno and dueno.telefono_celular:
+        bg_tasks.add_task(
+            enviar_alerta_whatsapp_task,
+            telefono=dueno.telefono_celular,
+            producto_id=prod.id,
+            nombre_pieza=prod.nombre_refaccion
+        )
+    
+    audit = models.BitacoraAuditoria(
+        usuario_id=usuario.id, 
+        accion_realizada=f"Venta de unidad de producto #{prod.id} - {prod.nombre_refaccion}"
+    )
     db.add(audit)
     db.commit()
     
-    dueno = db.query(models.Usuario).filter(models.Usuario.id == prod.dueno_id).first()
-    if dueno and dueno.telefono_celular:
-        bg_tasks.add_task(enviar_alerta_whatsapp_task, telefono=dueno.telefono_celular, producto_id=prod.id, nombre_pieza=prod.nombre_refaccion)
-        
     return RedirectResponse(url="/mostrador?msg=Venta+Registrada+Exitosamente", status_code=status.HTTP_303_SEE_OTHER)
