@@ -188,5 +188,4 @@ def marcar_como_vendido(id: int, request: Request, bg_tasks: BackgroundTasks, db
     )
     db.add(audit)
     db.commit()
-    
-    return RedirectResponse(url="/mostrador?msg=Venta+Registrada+Exitosamente", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/mostrador?msg=Venta+Registrada", status_code=status.HTTP_303_SEE_OTHER)
