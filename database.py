@@ -3,19 +3,23 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # Mantener el usuario base estricto para la autenticación directa
-    u = "postgres"
+    # En el puerto 6543 (Pooler Transaccional), el identificador del proyecto 
+    # se pasa directamente en el campo de usuario usando un punto '.'
+    id_proyecto = "grnqhgctjjahvhkjckxa"
+    u = f"postgres.{id_proyecto}"  
     p = "AutoStockMayab2026"
     
-    # Host e infraestructura de Supabase correspondiente a la región us-east-1
-    id_proyecto = "grnqhgctjjahvhkjckxa"
-    host_directo = f"db.{id_proyecto}.supabase.co"
+    # Host global del Pooler de Supabase compatible con IPv4
+    h1 = "aws-0-us-east-1"
+    h2 = "pooler"
+    h3 = "supabase"
+    h4 = "com"
+    host_completo = f"{h1}.{h2}.{h3}.{h4}"
     
-    # Puerto de sesión estándar (Permite operaciones DDL como create_all)
-    puerto = "5432"
+    puerto = "6543" 
     base_datos = "postgres"
     
-    return f"postgresql://{u}:{p}@{host_directo}:{puerto}/{base_datos}"
+    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}"
 
 DATABASE_URL = obtener_url_segura()
 
@@ -23,8 +27,9 @@ engine = create_engine(
     DATABASE_URL,
     connect_args={
         "sslmode": "require",
-        # Inyección forzada del ID del proyecto en las opciones de inicialización del driver
-        "options": "-c project=grnqhgctjjahvhkjckxa"
+        # 💡 CRUCIAL: Desactiva Server-Side prepared statements.
+        # Esto permite que SQLAlchemy cree tablas y use el modo transaccional del Pooler sin dar error FATAL.
+        "prepare_threshold": 0
     },
     pool_size=10,
     max_overflow=20,
