@@ -29,7 +29,7 @@ def verificar_password(plain_password: str, hashed_password: str) -> bool:
 
 def crear_token_acceso(data: dict):
     to_encode = data.copy()
-    # ✅ Corregido: Uso de timezone-aware datetime para evitar advertencias de depreciación
+    # ✅ Uso de timezone-aware datetime para evitar advertencias de depreciación
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -67,7 +67,7 @@ class PermisoRol:
         if usuario.rol not in self.roles_permitidos:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, 
-                # ✅ Corregido: Mensaje adaptado al contexto de AutoStock Mayab
+                # ✅ Mensaje adaptado al contexto de AutoStock Mayab
                 detail="Acceso denegado. Permisos insuficientes para esta operación comercial."
             )
         return usuario
