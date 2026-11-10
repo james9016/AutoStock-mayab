@@ -2,29 +2,23 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-def obtener_url_segura():
-    # Usuario limpio sin puntos ni caracteres conflictivos
-    u = "postgres"
+# Leemos directamente la variable de entorno segura configurada en Render
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Si no existe la variable en local, usa el pooler compartido como respaldo
+if not DATABASE_URL:
+    id_proyecto = "grnqhgctjjahvhkjckxa"
+    u = f"postgres.{id_proyecto}"  
     p = "AutoStockMayab2026"
-    
-    # IP numérica pública IPv4 de Supabase para la región us-east-1 (AWS)
-    # Esto evita por completo el error de "Network is unreachable" de Render
-    host_ip = "44.208.221.186"
-    
+    host_pooler = "://supabase.com"
     puerto = "5432"
     base_datos = "postgres"
-    
-    return f"postgresql://{u}:{p}@{host_ip}:{puerto}/{base_datos}"
-
-DATABASE_URL = obtener_url_segura()
+    DATABASE_URL = f"postgresql://{u}:{p}@{host_pooler}:{puerto}/{base_datos}"
 
 engine = create_engine(
     DATABASE_URL,
     connect_args={
-        "sslmode": "require",
-        # 🔒 ESTA ES LA CLAVE: Forzamos al driver a enviar el ID del proyecto 
-        # directamente en el handshake de Postgres, solucionando el SNI en IPv4
-        "options": "-c project=grnqhgctjjahvhkjckxa"
+        "sslmode": "require"
     },
     pool_size=10,
     max_overflow=20,
