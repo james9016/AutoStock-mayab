@@ -3,14 +3,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # 💡 REGLA DE INFRAESTRUCTURA: Al usar el Pooler en el puerto 5432 bajo IPv4,
-    # Supabase requiere acoplar el ID del proyecto al usuario con un punto '.'.
+    # 💡 REGLA DE INFRAESTRUCTURA DE SUPABASE PARA REDES IPv4 COMPLETAMENTE GRATUITA:
+    # Concatenamos el ID del proyecto al usuario separado por un punto.
     id_proyecto = "grnqhgctjjahvhkjckxa"
     u = f"postgres.{id_proyecto}"  
     p = "AutoStockMayab2026"
     
-    # Host de Supavisor con soporte IPv4 completo
-    host_pooler = "://supabase.com"
+    # HOST CORRECTO: Pooler oficial de AWS us-east-1 (Resuelve el tráfico IPv4 en Render)
+    host_pooler = "aws-0-us-east-1.pooler.supabase.com"
     puerto = "5432"
     base_datos = "postgres"
     
