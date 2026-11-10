@@ -3,8 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # En el puerto 6543 (Pooler Transaccional), el identificador del proyecto 
-    # se pasa directamente en el campo de usuario usando un punto '.'
+    # Estructura transaccional limpia para el puerto 6543
     id_proyecto = "grnqhgctjjahvhkjckxa"
     u = f"postgres.{id_proyecto}"  
     p = "AutoStockMayab2026"
@@ -27,9 +26,9 @@ engine = create_engine(
     DATABASE_URL,
     connect_args={
         "sslmode": "require",
-        # 💡 CRUCIAL: Desactiva Server-Side prepared statements.
-        # Esto permite que SQLAlchemy cree tablas y use el modo transaccional del Pooler sin dar error FATAL.
-        "prepare_threshold": 0
+        # 💡 Solución definitiva para psycopg2 con Supavisor en modo transaccional:
+        # Desactiva los cursores del lado del servidor para evitar conflictos DDL en el startup
+        "server_side_cursors": False
     },
     pool_size=10,
     max_overflow=20,
