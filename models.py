@@ -39,10 +39,14 @@ class Usuario(Base):
     contrasena_hash = Column(String, nullable=False)
     rol = Column(Enum(RolEnum, native_enum=False), nullable=False)
     telefono_celular = Column(String, nullable=False)
-    # ✅ Corregido: Función lambda con timezone.utc para mantener la consistencia del servidor
+    # ✅ Función lambda con timezone.utc para mantener la consistencia del servidor
     fecha_registro = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
+    # Relaciones
     productos = relationship("Producto", back_populates="dueno")
+    ventas = relationship("HistorialVenta", back_populates="vendedor")
+    lista_espera = relationship("ListaEspera", back_populates="vendedor")
+    auditorias = relationship("BitacoraAuditoria", back_populates="usuario")
 
 class Producto(Base):
     __tablename__ = "productos"
@@ -60,8 +64,10 @@ class Producto(Base):
     precio_sugerido = Column(Float, nullable=False)
     fecha_ingreso = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
+    # Relaciones
     dueno = relationship("Usuario", back_populates="productos")
     imagenes = relationship("ImagenesPieza", back_populates="producto", cascade="all, delete-orphan")
+    ventas = relationship("HistorialVenta", back_populates="producto")
 
 class ImagenesPieza(Base):
     __tablename__ = "imagenes_pieza"
@@ -69,6 +75,7 @@ class ImagenesPieza(Base):
     producto_id = Column(Integer, ForeignKey("productos.id"), nullable=False)
     url_imagen = Column(String, nullable=False)
     
+    # Relaciones
     producto = relationship("Producto", back_populates="imagenes")
 
 class HistorialVenta(Base):
@@ -84,12 +91,19 @@ class HistorialVenta(Base):
     liquidado_al_dueno = Column(Boolean, default=False, nullable=False)
     saldo_por_cobrar = Column(Float, nullable=False)
 
+    # Relaciones
+    producto = relationship("Producto", back_populates="ventas")
+    vendedor = relationship("Usuario", back_populates="ventas")
+
 class ListaEspera(Base):
     __tablename__ = "lista_espera"
     id = Column(Integer, primary_key=True, index=True)
     refaccion_buscada = Column(String, nullable=False)
     vendedor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     fecha_registro = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relaciones
+    vendedor = relationship("Usuario", back_populates="lista_espera")
 
 class BitacoraAuditoria(Base):
     __tablename__ = "bitacora_auditoria"
@@ -98,7 +112,11 @@ class BitacoraAuditoria(Base):
     accion_realizada = Column(String, nullable=False)
     fecha_hora = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+    # Relaciones
+    usuario = relationship("Usuario", back_populates="auditorias")
+
 # BLINDAJE LOGÍSTICO
+# Modifica la secuencia de PostgreSQL para arrancar folios de productos desde 1000
 event.listen(
     Producto.__table__,
     "after_create",
