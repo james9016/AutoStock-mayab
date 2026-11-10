@@ -59,25 +59,4 @@ DICCIONARIO_VEHICULOS = {
 GRUPOS_ANOS = ["1990-1995", "1996-2000", "2001-2005", "2006-2010", "2011-2015", "2016-2020", "2021-2026"]
 
 def seed_database(db: Session):
-    """Inicializa datos raíz obligatorios de forma segura controlando excepciones transaccionales"""
-    try:
-        admin = db.query(models.Usuario).filter(models.Usuario.usuario == "admin").first()
-        if not admin:
-            password_segura = "AdminCorp2026*"
-            new_admin = models.Usuario(
-                nombre="Administrador General",
-                usuario="admin",
-                contrasena_hash=obtener_password_hash(password_segura[:72]),
-                rol=models.RolEnum.Administrador,
-                telefono_celular="+529990000000"
-            )
-            db.add(new_admin)
-            db.commit()
-            print("[SEED] Usuario Administrador raíz inyectado exitosamente.")
-        else:
-            print("[SEED] El usuario Administrador ya existe en el sistema.")
-            
-    except Exception as e:
-        db.rollback()
-        print(f"[SEED ERROR] Fallo crítico durante la precarga en Supabase: {str(e)}")
-        raise e
+    """Inicializa datos
