@@ -3,10 +3,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # El usuario debe ser estrictamente 'postgres' para evitar el error FATAL
-    u = "postgres"
-    p = "AutoStockMayab2026"
+    # En el puerto 6543 (Pooler Transaccional), el identificador del proyecto se pasa
+    # directamente en el campo de usuario usando la nomenclatura: usuario.id_proyecto
     id_proyecto = "grnqhgctjjahvhkjckxa"
+    u = f"postgres.{id_proyecto}"  
+    p = "AutoStockMayab2026"
     
     # Servidor del Pooler regional correspondiente a us-east-1
     h1 = "aws-0-us-east-1"
@@ -15,11 +16,11 @@ def obtener_url_segura():
     h4 = "com"
     host_completo = f"{h1}.{h2}.{h3}.{h4}"
     
-    puerto = "5432"
+    # Puerto oficial de Supavisor para transacciones estructuradas (Evita errores de SNI)
+    puerto = "6543" 
     base_datos = "postgres"
     
-    # Inyectamos el ID del proyecto a través de las opciones nativas de PostgreSQL (?options=-c project=...)
-    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}?options=-c%20project={id_proyecto}"
+    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}"
 
 DATABASE_URL = obtener_url_segura()
 
