@@ -3,13 +3,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 def obtener_url_segura():
-    # 💡 ESTÁNDAR OBLIGATORIO PARA IPv4: Concatenar el ID con un punto en el usuario
-    # apuntando estrictamente al puerto del pooler transaccional 6543
+    # 💡 FORMATO IPv4 TRANSACCIONAL: Combinación limpia de usuario con punto y puerto 6543
     id_proyecto = "grnqhgctjjahvhkjckxa"
     u = f"postgres.{id_proyecto}"  
     p = "AutoStockMayab2026"
     
-    # Host oficial del Pooler regional de Supabase
+    # Host oficial del Pooler de Supabase
     h1 = "aws-0-us-east-1"
     h2 = "pooler"
     h3 = "supabase"
@@ -19,8 +18,8 @@ def obtener_url_segura():
     puerto = "6543" 
     base_datos = "postgres"
     
-    # Forzamos la desactivación de prepared statements en el string de conexión de SQLAlchemy
-    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}?prepare_threshold=0"
+    # Retornamos la URL limpia sin query strings conflictivos
+    return f"postgresql://{u}:{p}@{host_completo}:{puerto}/{base_datos}"
 
 DATABASE_URL = obtener_url_segura()
 
@@ -28,6 +27,11 @@ engine = create_engine(
     DATABASE_URL,
     connect_args={
         "sslmode": "require"
+    },
+    # ✅ SOLUCIÓN DE RAÍZ EN SQLALCHEMY: Fuerza la carga total en memoria 
+    # y deshabilita server-side cursors evitando conflictos DDL con el pooler transaccional
+    execution_options={
+        "stream_results": False
     },
     pool_size=10,
     max_overflow=20,
