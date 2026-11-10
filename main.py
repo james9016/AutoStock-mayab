@@ -2,14 +2,21 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Leemos directamente de las variables de entorno de Render para evitar hardcodear propiedades de red
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    # Respaldo de seguridad estricto con el formato oficial del Pooler de Sesión (Puerto 5432)
-    # El usuario compuesto con el ID del proyecto garantiza el enrutamiento sin requerir SNI
+def obtener_url_segura():
+    # 💡 REGLA DE INFRAESTRUCTURA: Al usar el Pooler en el puerto 5432 bajo IPv4,
+    # Supabase requiere acoplar el ID del proyecto al usuario con un punto '.'.
     id_proyecto = "grnqhgctjjahvhkjckxa"
-    DATABASE_URL = f"postgresql://postgres.{id_proyecto}:AutoStockMayab2026@://supabase.com"
+    u = f"postgres.{id_proyecto}"  
+    p = "AutoStockMayab2026"
+    
+    # Host de Supavisor con soporte IPv4 completo
+    host_pooler = "://supabase.com"
+    puerto = "5432"
+    base_datos = "postgres"
+    
+    return f"postgresql://{u}:{p}@{host_pooler}:{puerto}/{base_datos}"
+
+DATABASE_URL = obtener_url_segura()
 
 engine = create_engine(
     DATABASE_URL,
