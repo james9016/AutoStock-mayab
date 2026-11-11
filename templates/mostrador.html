@@ -321,14 +321,14 @@
         </div>
     </div>
 
-    <div id="modal-registro" class="fixed inset-0 bg-slate-950/70 hidden target:flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+     <div id="modal-registro" class="fixed inset-0 bg-slate-950/70 hidden target:flex items-center justify-center p-4 z-50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 max-w-sm w-full space-y-4 relative">
             <a href="/mostrador" class="absolute right-4 top-3 text-slate-400 hover:text-slate-700 font-black text-2xl">&times;</a>
             <h3 class="text-lg font-extrabold text-slate-900 border-b border-slate-100 pb-2">📝 Registro Público</h3>
             <div class="bg-slate-100 border border-slate-200 p-3 rounded-xl text-xs text-slate-700 font-medium">
-                Al registrarte externamente, tu cuenta tendrá rol de <strong>Público General</strong>.
+                Tu cuenta se creará con rol de <strong>Público General</strong>.
             </div>
-            <form action="/auth/login" method="POST" class="space-y-3">
+            <form action="/auth/registro" method="POST" class="space-y-3">
                 <div>
                     <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Nombre Completo</label>
                     <input type="text" name="nombre" placeholder="Ej: Juan Pérez" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
@@ -341,10 +341,15 @@
                     <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Celular (WhatsApp)</label>
                     <input type="text" name="telefono_celular" placeholder="+529991234567" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
                 </div>
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Contraseña</label>
+                    <input type="password" name="contrasena" placeholder="••••••••" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
+                </div>
                 <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl text-xs shadow uppercase tracking-wider">Enviar Registro</button>
             </form>
         </div>
     </div>
+
         <script>
         const VEHICULOS = {% if dict_vehiculos %}{{ dict_vehiculos|safe }}{% else %}{}{% endif %};
 
