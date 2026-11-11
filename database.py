@@ -2,11 +2,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
+servidor = "aws-0-us-east-1" + ".pooler" + ".supabase" + ".com"
+
 url_conexion = URL.create(
     drivername="postgresql",
     username="postgres.grnqhgctjjahvhkjckxa",
     password="AutoStockMayab2026",
-    host="://supabase.com",
+    host=servidor,
     port=5432,
     database="postgres"
 )
