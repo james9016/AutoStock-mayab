@@ -391,6 +391,71 @@
             </form>
         </div>
     </div>
+    {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor' or usuario.rol == 'Administrador' or usuario.rol == 'Vendedor') %}
+    <div id="modal-mi-inventario" class="fixed inset-0 bg-slate-950/80 hidden target:flex items-center justify-center p-3 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            
+            <div class="bg-slate-900 text-white p-4 flex justify-between items-center border-b-4 border-orange-500">
+                <div>
+                    <h3 class="text-base font-extrabold uppercase tracking-wide">📦 Mi Inventario por Categoría</h3>
+                    <p class="text-xs text-slate-400">{{ usuario.nombre }}</p>
+                </div>
+                <a href="/mostrador" class="text-slate-300 hover:text-white font-black text-3xl leading-none px-2">&times;</a>
+            </div>
+
+            <div class="bg-slate-100 p-3 border-b border-slate-200 flex flex-wrap gap-2 justify-between items-center">
+                <span class="text-xs font-bold text-slate-600">Exportar existencias actuales:</span>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <a href="/inventario/exportar/csv" class="flex-1 sm:flex-none text-center text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-sm uppercase">
+                        📊 Excel (CSV)
+                    </a>
+                    <a href="/inventario/reporte/pdf" target="_blank" class="flex-1 sm:flex-none text-center text-xs bg-orange-600 hover:bg-orange-700 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-sm uppercase">
+                        📄 Reporte PDF
+                    </a>
+                </div>
+            </div>
+
+            <div class="p-4 overflow-y-auto space-y-4 flex-1">
+                {% set mis_piezas = [] %}
+                {% for p in productos %}
+                    {% if p.dueno_id == usuario.id or usuario.rol.value == 'Administrador' or usuario.rol == 'Administrador' %}
+                        {% set _ = mis_piezas.append(p) %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if mis_piezas %}
+                    {% for grupo in mis_piezas|groupby('categoria') %}
+                        <div class="border border-slate-200 rounded-xl overflow-hidden">
+                            <div class="bg-slate-800 text-orange-400 px-3.5 py-2 text-xs font-extrabold uppercase tracking-wider flex justify-between">
+                                <span>🗂️ {{ grupo.grouper.value if grupo.grouper.value else grupo.grouper }}</span>
+                                <span class="text-white">{{ grupo.list|length }} pzas</span>
+                            </div>
+                            <div class="divide-y divide-slate-100">
+                                {% for item in grupo.list %}
+                                    <div class="p-3 flex justify-between items-center gap-2 hover:bg-slate-50 text-xs">
+                                        <div>
+                                            <span class="font-black text-slate-900">#{{ item.id }}</span>
+                                            <span class="font-bold text-slate-800 ml-1">{{ item.nombre_refaccion }}</span>
+                                            <p class="text-[11px] text-slate-500 mt-0.5">{{ item.marca }} {{ item.modelo }} ({{ item.ano_grupo }}) • 📍 {{ item.ubicacion_fisica }}</p>
+                                        </div>
+                                        <div class="text-right shrink-0">
+                                            <span class="block text-[10px] text-slate-400 font-bold uppercase">Costo</span>
+                                            <span class="font-black text-emerald-700 text-sm">${{ "{:,.2f}".format(item.precio_real) if item.precio_real else '0.00' }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                        <p class="text-sm text-slate-500 font-bold">No tienes refacciones registradas en inventario.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
         <script>
         const VEHICULOS = {% if dict_vehiculos %}{{ dict_vehiculos|safe }}{% else %}{}{% endif %};
