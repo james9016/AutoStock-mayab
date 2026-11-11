@@ -135,6 +135,35 @@ def logout():
     response = RedirectResponse(url="/mostrador", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie("access_token")
     return response
+@app.post("/auth/registro")
+def registrar_usuario_publico(
+    nombre: str = Form(...),
+    usuario: str = Form(...),
+    telefono_celular: str = Form(...),
+    contrasena: str = Form(...)
+):
+    import database
+    import models
+    import security
+    
+    db = next(database.get_db())
+    try:
+        existe = db.query(models.Usuario).filter(models.Usuario.usuario == usuario).first()
+        if existe:
+            return RedirectResponse(url="/mostrador?error=El+usuario+ya+existe", status_code=status.HTTP_303_SEE_OTHER)
+        
+        nuevo_usuario = models.Usuario(
+            nombre=nombre,
+            usuario=usuario,
+            contrasena_hash=security.obtener_password_hash(contrasena),
+            rol=models.RolEnum.Publico_General,
+            telefono_celular=telefono_celular
+        )
+        db.add(nuevo_usuario)
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Registro+exitoso.+Solicita+activacion+al+Admin", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
 
 @app.post("/productos/crear")
 def registrar_producto(
