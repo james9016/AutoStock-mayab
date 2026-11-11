@@ -129,6 +129,34 @@ def login(usuario: str = Form(...), contrasena: str = Form(...)):
         return response
     finally:
         db.close()
+@app.post("/usuarios/aprobar/{user_id}")
+def aprobar_usuario(user_id: int, nuevo_rol: str = Form(...), request: Request = None):
+    import database
+    import models
+    import security
+    
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        user_target = db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
+        
+        if not user_target:
+            return RedirectResponse(url="/mostrador?error=Usuario+no+encontrado", status_code=status.HTTP_303_SEE_OTHER)
+        
+        if nuevo_rol == "Vendedor":
+            user_target.rol = models.RolEnum.Vendedor
+        elif nuevo_rol == "Administrador":
+            user_target.rol = models.RolEnum.Administrador
+            
+        audit = models.BitacoraAuditoria(
+            usuario_id=admin.id, 
+            accion_realizada=f"Aprobación de usuario @{user_target.usuario} con rol {nuevo_rol}"
+        )
+        db.add(audit)
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Usuario+Aprobado+y+Activado", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
 
 @app.get("/auth/logout")
 def logout():
