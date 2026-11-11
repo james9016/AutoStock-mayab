@@ -17,7 +17,8 @@
             <div class="flex items-center space-x-4">
                 {% if usuario %}
                     <span class="text-sm bg-blue-700 px-3 py-1.5 rounded-md font-medium border border-blue-500">
-                        👤 {{ usuario.nombre }} ({{ usuario.rol.value if hasattr(usuario.rol, 'value') else usuario.rol }})
+                        👤 {{ usuario.nombre }} ({{ usuario.rol }})
+
                     </span>
                     <a href="/auth/logout" class="text-sm font-semibold bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-md transition shadow">Salir</a>
                 {% else %}
