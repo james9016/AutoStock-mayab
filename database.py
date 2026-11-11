@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-servidor = "aws-0-us-west-2" + ".pooler" + ".supabase" + ".com"
+servidor = "aws-1-us-west-2" + ".pooler" + ".supabase" + ".com"
 
 url_conexion = URL.create(
     drivername="postgresql",
