@@ -1,26 +1,19 @@
-import os
 from sqlalchemy import create_engine
+from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-def obtener_url_segura():
-    # 💡 Conexión directa y harcodeada para evadir la caché corrupta de Render
-    id_proyecto = "grnqhgctjjahvhkjckxa"
-    u = f"postgres.{id_proyecto}"  
-    p = "AutoStockMayab2026"
-    host_pooler = "://supabase.com"
-    puerto = "5432"
-    base_datos = "postgres"
-    
-    return f"postgresql://{u}:{p}@{host_pooler}:{puerto}/{base_datos}"
-
-# Forzamos la asignación directa sin pasar por variables de entorno
-DATABASE_URL = obtener_url_segura()
+url_conexion = URL.create(
+    drivername="postgresql",
+    username="postgres.grnqhgctjjahvhkjckxa",
+    password="AutoStockMayab2026",
+    host="://supabase.com",
+    port=5432,
+    database="postgres"
+)
 
 engine = create_engine(
-    DATABASE_URL,
-    connect_args={
-        "sslmode": "require"
-    },
+    url_conexion,
+    connect_args={"sslmode": "require"},
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
