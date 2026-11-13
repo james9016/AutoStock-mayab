@@ -304,7 +304,7 @@ def exportar_inventario_csv(request: Request):
         return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"})
     finally:
         db.close()
-      @app.get("/inventario/reporte/pdf", response_class=HTMLResponse)
+@app.get("/inventario/reporte/pdf", response_class=HTMLResponse)
 def reporte_imprimible_pdf(request: Request):
     import database, models, security
     from datetime import datetime
