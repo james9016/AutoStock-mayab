@@ -275,3 +275,62 @@ def marcar_como_vendido(id: int, request: Request, bg_tasks: BackgroundTasks):
         return RedirectResponse(url="/mostrador?msg=Venta+Completada", status_code=status.HTTP_303_SEE_OTHER)
     finally:
         db.close()
+@app.get("/inventario/exportar/csv")
+def exportar_inventario_csv(request: Request):
+    import io, csv
+    from fastapi.responses import StreamingResponse
+    import database, models, security
+
+    db = next(database.get_db())
+    try:
+        usuario = security.PermisoRol(["Administrador", "Vendedor"])(security.obtener_usuario_actual(request, db))
+        if usuario.rol == models.RolEnum.Administrador or usuario.rol == "Administrador":
+            productos = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).all()
+            nombre_archivo = "inventario_general.csv"
+        else:
+            productos = db.query(models.Producto).filter(models.Producto.dueno_id == usuario.id, models.Producto.cantidad_disponible > 0).all()
+            nombre_archivo = f"inventario_{usuario.usuario}.csv"
+
+        output = io.StringIO()
+        output.write('\ufeff')
+        writer = csv.writer(output)
+        writer.writerow(["ID", "Categoria", "Refaccion", "Marca", "Modelo", "Anos", "Ubicacion", "Costo", "Publico"])
+
+        for p in productos:
+            cat = p.categoria.value if hasattr(p.categoria, 'value') else str(p.categoria)
+            writer.writerow([p.id, cat, p.nombre_refaccion, p.marca, p.modelo, p.ano_grupo, p.ubicacion_fisica, p.precio_real, p.precio_sugerido])
+
+        output.seek(0)
+        return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"})
+    finally:
+        db.close()
+      @app.get("/inventario/reporte/pdf", response_class=HTMLResponse)
+def reporte_imprimible_pdf(request: Request):
+    import database, models, security
+    from datetime import datetime
+
+    db = next(database.get_db())
+    try:
+        usuario = security.PermisoRol(["Administrador", "Vendedor"])(security.obtener_usuario_actual(request, db))
+        if usuario.rol == models.RolEnum.Administrador or usuario.rol == "Administrador":
+            productos = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).all()
+            titulo = "Inventario General de Bodega"
+        else:
+            productos = db.query(models.Producto).filter(models.Producto.dueno_id == usuario.id, models.Producto.cantidad_disponible > 0).all()
+            titulo = f"Inventario: {usuario.nombre}"
+
+        filas = ""
+        total_costo = 0.0
+        for p in productos:
+            total_costo += p.precio_real
+            filas += f"<tr><td>#{p.id}</td><td><b>{p.nombre_refaccion}</b><br><small>{p.marca} {p.modelo}</small></td><td>{p.ubicacion_fisica}</td><td>${p.precio_real:,.2f}</td><td>${p.precio_sugerido:,.2f}</td></tr>"
+
+        html = f"""<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{titulo}</title>
+        <style>body{{font-family:sans-serif;padding:15px}}table{{width:100%;border-collapse:collapse;font-size:12px}}th,td{{border-bottom:1px solid #ddd;padding:8px;text-align:left}}th{{background:#0f172a;color:#fff}}.btn{{background:#ea580c;color:#fff;border:none;padding:12px;width:100%;font-weight:bold;border-radius:8px;margin-bottom:15px}}@media print{{.btn{{display:none}}}}</style></head>
+        <body><button class="btn" onclick="window.print()">🖨️ Guardar PDF / Imprimir</button><h2>⚙️ AutoStock Mayab - {titulo}</h2><p>Fecha: {datetime.now().strftime('%d/%m/%Y')} | Piezas: {len(productos)}</p>
+        <table><thead><tr><th>ID</th><th>Refacción</th><th>Ubicación</th><th>Costo</th><th>Público</th></tr></thead><tbody>{filas}</tbody></table>
+        <h3 style="text-align:right">Total Costo: ${total_costo:,.2f}</h3></body></html>"""
+        return HTMLResponse(content=html)
+    finally:
+        db.close()
+      
