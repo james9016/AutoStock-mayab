@@ -334,3 +334,6 @@ def reporte_imprimible_pdf(request: Request):
     finally:
         db.close()
       
+@app.get("/ping")
+def mantener_despierto():
+    return {"estado": "activo"}
