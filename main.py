@@ -393,7 +393,7 @@ def exportar_inventario_csv(request: Request):
 
         for col in ws.iter_cols(min_row=4, max_row=fila_total):
             max_len = max((len(str(cell.value or "")) for cell in col), default=10)
-            ws.column_dimensions[col.column_letter].width = max_len + 5
+            ws.column_dimensions[col[0].column_letter].width = max_len + 5
 
         output = io.BytesIO()
         wb.save(output)
