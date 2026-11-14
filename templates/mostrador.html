@@ -559,7 +559,7 @@
                 if(this.value) {
                     fAno.disabled = false;
                     let options = '<option value="">-- Todos los Años --</option>';
-                    ["1990-1995", "1996-2000", "2001-2005", "2006-2010", "2011-2015", "2016-2020", "2021-2026"].forEach(a => { options += `<option value="${a}">${a}</option>`; });
+                    for (let y = 2027; y >= 1980; y--) { options += `<option value="${y}">${y}</option>`; }
                     fAno.innerHTML = options;
                 } else { fAno.disabled = true; fAno.innerHTML = '<option value="">Selecciona</option>'; }
                 filtrarProductos();
