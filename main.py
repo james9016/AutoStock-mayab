@@ -332,7 +332,7 @@ def exportar_inventario_csv(request: Request):
         )
 
         ws.row_dimensions.height = 26
-        for cell in ws:
+        for cell in ws[4]:
             cell.fill = header_fill
             cell.font = header_font
             cell.alignment = Alignment(horizontal="center", vertical="center")
