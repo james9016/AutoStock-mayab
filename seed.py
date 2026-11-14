@@ -17,7 +17,7 @@ DICCIONARIO_VEHICULOS = {
     "Cupra": ["Formentor", "Leon", "Ateca", "Born"],
     "Dacia": ["Sandero", "Duster", "Logan", "Stepway"],
     "Dodge": ["Neon", "Attitude", "Journey", "Dart", "Durango", "Stratus", "Caravan", "Grand Caravan", "Ram Charger", "Caliber", "Avenger", "Verna", "Atos"],
-    "Fiat": ["Pulse", "Mobi", "Uno", "500", "Palio", "Siena", "Stilo", "Ducato", "Argo", "Fastback"],
+    "Fiat": ["Pulse", "Mobi", "Uno", "500", "Palio", "Siena", "Stilo", "Ducato", "Argo", "Fastback", "Idea"],
     "Ford": ["Fiesta", "Fiesta Ikon", "Focus", "Ka", "EcoSport", "Escape", "Explorer", "Expedition", "Ranger", "Mustang", "F-150", "Lobo", "Courier", "Fusion", "Figo", "Edge", "Windstar", "Freestar", "Ghia", "Topaz"],
     "Geely": ["Coolray", "Geometry C", "Emgrand", "Okavango", "Starray"],
     "GMC": ["Sierra", "Yukon", "Acadia", "Terrain", "Canyon", "Envoy"],
@@ -55,8 +55,9 @@ DICCIONARIO_VEHICULOS = {
     "Volvo": ["XC40", "XC60", "XC90", "S40", "S60", "C30", "V40"]
 }
 
-# Grupos de años requeridos por la lógica del negocio de refacciones
-GRUPOS_ANOS = ["1990-1995", "1996-2000", "2001-2005", "2006-2010", "2011-2015", "2016-2020", "2021-2026"]
+# Lista de años individuales ordenada del más reciente al más antiguo
+GRUPOS_ANOS = [str(anio) for anio in range(2027, 1979, -1)]
+
 def seed_database(db: Session):
     """Inicializa datos raíz obligatorios de forma segura controlando excepciones transaccionales"""
     try:
