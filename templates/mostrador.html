@@ -113,10 +113,6 @@
                     </div>
                 </div>
             </section>
-        </div>
-    </main>
-</body>
-</html>
             {% if request.query_params.get('error') %}
                 <div class="bg-red-50 border-l-4 border-red-600 text-red-800 p-3.5 rounded-r-xl shadow-sm flex items-center justify-between">
                     <span class="font-bold text-xs">⚠️ {{ request.query_params.get('error') }}</span>
