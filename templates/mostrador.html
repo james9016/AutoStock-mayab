@@ -146,15 +146,21 @@
                                 </div>
                                 <div>
                                     <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Año Grupo</label>
-                                    <select name="ano_grupo" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold" required>
-                                        <option value="1990-1995">1990-1995</option>
-                                        <option value="1996-2000">1996-2000</option>
-                                        <option value="2001-2005">2001-2005</option>
-                                        <option value="2006-2010">2006-2010</option>
-                                        <option value="2011-2015">2011-2015</option>
-                                        <option value="2016-2020">2016-2020</option>
-                                        <option value="2021-2026">2021-2026</option>
-                                    </select>
+                                    <select id="form-ano" name="ano_grupo" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 focus:ring-2 focus:ring-orange-500 outline-none">
+    <option value="">Selecciona Año</option>
+</select>
+<script>
+    (function() {
+        const selAno = document.getElementById('form-ano');
+        for (let y = 2027; y >= 1980; y--) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            selAno.appendChild(opt);
+        }
+    })();
+</script>
+
                                 </div>
                             </div>
 
