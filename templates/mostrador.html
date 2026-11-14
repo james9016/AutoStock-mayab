@@ -145,22 +145,48 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Año</label>
-                                    <select id="form-ano" name="ano_grupo" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 focus:ring-2 focus:ring-orange-500 outline-none">
-    <option value="">Selecciona Año</option>
-</select>
-<script>
-    (function() {
-        const selAno = document.getElementById('form-ano');
-        for (let y = 2027; y >= 1980; y--) {
-            const opt = document.createElement('option');
-            opt.value = y;
-            opt.textContent = y;
-            selAno.appendChild(opt);
-        }
-    })();
-</script>
+                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Años (Desde - Hasta)</label>
+                                    <input type="hidden" name="ano_grupo" id="form-ano-final" required>
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        <select id="form-ano-desde" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold">
+                                            <option value="">Desde</option>
+                                        </select>
+                                        <select id="form-ano-hasta" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold">
+                                            <option value="">Hasta</option>
+                                        </select>
+                                    </div>
+                                    <script>
+                                        (function() {
+                                            const sDesde = document.getElementById('form-ano-desde');
+                                            const sHasta = document.getElementById('form-ano-hasta');
+                                            const inputFinal = document.getElementById('form-ano-final');
 
+                                            for (let y = 2027; y >= 1980; y--) {
+                                                sDesde.add(new Option(y, y));
+                                                sHasta.add(new Option(y, y));
+                                            }
+
+                                            function actualizarRangoAnos() {
+                                                const d = parseInt(sDesde.value);
+                                                const h = parseInt(sHasta.value);
+                                                if (!d) { inputFinal.value = ""; return; }
+                                                if (!h || d === h) {
+                                                    if (!h) sHasta.value = d;
+                                                    inputFinal.value = String(d);
+                                                } else {
+                                                    const inicio = Math.min(d, h);
+                                                    const fin = Math.max(d, h);
+                                                    const lista = [];
+                                                    for (let a = inicio; a <= fin; a++) lista.push(a);
+                                                    inputFinal.value = lista.join(", ");
+                                                }
+                                            }
+
+                                            sDesde.addEventListener('change', actualizarRangoAnos);
+                                            sHasta.addEventListener('change', actualizarRangoAnos);
+                                        })();
+                                        </script>
+                                        
                                 </div>
                             </div>
 
