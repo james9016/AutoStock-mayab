@@ -562,7 +562,8 @@
                 const texto = card.getAttribute('data-texto').toLowerCase();
 
                 let cumpleQuery = !query || (esNumerico ? id.startsWith(query) : texto.includes(query));
-                let cumpleFiltros = esNumerico || ((!marcaSel || marca === marcaSel) && (!modeloSel || modelo === modeloSel) && (!anoSel || ano === anoSel));
+                let cumpleFiltros = esNumerico || ((!marcaSel || marca === marcaSel) && (!modeloSel || modelo === modeloSel) && (!anoSel || ano.includes(anoSel)));
+
 
                 if (cumpleQuery && cumpleFiltros) { card.classList.remove('hidden'); } else { card.classList.add('hidden'); }
             });
