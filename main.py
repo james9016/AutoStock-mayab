@@ -277,31 +277,134 @@ def marcar_como_vendido(id: int, request: Request, bg_tasks: BackgroundTasks):
         db.close()
 @app.get("/inventario/exportar/csv")
 def exportar_inventario_csv(request: Request):
-    import io, csv
+    import io
+    from datetime import datetime
     from fastapi.responses import StreamingResponse
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     import database, models, security
 
     db = next(database.get_db())
     try:
         usuario = security.PermisoRol(["Administrador", "Vendedor"])(security.obtener_usuario_actual(request, db))
         if usuario.rol == models.RolEnum.Administrador or usuario.rol == "Administrador":
-            productos = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).all()
-            nombre_archivo = "inventario_general.csv"
+            productos = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).order_by(models.Producto.id).all()
+            nombre_archivo = "Inventario_General_AutoStock_Mayab.xlsx"
+            titulo_reporte = "REPORTE EJECUTIVO DE INVENTARIO GENERAL"
         else:
-            productos = db.query(models.Producto).filter(models.Producto.dueno_id == usuario.id, models.Producto.cantidad_disponible > 0).all()
-            nombre_archivo = f"inventario_{usuario.usuario}.csv"
+            productos = db.query(models.Producto).filter(models.Producto.dueno_id == usuario.id, models.Producto.cantidad_disponible > 0).order_by(models.Producto.id).all()
+            nombre_archivo = f"Inventario_{usuario.usuario}_AutoStock.xlsx"
+            titulo_reporte = f"INVENTARIO DE AFILIADO: {usuario.nombre.upper()}"
 
-        output = io.StringIO()
-        output.write('\ufeff')
-        writer = csv.writer(output)
-        writer.writerow(["ID", "Categoria", "Refaccion", "Marca", "Modelo", "Anos", "Ubicacion", "Costo", "Publico"])
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Inventario"
 
-        for p in productos:
-            cat = p.categoria.value if hasattr(p.categoria, 'value') else str(p.categoria)
-            writer.writerow([p.id, cat, p.nombre_refaccion, p.marca, p.modelo, p.ano_grupo, p.ubicacion_fisica, p.precio_real, p.precio_sugerido])
+        ws.merge_cells("A1:J1")
+        ws["A1"] = f"AUTOSTOCK MAYAB — {titulo_reporte}"
+        ws["A1"].font = Font(name="Calibri", size=14, bold=True, color="FFFFFF")
+        ws["A1"].fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+        ws["A1"].alignment = Alignment(horizontal="left", vertical="center", indent=1)
+        ws.row_dimensions.height = 32
 
+        ws.merge_cells("A2:J2")
+        ws["A2"] = f"Generado el {datetime.now().strftime('%d/%m/%Y a las %H:%M')} hrs  |  Total de refacciones activas: {len(productos)}"
+        ws["A2"].font = Font(name="Calibri", size=10, italic=True, color="334155")
+        ws["A2"].fill = PatternFill(start_color="E2E8F0", end_color="E2E8F0", fill_type="solid")
+        ws["A2"].alignment = Alignment(horizontal="left", vertical="center", indent=1)
+        ws.row_dimensions.height = 20
+
+        encabezados = [
+            "ID", "Categoría", "Refacción", "Marca", "Modelo",
+            "Años", "Ubicación", "Costo Dueño", "Precio Público", "Margen Estimado"
+        ]
+        ws.append([])
+        ws.append(encabezados)
+
+        header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
+        header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+        zebra_fill = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
+        borde_fino = Border(
+            left=Side(style="thin", color="CBD5E1"),
+            right=Side(style="thin", color="CBD5E1"),
+            top=Side(style="thin", color="CBD5E1"),
+            bottom=Side(style="thin", color="CBD5E1")
+        )
+
+        ws.row_dimensions.height = 26
+        for cell in ws:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = borde_fino
+
+        total_costo = 0.0
+        total_publico = 0.0
+        total_margen = 0.0
+
+        for idx, p in enumerate(productos, start=5):
+            cat = p.categoria.value if hasattr(p.categoria, "value") else str(p.categoria)
+            costo = float(p.precio_real or 0)
+            publico = float(p.precio_sugerido or 0)
+            margen = publico - costo
+
+            total_costo += costo
+            total_publico += publico
+            total_margen += margen
+
+            fila = [
+                p.id, cat, p.nombre_refaccion, p.marca, p.modelo,
+                p.ano_grupo, p.ubicacion_fisica, costo, publico, margen
+            ]
+            ws.append(fila)
+            ws.row_dimensions[idx].height = 22
+
+            for col_idx, cell in enumerate(ws[idx], 1):
+                cell.border = borde_fino
+                cell.font = Font(name="Calibri", size=10, color="0F172A")
+                if idx % 2 == 0:
+                    cell.fill = zebra_fill
+
+                if col_idx in (1, 6):
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                elif col_idx in (8, 9, 10):
+                    cell.number_format = '"$"#,##0.00'
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+                    if col_idx == 10:
+                        cell.font = Font(name="Calibri", size=10, bold=True, color="15803D")
+                else:
+                    cell.alignment = Alignment(horizontal="left", vertical="center")
+
+        fila_total = len(productos) + 5
+        ws.cell(row=fila_total, column=7, value="TOTALES:").font = Font(name="Calibri", size=11, bold=True, color="0F172A")
+        ws.cell(row=fila_total, column=7).alignment = Alignment(horizontal="right", vertical="center")
+
+        for col_idx, valor in [(8, total_costo), (9, total_publico), (10, total_margen)]:
+            celda = ws.cell(row=fila_total, column=col_idx, value=valor)
+            celda.number_format = '"$"#,##0.00'
+            celda.font = Font(name="Calibri", size=11, bold=True, color="0F172A")
+            celda.fill = PatternFill(start_color="E2E8F0", end_color="E2E8F0", fill_type="solid")
+            celda.border = borde_fino
+            celda.alignment = Alignment(horizontal="right", vertical="center")
+        ws.row_dimensions[fila_total].height = 26
+
+        ws.auto_filter.ref = f"A4:J{len(productos) + 4}"
+        ws.freeze_panes = "A5"
+
+        for col in ws.iter_cols(min_row=4, max_row=fila_total):
+            max_len = max((len(str(cell.value or "")) for cell in col), default=10)
+            ws.column_dimensions[col.column_letter].width = max_len + 5
+
+        output = io.BytesIO()
+        wb.save(output)
         output.seek(0)
-        return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"})
+
+        headers = {"Content-Disposition": f'attachment; filename="{nombre_archivo}"'}
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers=headers
+        )
     finally:
         db.close()
 @app.get("/inventario/reporte/pdf", response_class=HTMLResponse)
