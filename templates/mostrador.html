@@ -217,7 +217,7 @@
                                             <p class="text-xs text-slate-500 font-semibold">Saldo: <span class="text-emerald-700 font-black">${{ "{:,.2f}".format(data.saldo) }}</span></p>
                                         </div>
                                         <form action="/liquidaciones/procesar/{{ d_id }}" method="POST">
-                                            <input type="hidden" name="ids_ventas" value="{{ data.items|join(',') }}">
+                                            <input type="hidden" name="ids_ventas" value="{{ data.get('items', [])|join(',') }}">
                                             <button type="submit" class="text-xs bg-emerald-600 text-white font-extrabold px-3.5 py-2 rounded-xl uppercase">Liquidar</button>
                                         </form>
                                     </div>
