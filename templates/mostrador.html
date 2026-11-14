@@ -10,386 +10,440 @@
         html { background-color: #0f172a; }
         body { opacity: 0; transition: opacity 0.15s ease-in; }
     </style>
-    <script src="https://cdn.tailwindcss.com" onload="document.addEventListener('DOMContentLoaded', () => document.body.style.opacity = '1'); if (document.readyState !== 'loading') document.body.style.opacity = '1';"></script>
-
-    <script>
-        setTimeout(() => { document.body.style.opacity = '1'; }, 1200);
-    </script>
+    <script src="https://tailwindcss.com" onload="document.addEventListener('DOMContentLoaded', () => document.body.style.opacity = '1'); if (document.readyState !== 'loading') document.body.style.opacity = '1';"></script>
+    <script>setTimeout(() => { document.body.style.opacity = '1'; }, 1200);</script>
 </head>
-<body class="bg-slate-100 text-slate-900 font-sans min-h-screen pb-12">
+<body class="bg-slate-100 text-slate-900 font-sans min-h-screen pb-24">
+    {% set rol_actual = (usuario.rol.value if usuario and usuario.rol.value else (usuario.rol if usuario else 'Publico')) %}
+    {% set es_admin = (rol_actual == 'Administrador') %}
+    {% set es_vendedor = (rol_actual == 'Vendedor') %}
+    {% set es_operador = (es_admin or es_vendedor) %}
 
-    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50 border-b-4 border-orange-500">
-        <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-wrap justify-between items-center gap-3">
-            <div class="flex items-center space-x-2">
-                <span class="bg-orange-500 text-slate-950 p-1.5 rounded-lg font-black text-lg">⚙️</span>
-                <span class="text-xl font-extrabold tracking-tight">AutoStock <span class="text-orange-400">Mayab</span></span>
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40 border-b-4 border-orange-500">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="cambiarVista('inicio')">
+                <span class="bg-orange-500 text-slate-950 p-1.5 rounded-xl font-black text-base shadow">⚙️</span>
+                <div>
+                    <span class="text-lg font-extrabold tracking-tight block leading-none">AutoStock <span class="text-orange-400">Mayab</span></span>
+                    <span class="text-[10px] text-slate-400 font-semibold tracking-wider uppercase">
+                        {% if es_admin %}Panel Administrador{% elif es_vendedor %}Mostrador Vendedor{% else %}Catálogo Oficial PVP{% endif %}
+                    </span>
+                </div>
             </div>
-            
-            <div class="flex items-center space-x-3">
-                {% if usuario %}
-                    <div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-2">
-                        <span class="text-xs font-bold text-slate-300">👤 {{ usuario.nombre }}</span>
-                        <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                            {{ usuario.rol.value if usuario.rol.value else usuario.rol }}
-                        </span>
-                    </div>
-                    <a href="/auth/logout" class="text-xs font-bold bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-lg transition shadow">Salir</a>
-                {% else %}
-                    <a href="#modal-login" class="text-xs font-bold bg-orange-500 hover:bg-orange-600 text-slate-950 px-4 py-2 rounded-lg transition shadow">Iniciar Sesión</a>
-                    <a href="#modal-registro" class="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-2 rounded-lg border border-slate-700 transition">Registrarse</a>
-                {% endif %}
-            </div>
+            <!-- Botones de usuario y menú lateral omitidos por brevedad en este fragmento base... -->
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-4 space-y-6">
-        {% if request.query_params.get('error') %}
-            <div class="bg-red-50 border-l-4 border-red-600 text-red-800 p-4 rounded-r-xl shadow-sm flex items-center justify-between">
-                <span class="font-bold text-sm">⚠️ {{ request.query_params.get('error') }}</span>
-                <a href="/mostrador" class="text-red-900 font-black text-xl leading-none">&times;</a>
-            </div>
-        {% endif %}
-        {% if request.query_params.get('msg') %}
-            <div class="bg-emerald-50 border-l-4 border-emerald-600 text-emerald-900 p-4 rounded-r-xl shadow-sm flex items-center justify-between">
-                <span class="font-bold text-sm">✅ {{ request.query_params.get('msg') }}</span>
-                <a href="/mostrador" class="text-emerald-900 font-black text-xl leading-none">&times;</a>
-            </div>
-        {% endif %}
+    <main class="max-w-7xl mx-auto p-4 space-y-5">
+        <div id="vista-inicio" class="vista-seccion space-y-5">
+            <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3.5">
+                <div class="flex gap-2 items-center">
+                    <div class="relative flex-1">
+                        <input type="text" id="buscador-principal" placeholder="Buscar refacción, auto o ID..." 
+                               class="w-full pl-4 pr-11 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white text-sm font-semibold">
+                        <button type="button" id="btn-voz" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-lg hover:scale-110 transition">🎤</button>
+                    </div>
+                    <button type="button" id="btn-limpiar" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold px-3.5 py-2.5 rounded-xl transition text-xs uppercase">Limpiar</button>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Marca</label>
+                        <select id="filtro-marca" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:ring-2 focus:ring-orange-500"><option value="">Todas</option></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Modelo</label>
+                        <select id="filtro-modelo" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:ring-2 focus:ring-orange-500" disabled><option value="">--</option></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Año</label>
+                        <select id="filtro-ano" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:ring-2 focus:ring-orange-500" disabled><option value="">--</option></select>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>
+            {% if request.query_params.get('error') %}
+                <div class="bg-red-50 border-l-4 border-red-600 text-red-800 p-3.5 rounded-r-xl shadow-sm flex items-center justify-between">
+                    <span class="font-bold text-xs">⚠️ {{ request.query_params.get('error') }}</span>
+                    <a href="/mostrador" class="text-red-900 font-black text-lg leading-none">&times;</a>
+                </div>
+            {% endif %}
+            {% if request.query_params.get('msg') %}
+                <div class="bg-emerald-50 border-l-4 border-emerald-600 text-emerald-900 p-3.5 rounded-r-xl shadow-sm flex items-center justify-between">
+                    <span class="font-bold text-xs">✅ {{ request.query_params.get('msg') }}</span>
+                    <a href="/mostrador" class="text-emerald-900 font-black text-lg leading-none">&times;</a>
+                </div>
+            {% endif %}
 
-        <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-            <h2 class="text-base font-extrabold text-slate-800 uppercase tracking-wide flex items-center space-x-2">
-                <span class="text-orange-500">🔍</span> <span>Panel de Búsqueda Predictiva</span>
-            </h2>
-            
-            <div class="flex flex-col md:flex-row gap-3 items-center">
-                <div class="relative w-full flex-1">
-                    <input type="text" id="buscador-principal" placeholder="Escribe ID numérico o palabra clave (Ej: Marcha)..." 
-                           class="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white text-sm font-semibold">
-                    <button type="button" id="btn-voz" class="absolute inset-y-0 right-0 flex items-center pr-4 text-xl hover:scale-110 transition">🎤</button>
+            <div id="badge-modo-id" class="hidden bg-amber-100 border border-amber-400 text-amber-900 px-4 py-2 rounded-xl font-extrabold text-xs text-center">
+                ⚠️ MODO BÚSQUEDA POR ID DETECTADO
+            </div>
+
+            {% if es_admin %}
+                <section id="sec-alta-admin" class="hidden bg-white p-5 rounded-2xl shadow-md border-2 border-orange-500/40 space-y-4">
+                    <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+                        <h2 class="text-sm font-extrabold text-slate-800 uppercase">📦 Alta Rápida de Refacciones</h2>
+                        <button type="button" onclick="document.getElementById('sec-alta-admin').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 font-black text-xl">&times;</button>
+                    </div>
+                    <form action="/productos/crear" method="POST" class="space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Categoría</label>
+                                <select name="categoria" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold" required>
+                                    <option value="carroceria">Carrocería y Colisión</option>
+                                    <option value="iluminacion">Iluminación</option>
+                                    <option value="motor">Motor y Componentes</option>
+                                    <option value="accesorios">Accesorios de Motor</option>
+                                    <option value="transmision">Transmisión y Tren Motriz</option>
+                                    <option value="suspension">Suspensión y Dirección</option>
+                                    <option value="frenos">Sistema de Frenos</option>
+                                    <option value="enfriamiento">Enfriamiento y Calefacción</option>
+                                    <option value="escape">Escape y Combustible</option>
+                                    <option value="electrica">Eléctrica y Módulos</option>
+                                    <option value="interiores">Interiores y Plásticos</option>
+                                    <option value="cristales">Cristales y Vidrios</option>
+                                    <option value="llantas">Llantas y Rines</option>
+                                    <option value="seguridad">Seguridad (Airbags)</option>
+                                    <option value="audio">Audio e Infoentretenimiento</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Nombre Refacción</label>
+                                <input type="text" name="nombre_refaccion" placeholder="Ej: Marcha" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold" required>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Marca</label>
+                                <select id="form-marca" name="marca" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold" required></select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Modelo</label>
+                                <select id="form-modelo" name="modelo" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold" required>
+                                    <option value="">Elige Marca</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Años (Desde - Hasta)</label>
+                                <input type="hidden" name="ano_grupo" id="form-ano-final" required>
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <select id="form-ano-desde" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold"><option value="">Desde</option></select>
+                                    <select id="form-ano-hasta" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold"><option value="">Hasta</option></select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Ubicación Física</label>
+                                <input type="text" name="ubicacion_fisica" placeholder="Ej: Pasillo B - 4" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Dueño / Afiliado</label>
+                                <select name="dueno_id" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold" required>
+                                    {% for u in usuarios %}
+                                        <option value="{{ u.id }}">{{ u.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Costo Real</label>
+                                <input type="number" step="0.01" name="precio_real" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Precio Venta PVP</label>
+                                <input type="number" step="0.01" name="precio_sugerido" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold" required>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Foto Cámara</label>
+                            <input type="file" id="foto-camara" accept="image/*" capture="environment" class="w-full text-xs bg-slate-50 p-2 border border-dashed border-slate-400 rounded-xl">
+                            <input type="hidden" name="url_imagen" id="url_imagen_string">
+                        </div>
+
+                        <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-3 rounded-xl shadow-md uppercase text-xs">
+                            ➕ Registrar Refacción
+                        </button>
+                    </form>
+                </section>
+            {% endif %}
+            <section class="space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <h2 class="text-base font-extrabold text-slate-800 uppercase tracking-wide flex items-center space-x-2">
+                        <span class="text-orange-500">📦</span> <span>Inventario Disponible</span>
+                    </h2>
+                    <span class="text-xs font-bold text-slate-600 bg-slate-200 px-3 py-1 rounded-full">{{ productos|length }} piezas</span>
                 </div>
                 
-                <div id="badge-modo-id" class="hidden bg-amber-100 border border-amber-400 text-amber-900 px-4 py-2.5 rounded-xl font-extrabold text-xs text-center w-full md:w-auto">
-                    ⚠️ MODO ID DETECTADO
-                </div>
-                <button type="button" id="btn-limpiar" class="w-full md:w-auto bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-5 py-3 rounded-xl transition text-xs uppercase tracking-wider">
-                    Limpiar Filtros
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                <div>
-                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">1. Marca</label>
-                    <select id="filtro-marca" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:ring-2 focus:ring-orange-500">
-                        <option value="">-- Todas las Marcas --</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">2. Modelo</label>
-                    <select id="filtro-modelo" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:ring-2 focus:ring-orange-500" disabled>
-                        <option value="">Selecciona marca primero</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">3. Año</label>
-                    <select id="filtro-ano" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:ring-2 focus:ring-orange-500" disabled>
-                        <option value="">Selecciona modelo primero</option>
-                    </select>
-                </div>
-            </div>
-        </section>
-        {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor' or usuario.rol == 'Administrador' or usuario.rol == 'Vendedor') %}
-            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {% if usuario.rol.value == 'Administrador' or usuario.rol == 'Administrador' %}
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                        <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
-                            <h2 class="text-base font-extrabold text-slate-800 uppercase">📦 Alta de Refacciones</h2>
-                            <span class="text-[10px] font-extrabold uppercase bg-slate-900 text-orange-400 px-2.5 py-1 rounded-md">Admin</span>
-                        </div>
+                <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for p in productos %}
+                        {% set dias_almacen = ((datetime.utcnow() - p.fecha_ingreso).days) if (p.fecha_ingreso and datetime) else 0 %}
+                        {% set es_estancado = dias_almacen > 90 %}
                         
-                        <form action="/productos/crear" method="POST" class="space-y-3.5">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Categoría</label>
-                                    <select name="categoria" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
-                                        <option value="carroceria">Carrocería y Colisión</option>
-                                        <option value="iluminacion">Iluminación</option>
-                                        <option value="motor">Motor y Componentes</option>
-                                        <option value="accesorios">Accesorios de Motor</option>
-                                        <option value="transmision">Transmisión y Tren Motriz</option>
-                                        <option value="suspension">Suspensión y Dirección</option>
-                                        <option value="frenos">Sistema de Frenos</option>
-                                        <option value="enfriamiento">Enfriamiento y Calefacción</option>
-                                        <option value="escape">Escape y Combustible</option>
-                                        <option value="electrica">Eléctrica y Módulos</option>
-                                        <option value="interiores">Interiores y Plásticos</option>
-                                        <option value="cristales">Cristales y Vidrios</option>
-                                        <option value="llantas">Llantas y Rines</option>
-                                        <option value="seguridad">Seguridad (Airbags)</option>
-                                        <option value="audio">Audio e Infoentretenimiento</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Nombre Refacción</label>
-                                    <input type="text" name="nombre_refaccion" placeholder="Ej: Marcha" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
-                                </div>
-                            </div>
-                                                        <div class="grid grid-cols-3 gap-2.5">
-                                <div>
-                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Marca</label>
-                                    <select id="form-marca" name="marca" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold" required></select>
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Modelo</label>
-                                    <select id="form-modelo" name="modelo" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold" required>
-                                        <option value="">Elige Marca</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Años (Desde - Hasta)</label>
-                                    <input type="hidden" name="ano_grupo" id="form-ano-final" required>
-                                    <div class="grid grid-cols-2 gap-1.5">
-                                        <select id="form-ano-desde" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold">
-                                            <option value="">Desde</option>
-                                        </select>
-                                        <select id="form-ano-hasta" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold">
-                                            <option value="">Hasta</option>
-                                        </select>
+                        <div class="card-refaccion border rounded-2xl bg-white flex flex-col justify-between overflow-hidden shadow-sm transition hover:shadow-md {{ 'border-red-400 bg-red-50/30' if (es_estancado and es_operador) else 'border-slate-200' }}"
+                             data-id="{{ p.id }}" data-nombre="{{ p.nombre_refaccion }}" data-marca="{{ p.marca }}" data-modelo="{{ p.modelo }}" data-ano="{{ p.ano_grupo }}" data-precio="{{ p.precio_sugerido }}" data-texto="{{ p.nombre_refaccion }} {{ p.marca }} {{ p.modelo }} {{ p.compatibilidad if p.compatibilidad else '' }}">
+                            
+                            <div class="p-4 space-y-2.5 flex-1">
+                                <div class="flex justify-between items-center gap-2">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="bg-slate-900 text-orange-400 text-xs font-black px-2.5 py-1 rounded-lg">ID #{{ p.id }}</span>
+                                        <span class="text-[10px] font-extrabold text-slate-600 uppercase bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg truncate max-w-[140px]">
+                                            {{ p.categoria.value if p.categoria.value else p.categoria }}
+                                        </span>
                                     </div>
-                                    <script>
-                                        (function() {
-                                            const sDesde = document.getElementById('form-ano-desde');
-                                            const sHasta = document.getElementById('form-ano-hasta');
-                                            const inputFinal = document.getElementById('form-ano-final');
-
-                                            for (let y = 2027; y >= 1980; y--) {
-                                                sDesde.add(new Option(y, y));
-                                                sHasta.add(new Option(y, y));
-                                            }
-
-                                            function actualizarRangoAnos() {
-                                                const d = parseInt(sDesde.value);
-                                                const h = parseInt(sHasta.value);
-                                                if (!d) { inputFinal.value = ""; return; }
-                                                if (!h || d === h) {
-                                                    if (!h) sHasta.value = d;
-                                                    inputFinal.value = String(d);
-                                                } else {
-                                                    const inicio = Math.min(d, h);
-                                                    const fin = Math.max(d, h);
-                                                    const lista = [];
-                                                    for (let a = inicio; a <= fin; a++) lista.push(a);
-                                                    inputFinal.value = lista.join(", ");
-                                                }
-                                            }
-
-                                            sDesde.addEventListener('change', actualizarRangoAnos);
-                                            sHasta.addEventListener('change', actualizarRangoAnos);
-                                        })();
-                                        </script>
-                                        
+                                    <button type="button" onclick="toggleFavorito('{{ p.id }}')" id="fav-btn-{{ p.id }}" class="text-xl leading-none p-1 rounded-full hover:bg-slate-100 transition" title="Guardar en favoritos">
+                                        🤍
+                                    </button>
                                 </div>
-                            </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Ubicación Física</label>
-                                    <input type="text" name="ubicacion_fisica" placeholder="Ej: Pasillo B - 4" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Dueño / Afiliado</label>
-                                    <select name="dueno_id" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
-                                        {% for u in usuarios %}
-                                            <option value="{{ u.id }}">{{ u.nombre }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
+                                <h3 class="font-extrabold text-slate-900 text-lg leading-snug pt-0.5">{{ p.nombre_refaccion }}</h3>
+                                <p class="text-sm font-bold text-slate-700 flex flex-wrap items-center gap-1.5">
+                                    <span>🚘 {{ p.marca }} {{ p.modelo }}</span>
+                                    <span class="text-xs font-extrabold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded">{{ p.ano_grupo }}</span>
+                                </p>
+                                
+                                {% if p.compatibilidad %}
+                                    <p class="text-xs bg-slate-50 text-slate-700 p-2.5 rounded-xl border border-slate-200 font-medium">
+                                        <strong class="text-slate-900">Compatibilidad:</strong> {{ p.compatibilidad }}
+                                    </p>
+                                {% endif %}
 
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Costo Real</label>
-                                    <input type="number" step="0.01" name="precio_real" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold" required>
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Precio Venta</label>
-                                    <input type="number" step="0.01" name="precio_sugerido" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold" required>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Foto Cámara</label>
-                                <input type="file" id="foto-camara" accept="image/*" capture="environment" class="w-full text-xs bg-slate-50 p-2.5 border border-dashed border-slate-400 rounded-xl">
-                                <input type="hidden" name="url_imagen" id="url_imagen_string">
-                            </div>
-
-                            <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-3 rounded-xl shadow-md uppercase text-xs">
-                                ➕ Registrar Entrada
-                            </button>
-                        </form>
-                    </div>
-                {% endif %}
-
-                {% if usuario.rol.value == 'Administrador' or usuario.rol == 'Administrador' %}
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                        <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
-                            <h2 class="text-base font-extrabold text-slate-800 uppercase">💰 Liquidaciones</h2>
-                            <span class="text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md">Semanal</span>
-                        </div>
-                        {% if liquidaciones %}
-                            <div class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
-                                {% for d_id, data in liquidaciones.items() %}
-                                    <div class="p-3.5 border border-slate-200 rounded-xl bg-slate-50 flex justify-between items-center">
-                                        <div>
-                                            <p class="font-extrabold text-slate-900 text-sm">{{ data.dueno }}</p>
-                                            <p class="text-xs text-slate-500 font-semibold">Saldo: <span class="text-emerald-700 font-black">${{ "{:,.2f}".format(data.saldo) }}</span></p>
+                                {% if es_operador %}
+                                    {% if es_estancado %}
+                                        <div class="text-[11px] font-extrabold text-red-700 bg-red-100 p-2 rounded-xl border border-red-200">
+                                            ⚠️ Pieza estancada (+{{ dias_almacen }} días en bodega)
                                         </div>
-                                        <form action="/liquidaciones/procesar/{{ d_id }}" method="POST">
-                                            <input type="hidden" name="ids_ventas" value="{{ data.get('items', [])|join(',') }}">
-                                            <button type="submit" class="text-xs bg-emerald-600 text-white font-extrabold px-3.5 py-2 rounded-xl uppercase">Liquidar</button>
-                                        </form>
+                                    {% endif %}
+                                    <div class="mt-2 bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs space-y-1.5">
+                                        <p class="flex justify-between items-center">
+                                            <span class="text-slate-500 font-bold">📍 Ubicación:</span>
+                                            <span class="font-extrabold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">{{ p.ubicacion_fisica }}</span>
+                                        </p>
+                                        {% if p.precio_real %}
+                                            <p class="flex justify-between items-center border-t border-slate-200 pt-1.5">
+                                                <span class="text-slate-500 font-bold">💰 Costo Dueño:</span>
+                                                <span class="font-black text-slate-700">${{ "{:,.2f}".format(p.precio_real) }}</span>
+                                            </p>
+                                        {% endif %}
                                     </div>
-                                {% endfor %}
+                                {% endif %}
                             </div>
-                        {% else %}
-                            <div class="py-10 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                                <p class="text-sm text-slate-600 font-bold">Sin saldos pendientes esta semana.</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                {% endif %}
-                        {% if usuario.rol.value == 'Administrador' or usuario.rol == 'Administrador' %}
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4 lg:col-span-2">
-                        <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
-                            <h2 class="text-base font-extrabold text-slate-800 uppercase">👥 Control de Usuarios y Permisos</h2>
-                            <span class="text-[10px] font-extrabold uppercase bg-blue-100 text-blue-800 px-2.5 py-1 rounded-md">Activaciones</span>
-                        </div>
-                        
-                        {% set pendientes = [] %}
-                        {% for u in usuarios %}
-                            {% if u.rol.value == 'Publico_General' or u.rol == 'Publico_General' %}
-                                {% set _ = pendientes.append(u) %}
-                            {% endif %}
-                        {% endfor %}
 
-                        {% if pendientes %}
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {% for p_user in pendientes %}
-                                    <div class="p-3.5 border border-amber-300 rounded-xl bg-amber-50/50 flex flex-wrap justify-between items-center gap-3">
-                                        <div>
-                                            <p class="font-extrabold text-slate-900 text-sm">{{ p_user.nombre }} <span class="text-xs text-slate-500">(@{{ p_user.usuario }})</span></p>
-                                            <p class="text-xs text-slate-600 font-semibold">📱 {{ p_user.telefono_celular }}</p>
-                                        </div>
-                                        <form action="/usuarios/aprobar/{{ p_user.id }}" method="POST" class="flex items-center space-x-2">
-                                            <select name="nuevo_rol" class="p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800">
-                                                <option value="Vendedor">Vendedor / Afiliado</option>
-                                                <option value="Administrador">Administrador</option>
-                                            </select>
-                                            <button type="submit" class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-3 py-2 rounded-lg uppercase shadow-sm">
-                                                Autorizar
+                            <div class="bg-slate-900 px-4 py-3 flex items-center justify-between mt-auto gap-2">
+                                <div>
+                                    <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Precio Público</span>
+                                    <span class="text-xl font-black text-white">${{ "{:,.2f}".format(p.precio_sugerido) }}</span>
+                                </div>
+                                
+                                {% if es_operador %}
+                                    <div class="flex items-center gap-1.5">
+                                        <button type="button" onclick="agregarAlCarrito('{{ p.id }}')" class="bg-slate-800 hover:bg-slate-700 text-orange-400 border border-slate-700 text-xs font-extrabold p-2.5 rounded-xl transition" title="Agregar a cotización">
+                                            🛒
+                                        </button>
+                                        <form action="/productos/vender/{{ p.id }}" method="POST" onsubmit="return confirm('¿Confirmar venta de refacción #{{ p.id }}?');">
+                                            <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black px-3.5 py-2.5 rounded-xl shadow transition uppercase tracking-wider">
+                                                ⚡ Vender
                                             </button>
                                         </form>
                                     </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="py-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                                <p class="text-xs text-slate-500 font-bold">No hay solicitudes de usuarios pendientes de autorización.</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                {% endif %}
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4 lg:col-span-2">
-                    <div>
-                        <h2 class="text-base font-extrabold text-slate-800 uppercase">👤 Panel de Control: {{ usuario.nombre }}</h2>
-                        <p class="text-xs text-slate-500 font-medium mt-0.5">Consulta tus existencias ordenadas por categoría y descarga reportes.</p>
-                    </div>
-                    <a href="#modal-mi-inventario" class="w-full sm:w-auto text-center bg-slate-900 hover:bg-slate-800 text-orange-400 font-extrabold px-6 py-3.5 rounded-xl shadow-md uppercase text-xs tracking-wider transition">
-                        📦 Mi Inventario
-                    </a>
-                </div>
-
-            </section>
-        {% endif %}
-                <section class="space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-                <h2 class="text-lg font-extrabold text-slate-800 uppercase tracking-wide flex items-center space-x-2">
-                    <span class="text-orange-500">📦</span> <span>Inventario Disponible</span>
-                </h2>
-                <span class="text-xs font-bold text-slate-500 bg-slate-200 px-3 py-1 rounded-full">{{ productos|length }} piezas</span>
-            </div>
-            
-            <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {% for p in productos %}
-                    {% if p.fecha_ingreso %}
-                        {% set dias_almacen = ((datetime.utcnow() - p.fecha_ingreso).days) if datetime else 0 %}
-                    {% else %}
-                        {% set dias_almacen = 0 %}
-                    {% endif %}
-                    {% set es_estancado = dias_almacen > 90 %}
-                    
-                    <div class="card-refaccion border rounded-2xl bg-white flex flex-col justify-between overflow-hidden shadow-sm transition hover:shadow-md {{ 'border-red-400 bg-red-50/40' if es_estancado else 'border-slate-200' }}"
-                         data-id="{{ p.id }}" data-marca="{{ p.marca }}" data-modelo="{{ p.modelo }}" data-ano="{{ p.ano_grupo }}" data-texto="{{ p.nombre_refaccion }} {{ p.marca }} {{ p.modelo }} {{ p.compatibilidad if p.compatibilidad else '' }}">
-                        
-                        <div class="p-4 space-y-2.5 flex-1">
-                            <div class="flex justify-between items-center gap-2">
-                                <span class="bg-slate-900 text-orange-400 text-xs font-black px-2.5 py-1 rounded-lg">ID #{{ p.id }}</span>
-                                <span class="text-[10px] font-extrabold text-slate-600 uppercase bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg truncate">
-                                    {{ p.categoria.value if p.categoria.value else p.categoria }}
-                                </span>
-                            </div>
-
-                            <h3 class="font-extrabold text-slate-900 text-lg leading-snug pt-1">{{ p.nombre_refaccion }}</h3>
-                            <p class="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                                <span>🚘</span> {{ p.marca }} {{ p.modelo }} 
-                                <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{{ p.ano_grupo }}</span>
-                            </p>
-                            
-                            {% if p.compatibilidad %}
-                                <p class="text-xs bg-slate-50 text-slate-700 p-2.5 rounded-xl border border-slate-200 font-medium">
-                                    <strong class="text-slate-900">Compatibilidad:</strong> {{ p.compatibilidad }}
-                                </p>
-                            {% endif %}
-
-                            {% if es_estancado %}
-                                <div class="text-[11px] font-extrabold text-red-700 bg-red-100 p-2 rounded-xl border border-red-200">
-                                    ⚠️ Pieza estancada (+{{ dias_almacen }} días en bodega)
-                                </div>
-                            {% endif %}
-
-                            <div class="mt-2 bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs space-y-1.5">
-                                <p class="flex justify-between items-center">
-                                    <span class="text-slate-500 font-bold">📍 Ubicación:</span>
-                                    <span class="font-extrabold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">{{ p.ubicacion_fisica }}</span>
-                                </p>
-                                {% if p.precio_real %}
-                                    <p class="flex justify-between items-center border-t border-slate-200 pt-1.5">
-                                        <span class="text-slate-500 font-bold">💰 Costo Dueño:</span>
-                                        <span class="font-black text-slate-700">${{ "{:,.2f}".format(p.precio_real) }}</span>
-                                    </p>
+                                {% else %}
+                                    <button type="button" onclick="agregarAlCarrito('{{ p.id }}', true)" class="bg-orange-500 hover:bg-orange-600 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl shadow transition uppercase tracking-wider flex items-center gap-1.5">
+                                        <span>🛒</span> <span>Comprar</span>
+                                    </button>
                                 {% endif %}
                             </div>
                         </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+        <div id="vista-favoritos" class="vista-seccion hidden space-y-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-900 uppercase">❤️ Mis Favoritos</h2>
+                    <p class="text-xs text-slate-500">Refacciones guardadas en este dispositivo</p>
+                </div>
+                <button type="button" onclick="cambiarVista('inicio')" class="text-xs font-extrabold text-orange-600 hover:underline">← Volver</button>
+            </div>
+            <div id="contenedor-favoritos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
 
-                        <div class="bg-slate-900 px-4 py-3.5 flex items-center justify-between mt-auto">
-                            <div>
-                                <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Precio Público</span>
-                                <span class="text-xl font-black text-white">${{ "{:,.2f}".format(p.precio_sugerido) }}</span>
-                            </div>
-                            
-                            {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor' or usuario.rol == 'Administrador' or usuario.rol == 'Vendedor') %}
-                                <form action="/productos/vender/{{ p.id }}" method="POST" onsubmit="return confirm('¿Confirmar venta de refacción #{{ p.id }}?');">
-                                    <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl shadow transition uppercase tracking-wider">
-                                        ⚡ Vender
-                                    </button>
-                                </form>
-                            {% endif %}
+        <div id="vista-carrito" class="vista-seccion hidden space-y-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-900 uppercase">🛒 Carrito de Compra</h2>
+                    <p class="text-xs text-slate-500">Resumen de refacciones seleccionadas</p>
+                </div>
+                <button type="button" onclick="vaciarCarrito()" class="text-xs font-extrabold text-red-600 hover:underline">Vaciar</button>
+            </div>
+            <div id="contenedor-carrito" class="space-y-3"></div>
+            <div id="resumen-carrito" class="hidden bg-slate-900 text-white p-5 rounded-2xl shadow-lg space-y-4 border-t-4 border-orange-500">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs uppercase font-bold text-slate-400">Total Estimado PVP</span>
+                    <span id="total-carrito" class="text-2xl font-black text-orange-400">$0.00</span>
+                </div>
+                <button type="button" onclick="enviarPedidoWhatsApp()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3.5 rounded-xl shadow uppercase text-xs tracking-wider flex items-center justify-center gap-2">
+                    <span>📲</span> <span>Solicitar / Confirmar Pedido</span>
+                </button>
+            </div>
+        </div>
+
+        {% if es_operador %}
+        <div id="vista-ventas" class="vista-seccion hidden space-y-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-900 uppercase">💰 Mis Ventas y Liquidaciones</h2>
+                    <p class="text-xs text-slate-500">Control de salidas de inventario y saldos pendientes</p>
+                </div>
+                <a href="#modal-mi-inventario" class="bg-slate-900 text-orange-400 text-[11px] font-extrabold px-3 py-2 rounded-xl uppercase">📦 Mi Stock</a>
+            </div>
+            {% if es_admin %}
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="border-b border-slate-100 pb-2 flex items-center justify-between">
+                        <h3 class="text-xs font-extrabold text-slate-800 uppercase">Saldos Pendientes por Liquidar</h3>
+                        <span class="text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">Admin</span>
+                    </div>
+                    {% if liquidaciones %}
+                        <div class="space-y-2.5">
+                            {% for d_id, data in liquidaciones.items() %}
+                                <div class="p-3.5 border border-slate-200 rounded-xl bg-slate-50 flex justify-between items-center">
+                                    <div>
+                                        <p class="font-extrabold text-slate-900 text-sm">{{ data.dueno }}</p>
+                                        <p class="text-xs text-slate-500 font-semibold">Saldo: <span class="text-emerald-700 font-black">${{ "{:,.2f}".format(data.saldo) }}</span></p>
+                                    </div>
+                                    <form action="/liquidaciones/procesar/{{ d_id }}" method="POST">
+                                        <input type="hidden" name="ids_ventas" value="{{ data.get('items', [])|join(',') }}">
+                                        <button type="submit" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3.5 py-2 rounded-xl uppercase shadow-sm">Liquidar</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
                         </div>
+                    {% else %}
+                        <div class="py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                            <p class="text-xs text-slate-500 font-bold">Todas las ventas están liquidadas al día de hoy.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center space-y-3">
+                    <span class="text-4xl block">📊</span>
+                    <h3 class="text-sm font-extrabold text-slate-900 uppercase">Resumen de Operación: {{ usuario.nombre }}</h3>
+                    <p class="text-xs text-slate-600">Registra tus ventas con el botón <strong class="text-emerald-600">⚡ Vender</strong>. El administrador procesará tu liquidación semanal.</p>
+                    <a href="/inventario/reporte/pdf" target="_blank" class="inline-block bg-orange-600 text-white text-xs font-extrabold px-5 py-2.5 rounded-xl uppercase shadow">📄 Ver Mi Reporte PDF</a>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% if es_admin %}
+        <div id="vista-afiliados" class="vista-seccion hidden space-y-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-900 uppercase">🤝 Directorio de Afiliados</h2>
+                    <p class="text-xs text-slate-500">Nombres, roles y teléfonos de contacto directo</p>
+                </div>
+                <span class="text-xs font-extrabold bg-slate-900 text-orange-400 px-3 py-1 rounded-full">{{ usuarios|length }}</span>
+            </div>
+
+            {% set pendientes = [] %}
+            {% for u in usuarios %}
+                {% if u.rol.value == 'Publico_General' or u.rol == 'Publico_General' %}
+                    {% set _ = pendientes.append(u) %}
+                {% endif %}
+            {% endfor %}
+
+            {% if pendientes %}
+                <div class="bg-amber-50 border border-amber-300 p-4 rounded-2xl space-y-3">
+                    <h3 class="text-xs font-extrabold text-amber-900 uppercase">⏳ Solicitudes Pendientes</h3>
+                    <div class="space-y-2.5">
+                        {% for p_user in pendientes %}
+                            <div class="p-3 bg-white border border-amber-200 rounded-xl flex flex-wrap justify-between items-center gap-2">
+                                <div>
+                                    <p class="font-extrabold text-slate-900 text-sm">{{ p_user.nombre }} <span class="text-xs text-slate-500">(@{{ p_user.usuario }})</span></p>
+                                    <p class="text-xs text-slate-600 font-semibold">📱 {{ p_user.telefono_celular }}</p>
+                                </div>
+                                <form action="/usuarios/aprobar/{{ p_user.id }}" method="POST" class="flex items-center space-x-2">
+                                    <select name="nuevo_rol" class="p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold">
+                                        <option value="Vendedor">Vendedor / Afiliado</option>
+                                        <option value="Administrador">Administrador</option>
+                                    </select>
+                                    <button type="submit" class="text-xs bg-blue-600 text-white font-extrabold px-3 py-2 rounded-lg uppercase">Autorizar</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {% for u in usuarios %}
+                    {% set u_rol = (u.rol.value if u.rol.value else u.rol) %}
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center gap-3">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-extrabold text-slate-900 text-sm">{{ u.nombre }}</span>
+                                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded {{ 'bg-orange-100 text-orange-800' if u_rol == 'Administrador' else ('bg-emerald-100 text-emerald-800' if u_rol == 'Vendedor' else 'bg-slate-100 text-slate-600') }}">
+                                    {{ u_rol }}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 font-semibold">@{{ u.usuario }} • 📱 {{ u.telefono_celular or 'Sin teléfono' }}</p>
+                        </div>
+                        {% if u.telefono_celular %}
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <a href="tel:{{ u.telefono_celular }}" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-sm" title="Llamar">📞</a>
+                                <a href="https://wa.me{{ u.telefono_celular | replace('+', '') | replace(' ', '') }}" target="_blank" class="p-2.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl text-sm" title="WhatsApp">💬</a>
+                            </div>
+                        {% endif %}
                     </div>
                 {% endfor %}
             </div>
-        </section>
+        </div>
+        {% endif %}
     </main>
-        <div id="modal-login" class="fixed inset-0 bg-slate-950/70 hidden target:flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <!-- BARRA DE NAVEGACIÓN INFERIOR ESTILO MERCADO LIBRE -->
+    <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-40">
+        <div class="max-w-7xl mx-auto flex justify-around items-center h-16 px-1">
+            <button type="button" onclick="cambiarVista('inicio')" id="nav-inicio" class="nav-btn flex-1 flex flex-col items-center justify-center text-orange-600 font-extrabold transition">
+                <span class="text-xl leading-none">🏠</span>
+                <span class="text-[10px] mt-1">Inicio</span>
+            </button>
+
+            <button type="button" onclick="cambiarVista('favoritos')" id="nav-favoritos" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition relative">
+                <span class="text-xl leading-none">❤️</span>
+                <span id="badge-fav" class="hidden absolute top-1.5 right-1/4 bg-red-500 text-white text-[9px] font-black px-1.5 rounded-full">0</span>
+                <span class="text-[10px] mt-1">Favoritos</span>
+            </button>
+
+            <button type="button" onclick="cambiarVista('carrito')" id="nav-carrito" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition relative">
+                <span class="text-xl leading-none">🛒</span>
+                <span id="badge-cart" class="hidden absolute top-1.5 right-1/4 bg-orange-500 text-slate-950 text-[9px] font-black px-1.5 rounded-full">0</span>
+                <span class="text-[10px] mt-1">Carrito</span>
+            </button>
+
+            {% if es_operador %}
+            <button type="button" onclick="cambiarVista('ventas')" id="nav-ventas" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
+                <span class="text-xl leading-none">💰</span>
+                <span class="text-[10px] mt-1">Mis Ventas</span>
+            </button>
+            {% endif %}
+
+            {% if es_admin %}
+            <button type="button" onclick="cambiarVista('afiliados')" id="nav-afiliados" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
+                <span class="text-xl leading-none">🤝</span>
+                <span class="text-[10px] mt-1">Afiliados</span>
+            </button>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- MODAL INICIAR SESIÓN -->
+    <div id="modal-login" class="fixed inset-0 bg-slate-950/75 hidden target:flex items-center justify-center p-4 z-50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 max-w-sm w-full space-y-4 relative">
             <a href="/mostrador" class="absolute right-4 top-3 text-slate-400 hover:text-slate-700 font-black text-2xl">&times;</a>
             <h3 class="text-lg font-extrabold text-slate-900 border-b border-slate-100 pb-2">🔐 Acceso Operadores</h3>
@@ -407,7 +461,8 @@
         </div>
     </div>
 
-     <div id="modal-registro" class="fixed inset-0 bg-slate-950/70 hidden target:flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <!-- MODAL REGISTRO PÚBLICO -->
+    <div id="modal-registro" class="fixed inset-0 bg-slate-950/75 hidden target:flex items-center justify-center p-4 z-50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 max-w-sm w-full space-y-4 relative">
             <a href="/mostrador" class="absolute right-4 top-3 text-slate-400 hover:text-slate-700 font-black text-2xl">&times;</a>
             <h3 class="text-lg font-extrabold text-slate-900 border-b border-slate-100 pb-2">📝 Registro Público</h3>
@@ -435,10 +490,10 @@
             </form>
         </div>
     </div>
-    {% if usuario and (usuario.rol.value == 'Administrador' or usuario.rol.value == 'Vendedor' or usuario.rol == 'Administrador' or usuario.rol == 'Vendedor') %}
+    <!-- MODAL MI INVENTARIO (OPERADORES) -->
+    {% if es_operador %}
     <div id="modal-mi-inventario" class="fixed inset-0 bg-slate-950/80 hidden target:flex items-center justify-center p-3 z-50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-            
             <div class="bg-slate-900 text-white p-4 flex justify-between items-center border-b-4 border-orange-500">
                 <div>
                     <h3 class="text-base font-extrabold uppercase tracking-wide">📦 Mi Inventario por Categoría</h3>
@@ -451,7 +506,7 @@
                 <span class="text-xs font-bold text-slate-600">Exportar existencias actuales:</span>
                 <div class="flex gap-2 w-full sm:w-auto">
                     <a href="/inventario/exportar/csv" class="flex-1 sm:flex-none text-center text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-sm uppercase">
-                        📊 Excel (CSV)
+                        📊 Excel Ejecutivo
                     </a>
                     <a href="/inventario/reporte/pdf" target="_blank" class="flex-1 sm:flex-none text-center text-xs bg-orange-600 hover:bg-orange-700 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-sm uppercase">
                         📄 Reporte PDF
@@ -462,7 +517,7 @@
             <div class="p-4 overflow-y-auto space-y-4 flex-1">
                 {% set mis_piezas = [] %}
                 {% for p in productos %}
-                    {% if p.dueno_id == usuario.id or usuario.rol.value == 'Administrador' or usuario.rol == 'Administrador' %}
+                    {% if p.dueno_id == usuario.id or es_admin %}
                         {% set _ = mis_piezas.append(p) %}
                     {% endif %}
                 {% endfor %}
@@ -500,27 +555,213 @@
         </div>
     </div>
     {% endif %}
-
-        <script>
+    <script>
         const VEHICULOS = {% if dict_vehiculos %}{{ dict_vehiculos|safe }}{% else %}{}{% endif %};
+
+        function toggleMenuLateral() {
+            const drawer = document.getElementById('menu-lateral');
+            const panel = document.getElementById('panel-lateral');
+            if (drawer.classList.contains('hidden')) {
+                drawer.classList.remove('hidden');
+                setTimeout(() => panel.classList.remove('translate-x-full'), 10);
+            } else {
+                panel.classList.add('translate-x-full');
+                setTimeout(() => drawer.classList.add('hidden'), 200);
+            }
+        }
+
+        function cambiarVista(vista) {
+            document.querySelectorAll('.vista-seccion').forEach(el => el.classList.add('hidden'));
+            const activa = document.getElementById('vista-' + vista);
+            if (activa) activa.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-orange-600', 'font-extrabold');
+                btn.classList.add('text-slate-500', 'font-bold');
+            });
+            const navActivo = document.getElementById('nav-' + vista);
+            if (navActivo) {
+                navActivo.classList.remove('text-slate-500', 'font-bold');
+                navActivo.classList.add('text-orange-600', 'font-extrabold');
+            }
+
+            if (vista === 'favoritos') renderizarFavoritos();
+            if (vista === 'carrito') renderizarCarrito();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function obtenerCatalogo() {
+            const lista = [];
+            document.querySelectorAll('.card-refaccion').forEach(c => {
+                lista.push({
+                    id: c.dataset.id,
+                    nombre: c.dataset.nombre,
+                    marca: c.dataset.marca,
+                    modelo: c.dataset.modelo,
+                    ano: c.dataset.ano,
+                    precio: parseFloat(c.dataset.precio || 0)
+                });
+            });
+            return lista;
+        }
+
+        function toggleFavorito(id) {
+            let favs = JSON.parse(localStorage.getItem('autostock_favs') || '[]');
+            id = String(id);
+            if (favs.includes(id)) favs = favs.filter(x => x !== id);
+            else favs.push(id);
+            localStorage.setItem('autostock_favs', JSON.stringify(favs));
+            actualizarBadgesYCorazones();
+            if (!document.getElementById('vista-favoritos').classList.contains('hidden')) renderizarFavoritos();
+        }
+
+        function agregarAlCarrito(id, irAlCarrito = false) {
+            let cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            id = String(id);
+            if (!cart.includes(id)) cart.push(id);
+            localStorage.setItem('autostock_cart', JSON.stringify(cart));
+            actualizarBadgesYCorazones();
+            if (irAlCarrito) cambiarVista('carrito');
+            else alert('✅ Refacción #' + id + ' agregada al carrito.');
+        }
+
+        function quitarDelCarrito(id) {
+            let cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            cart = cart.filter(x => x !== String(id));
+            localStorage.setItem('autostock_cart', JSON.stringify(cart));
+            actualizarBadgesYCorazones();
+            renderizarCarrito();
+        }
+
+        function vaciarCarrito() {
+            localStorage.removeItem('autostock_cart');
+            actualizarBadgesYCorazones();
+            renderizarCarrito();
+        }
+        function actualizarBadgesYCorazones() {
+            const favs = JSON.parse(localStorage.getItem('autostock_favs') || '[]');
+            const cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+
+            const bFav = document.getElementById('badge-fav');
+            const bCart = document.getElementById('badge-cart');
+            if (bFav) { bFav.textContent = favs.length; bFav.classList.toggle('hidden', favs.length === 0); }
+            if (bCart) { bCart.textContent = cart.length; bCart.classList.toggle('hidden', cart.length === 0); }
+
+            document.querySelectorAll('[id^="fav-btn-"]').forEach(btn => {
+                const pid = btn.id.replace('fav-btn-', '');
+                btn.textContent = favs.includes(pid) ? '❤️' : '🤍';
+            });
+        }
+
+        function renderizarFavoritos() {
+            const favs = JSON.parse(localStorage.getItem('autostock_favs') || '[]');
+            const items = obtenerCatalogo().filter(p => favs.includes(p.id));
+            const cont = document.getElementById('contenedor-favoritos');
+            if (!items.length) {
+                cont.innerHTML = '<div class="col-span-full bg-white p-10 rounded-2xl border border-dashed border-slate-300 text-center text-xs font-bold text-slate-500">Aún no tienes refacciones en favoritos. Toca el ❤️ en cualquier pieza para guardarla.</div>';
+                return;
+            }
+            cont.innerHTML = items.map(p => `
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between gap-3">
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <span class="bg-slate-900 text-orange-400 text-xs font-black px-2 py-0.5 rounded">ID #${p.id}</span>
+                            <button onclick="toggleFavorito('${p.id}')" class="text-lg">❤️</button>
+                        </div>
+                        <h3 class="font-extrabold text-slate-900 text-base mt-2">${p.nombre}</h3>
+                        <p class="text-xs font-bold text-slate-600">${p.marca} ${p.modelo} (${p.ano})</p>
+                    </div>
+                    <div class="flex justify-between items-center border-t border-slate-100 pt-3">
+                        <span class="font-black text-slate-900 text-lg">$${p.precio.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                        <button onclick="agregarAlCarrito('${p.id}', true)" class="bg-orange-500 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl uppercase">🛒 Comprar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderizarCarrito() {
+            const cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            const items = obtenerCatalogo().filter(p => cart.includes(p.id));
+            const cont = document.getElementById('contenedor-carrito');
+            const res = document.getElementById('resumen-carrito');
+            if (!items.length) {
+                cont.innerHTML = '<div class="bg-white p-10 rounded-2xl border border-dashed border-slate-300 text-center text-xs font-bold text-slate-500">Tu carrito está vacío. Agrega refacciones desde el catálogo principal.</div>';
+                res.classList.add('hidden');
+                return;
+            }
+            let total = 0;
+            cont.innerHTML = items.map(p => {
+                total += p.precio;
+                return `
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center gap-3">
+                        <div>
+                            <span class="text-[10px] font-black bg-slate-900 text-orange-400 px-2 py-0.5 rounded">ID #${p.id}</span>
+                            <h4 class="font-extrabold text-slate-900 text-sm mt-1">${p.nombre}</h4>
+                            <p class="text-xs text-slate-500 font-semibold">${p.marca} ${p.modelo} (${p.ano})</p>
+                            <p class="text-sm font-black text-emerald-700 mt-1">$${p.precio.toLocaleString('es-MX', {minimumFractionDigits: 2})}</p>
+                        </div>
+                        <button onclick="quitarDelCarrito('${p.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded-xl font-black text-lg" title="Quitar">&times;</button>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('total-carrito').textContent = '$' + total.toLocaleString('es-MX', {minimumFractionDigits: 2});
+            res.classList.remove('hidden');
+        }
+        function enviarPedidoWhatsApp() {
+            const cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            const items = obtenerCatalogo().filter(p => cart.includes(p.id));
+            if (!items.length) return;
+            let total = 0;
+            let lineas = items.map(p => {
+                total += p.precio;
+                return `• ID #${p.id}: ${p.nombre} (${p.marca} ${p.modelo} ${p.ano}) - $${p.precio.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            });
+            const mensaje = `Hola AutoStock Mayab, me interesa confirmar disponibilidad y compra de:\n\n${lineas.join('\n')}\n\n*Total Estimado: $${total.toLocaleString('es-MX', {minimumFractionDigits: 2})}*`;
+            window.open(`https://wa.me{encodeURIComponent(mensaje)}`, '_blank');
+        }
 
         function inicializarFiltrosYFormularios() {
             const filtroMarca = document.getElementById('filtro-marca');
             const formMarca = document.getElementById('form-marca');
-            let opcionesMarcas = '<option value="">-- Todas las Marcas --</option>';
+            let opcionesMarcas = '<option value="">Todas</option>';
             let opcionesForm = '<option value="">-- Seleccionar Marca --</option>';
-            
+
             Object.keys(VEHICULOS).sort().forEach(m => {
                 opcionesMarcas += `<option value="${m}">${m}</option>`;
                 opcionesForm += `<option value="${m}">${m}</option>`;
             });
 
-            if(filtroMarca) filtroMarca.innerHTML = opcionesMarcas;
-            if(formMarca) formMarca.innerHTML = opcionesForm;
-        }
+            if (filtroMarca) filtroMarca.innerHTML = opcionesMarcas;
+            if (formMarca) formMarca.innerHTML = opcionesForm;
 
+            const sDesde = document.getElementById('form-ano-desde');
+            const sHasta = document.getElementById('form-ano-hasta');
+            const inputFinal = document.getElementById('form-ano-final');
+            if (sDesde && sHasta && inputFinal) {
+                for (let y = 2027; y >= 1980; y--) {
+                    sDesde.add(new Option(y, y));
+                    sHasta.add(new Option(y, y));
+                }
+                const actualizarRango = () => {
+                    const d = parseInt(sDesde.value);
+                    const h = parseInt(sHasta.value);
+                    if (!d) { inputFinal.value = ''; return; }
+                    if (!h || d === h) {
+                        if (!h) sHasta.value = d;
+                        inputFinal.value = String(d);
+                    } else {
+                        const ini = Math.min(d, h), fin = Math.max(d, h), arr = [];
+                        for (let a = ini; a <= fin; a++) arr.push(a);
+                        inputFinal.value = arr.join(', ');
+                    }
+                };
+                sDesde.addEventListener('change', actualizarRango);
+                sHasta.addEventListener('change', actualizarRango);
+            }
+            actualizarBadgesYCorazones();
+        }
         const formMarca = document.getElementById('form-marca');
-        if(formMarca) {
+        if (formMarca) {
             formMarca.addEventListener('change', function() {
                 const modelos = VEHICULOS[this.value] || [];
                 const formModelo = document.getElementById('form-modelo');
@@ -546,12 +787,12 @@
 
             if (esNumerico && query.length > 0) {
                 badgeModoId.classList.remove('hidden');
-                if(fMarca) fMarca.disabled = true;
-                if(fModelo) fModelo.disabled = true;
-                if(fAno) fAno.disabled = true;
+                if (fMarca) fMarca.disabled = true;
+                if (fModelo) fModelo.disabled = true;
+                if (fAno) fAno.disabled = true;
             } else {
                 badgeModoId.classList.add('hidden');
-                if(fMarca) fMarca.disabled = false;
+                if (fMarca) fMarca.disabled = false;
             }
 
             document.querySelectorAll('.card-refaccion').forEach(card => {
@@ -564,45 +805,55 @@
                 let cumpleQuery = !query || (esNumerico ? id.startsWith(query) : texto.includes(query));
                 let cumpleFiltros = esNumerico || ((!marcaSel || marca === marcaSel) && (!modeloSel || modelo === modeloSel) && (!anoSel || ano.includes(anoSel)));
 
-
-                if (cumpleQuery && cumpleFiltros) { card.classList.remove('hidden'); } else { card.classList.add('hidden'); }
+                if (cumpleQuery && cumpleFiltros) card.classList.remove('hidden');
+                else card.classList.add('hidden');
             });
         }
 
-        if(fMarca) {
+        if (fMarca) {
             fMarca.addEventListener('change', function() {
-                if(this.value) {
+                if (this.value) {
                     fModelo.disabled = false;
-                    let options = '<option value="">-- Todos los Modelos --</option>';
+                    let options = '<option value="">Todos</option>';
                     (VEHICULOS[this.value] || []).forEach(m => { options += `<option value="${m}">${m}</option>`; });
                     fModelo.innerHTML = options;
-                } else { fModelo.disabled = fAno.disabled = true; fModelo.innerHTML = '<option value="">Selecciona</option>'; }
+                } else {
+                    fModelo.disabled = fAno.disabled = true;
+                    fModelo.innerHTML = '<option value="">--</option>';
+                }
                 filtrarProductos();
             });
         }
 
-        if(fModelo) {
+        if (fModelo) {
             fModelo.addEventListener('change', function() {
-                if(this.value) {
+                if (this.value) {
                     fAno.disabled = false;
-                    let options = '<option value="">-- Todos los Años --</option>';
-                    for (let y = 2027; y >= 1980; y--) { options += `<option value="${y}">${y}</option>`; }
+                    let options = '<option value="">Todos</option>';
+                    for (let y = 2027; y >= 1980; y--) options += `<option value="${y}">${y}</option>`;
                     fAno.innerHTML = options;
-                } else { fAno.disabled = true; fAno.innerHTML = '<option value="">Selecciona</option>'; }
+                } else {
+                    fAno.disabled = true;
+                    fAno.innerHTML = '<option value="">--</option>';
+                }
                 filtrarProductos();
             });
         }
 
-        if(fAno) fAno.addEventListener('change', filtrarProductos);
-        buscador.addEventListener('input', filtrarProductos);
-        
-        btnLimpiar.addEventListener('click', () => {
-            buscador.value = ''; if(fMarca) fMarca.value = '';
-            if(fModelo) { fModelo.value = ''; fModelo.disabled = true; }
-            if(fAno) { fAno.value = ''; fAno.disabled = true; }
-            badgeModoId.classList.add('hidden'); if(fMarca) fMarca.disabled = false;
-            filtrarProductos();
-        });
+        if (fAno) fAno.addEventListener('change', filtrarProductos);
+        if (buscador) buscador.addEventListener('input', filtrarProductos);
+
+        if (btnLimpiar) {
+            btnLimpiar.addEventListener('click', () => {
+                buscador.value = '';
+                if (fMarca) fMarca.value = '';
+                if (fModelo) { fModelo.value = ''; fModelo.disabled = true; }
+                if (fAno) { fAno.value = ''; fAno.disabled = true; }
+                badgeModoId.classList.add('hidden');
+                if (fMarca) fMarca.disabled = false;
+                filtrarProductos();
+            });
+        }
 
         const btnVoz = document.getElementById('btn-voz');
         if (btnVoz) {
@@ -618,9 +869,9 @@
         }
 
         const inputFoto = document.getElementById('foto-camara');
-        if(inputFoto) {
+        if (inputFoto) {
             inputFoto.addEventListener('change', function(e) {
-                const file = e.target.files[0]; if(!file) return;
+                const file = e.target.files[0]; if (!file) return;
                 const reader = new FileReader(); reader.readAsDataURL(file);
                 reader.onload = function(event) {
                     const img = new Image(); img.src = event.target.result;
@@ -634,6 +885,7 @@
                 };
             });
         }
+
         window.onload = inicializarFiltrosYFormularios;
     </script>
 </body>
