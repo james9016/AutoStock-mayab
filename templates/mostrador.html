@@ -642,8 +642,8 @@
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 max-w-sm w-full space-y-4 relative">
             <a href="/mostrador" class="absolute right-4 top-3 text-slate-400 hover:text-slate-700 font-black text-2xl">&times;</a>
             <h3 class="text-lg font-extrabold text-slate-900 border-b border-slate-100 pb-2">📝 Registro Público</h3>
-            <div class="bg-slate-100 border border-slate-200 p-3 rounded-xl text-xs text-slate-700 font-medium">
-                Tu cuenta se creará con rol de <strong>Público General</strong>.
+            <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-xs text-emerald-900 font-medium">
+                Entrarás directo como <strong>Público General</strong> para comprar y publicar en el Mercado Local.
             </div>
             <form action="/auth/registro" method="POST" class="space-y-3">
                 <div>
@@ -656,13 +656,19 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Celular (WhatsApp)</label>
-                    <input type="text" name="telefono_celular" placeholder="+529991234567" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
+                    <input type="text" name="telefono_celular" placeholder="+529981234567" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
                 </div>
                 <div>
                     <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Contraseña</label>
                     <input type="password" name="contrasena" placeholder="••••••••" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
                 </div>
-                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl text-xs shadow uppercase tracking-wider">Enviar Registro</button>
+                <label class="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer">
+                    <input type="checkbox" name="solicitar_especial" value="si" class="mt-0.5 rounded text-orange-600 focus:ring-orange-500">
+                    <span class="text-xs text-amber-950 font-semibold leading-tight">
+                        Soy <strong>Taller, Mecánico o Vendedor</strong> (Solicitar verificación para descuento preferencial)
+                    </span>
+                </label>
+                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl text-xs shadow uppercase tracking-wider">Crear Cuenta y Entrar</button>
             </form>
         </div>
     </div>
