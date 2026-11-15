@@ -144,51 +144,37 @@ def vista_mostrador(request: Request):
 
 @app.post("/auth/login")
 def login(usuario: str = Form(...), contrasena: str = Form(...)):
-    import database
-    import models
-    import security
-    
+    import database, models, security
     db = next(database.get_db())
     try:
         user = db.query(models.Usuario).filter(models.Usuario.usuario == usuario).first()
         if not user or not security.verificar_password(contrasena, user.contrasena_hash):
             return RedirectResponse(url="/mostrador?error=Credenciales+Incorrectas", status_code=status.HTTP_303_SEE_OTHER)
-        
-        if user.rol == models.RolEnum.Publico_General:
-            return RedirectResponse(url="/mostrador?error=Acceso+Denegado+Bodega", status_code=status.HTTP_303_SEE_OTHER)
-        
         token = security.crear_token_acceso(data={"sub": user.usuario})
         response = RedirectResponse(url="/mostrador", status_code=status.HTTP_303_SEE_OTHER)
         response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True, secure=True, samesite="lax")
         return response
     finally:
         db.close()
+
 @app.post("/usuarios/aprobar/{user_id}")
 def aprobar_usuario(user_id: int, nuevo_rol: str = Form(...), request: Request = None):
-    import database
-    import models
-    import security
-    
+    import database, models, security
     db = next(database.get_db())
     try:
         admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
         user_target = db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
-        
         if not user_target:
             return RedirectResponse(url="/mostrador?error=Usuario+no+encontrado", status_code=status.HTTP_303_SEE_OTHER)
-        
-        if nuevo_rol == "Vendedor":
-            user_target.rol = models.RolEnum.Vendedor
-        elif nuevo_rol == "Administrador":
-            user_target.rol = models.RolEnum.Administrador
-            
-        audit = models.BitacoraAuditoria(
-            usuario_id=admin.id, 
-            accion_realizada=f"Aprobación de usuario @{user_target.usuario} con rol {nuevo_rol}"
-        )
-        db.add(audit)
+        if nuevo_rol in ["Vendedor", "Mecanico", "Administrador", "Publico_General"]:
+            user_target.rol = getattr(models.RolEnum, nuevo_rol)
+        db.query(models.BitacoraAuditoria).filter(
+            models.BitacoraAuditoria.usuario_id == user_target.id,
+            models.BitacoraAuditoria.accion_realizada == "SOLICITUD_VERIFICACION_ESPECIAL"
+        ).delete()
+        db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"Asignación de rol {nuevo_rol} a @{user_target.usuario}"))
         db.commit()
-        return RedirectResponse(url="/mostrador?msg=Usuario+Aprobado+y+Activado", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/mostrador?msg=Rol+Actualizado", status_code=status.HTTP_303_SEE_OTHER)
     finally:
         db.close()
 
@@ -197,33 +183,25 @@ def logout():
     response = RedirectResponse(url="/mostrador", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie("access_token")
     return response
+
 @app.post("/auth/registro")
-def registrar_usuario_publico(
-    nombre: str = Form(...),
-    usuario: str = Form(...),
-    telefono_celular: str = Form(...),
-    contrasena: str = Form(...)
-):
-    import database
-    import models
-    import security
-    
+def registrar_usuario_publico(nombre: str = Form(...), usuario: str = Form(...), telefono_celular: str = Form(...), contrasena: str = Form(...), solicitar_especial: str = Form(None)):
+    import database, models, security
     db = next(database.get_db())
     try:
-        existe = db.query(models.Usuario).filter(models.Usuario.usuario == usuario).first()
-        if existe:
+        if db.query(models.Usuario).filter(models.Usuario.usuario == usuario).first():
             return RedirectResponse(url="/mostrador?error=El+usuario+ya+existe", status_code=status.HTTP_303_SEE_OTHER)
-        
-        nuevo_usuario = models.Usuario(
-            nombre=nombre,
-            usuario=usuario,
-            contrasena_hash=security.obtener_password_hash(contrasena),
-            rol=models.RolEnum.Publico_General,
-            telefono_celular=telefono_celular
-        )
+        nuevo_usuario = models.Usuario(nombre=nombre, usuario=usuario, contrasena_hash=security.obtener_password_hash(contrasena), rol=models.RolEnum.Publico_General, telefono_celular=telefono_celular)
         db.add(nuevo_usuario)
         db.commit()
-        return RedirectResponse(url="/mostrador?msg=Registro+exitoso.+Solicita+activacion+al+Admin", status_code=status.HTTP_303_SEE_OTHER)
+        db.refresh(nuevo_usuario)
+        if solicitar_especial == "si":
+            db.add(models.BitacoraAuditoria(usuario_id=nuevo_usuario.id, accion_realizada="SOLICITUD_VERIFICACION_ESPECIAL"))
+            db.commit()
+        token = security.crear_token_acceso(data={"sub": nuevo_usuario.usuario})
+        response = RedirectResponse(url="/mostrador?msg=Bienvenido+a+AutoStock+Mayab", status_code=status.HTTP_303_SEE_OTHER)
+        response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True, secure=True, samesite="lax")
+        return response
     finally:
         db.close()
 
