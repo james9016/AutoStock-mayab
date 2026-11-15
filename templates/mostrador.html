@@ -485,6 +485,99 @@
             </div>
         </div>
         {% endif %}
+                <div id="vista-mercado" class="vista-seccion hidden space-y-4">
+            <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-md border-b-4 border-orange-500 flex flex-wrap justify-between items-center gap-3">
+                <div>
+                    <h2 class="text-base font-extrabold uppercase flex items-center gap-2"><span>🏪</span> <span>Mercado Local Cancún</span></h2>
+                    <p class="text-xs text-slate-300">Autos para reparar, herramientas de taller, rines y solicitudes</p>
+                </div>
+                {% if usuario %}
+                    <button type="button" onclick="document.getElementById('form-nuevo-anuncio').classList.toggle('hidden')" class="bg-orange-500 hover:bg-orange-600 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl shadow uppercase">
+                        ➕ Publicar Anuncio
+                    </button>
+                {% else %}
+                    <a href="#modal-registro" class="bg-orange-500 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl shadow uppercase">Regístrate para Publicar</a>
+                {% endif %}
+            </div>
+
+            {% if usuario %}
+            <form id="form-nuevo-anuncio" action="/mercado/publicar" method="POST" class="hidden bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <h3 class="text-xs font-extrabold text-slate-900 uppercase border-b pb-2">📝 Nueva Publicación en Mercado Local</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Título del Anuncio</label>
+                        <input type="text" name="titulo" placeholder="Ej. Tsuru 2012 chocado / Escáner Launch" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold" required>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Categoría</label>
+                        <select name="categoria" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold">
+                            <option value="autos">Autos para Reparar / Chocadas</option>
+                            <option value="herramientas">Herramientas y Equipo de Taller</option>
+                            <option value="rines_llantas">Rines, Llantas y Accesorios</option>
+                            <option value="busco_pieza">Busco Pieza (Solicitud)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Precio MXN ($0 si es solicitud)</label>
+                        <input type="number" step="0.01" name="precio" value="0" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Zona en Cancún</label>
+                        <input type="text" name="zona_cancun" placeholder="Ej. Región 95, Bonfil, Av. Kabah..." class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Descripción y detalles</label>
+                    <textarea name="descripcion" rows="2" placeholder="Describe el estado, año, detalles o qué pieza buscas..." class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold" required></textarea>
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl text-xs uppercase shadow">Publicar Ahora</button>
+            </form>
+            {% endif %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for a in anuncios_mercado %}
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center gap-2">
+                                <span class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 border border-orange-200">{{ a.categoria }}</span>
+                                <span class="text-[10px] font-bold text-slate-400">📍 {{ a.zona_cancun }}</span>
+                            </div>
+                            <h3 class="font-extrabold text-slate-900 text-base leading-snug">{{ a.titulo }}</h3>
+                            <p class="text-xs text-slate-600">{{ a.descripcion }}</p>
+                            <div class="flex items-center gap-1.5 pt-1">
+                                <span class="text-xs font-bold text-slate-800">👤 {{ a.autor_nombre }}</span>
+                                {% if a.autor_rol == 'Mecanico' %}
+                                    <span class="text-[10px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">🔧 Taller Verificado</span>
+                                {% elif a.autor_rol in ['Vendedor', 'Administrador'] %}
+                                    <span class="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">✅ Afiliado Oficial</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <span class="text-lg font-black text-slate-900">{{ '$' + '{:,.2f}'.format(a.precio) if a.precio > 0 else 'A tratar / Busco' }}</span>
+                            <div class="flex items-center gap-1.5">
+                                {% if a.autor_telefono %}
+                                    <a href="https://whatsapp.com{{ a.autor_telefono | replace('+', '') | replace(' ', '') }}&text=Hola%20{{ a.autor_nombre }},%20vi%20tu%20anuncio%20en%20Mercado%20Local%20AutoStock%20Mayab:%20{{ a.titulo }}" target="_blank" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black px-3 py-2 rounded-xl shadow uppercase">
+                                        💬 WhatsApp
+                                    </a>
+                                {% endif %}
+                                {% if usuario and (usuario.id == a.usuario_id or es_admin) %}
+                                    <form action="/mercado/eliminar/{{ a.id }}" method="POST" onsubmit="return confirm('¿Eliminar este anuncio?');">
+                                        <button type="submit" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-extrabold px-2.5 py-2 rounded-xl" title="Borrar">🗑️</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="col-span-full bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center space-y-2">
+                        <span class="text-3xl block">🏪</span>
+                        <p class="text-xs font-extrabold text-slate-700 uppercase">Aún no hay anuncios en el Mercado Local</p>
+                        <p class="text-xs text-slate-500">Sé el primero en publicar un auto para reparar, herramientas o rines en Cancún.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
     </main>
     <!-- BARRA DE NAVEGACIÓN INFERIOR ESTILO MERCADO LIBRE -->
     <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-40">
