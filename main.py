@@ -459,6 +459,39 @@ def reporte_imprimible_pdf(request: Request):
         return HTMLResponse(content=html)
     finally:
         db.close()
+@app.post("/ventas/validar-pago/{venta_id}")
+def validar_pago_venta(venta_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        venta = db.query(models.HistorialVenta).filter(models.HistorialVenta.id == venta_id).first()
+        if venta:
+            venta.liquidado_al_dueno = True
+            venta.saldo_por_cobrar = 0.0
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"Validación de pago recibido de venta #{venta.id}"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Pago+validado+correctamente", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/liquidaciones/procesar/{dueno_id}")
+def procesar_liquidacion(dueno_id: int, ids_ventas: str = Form(""), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        if ids_ventas:
+            lista_ids = [int(x) for x in ids_ventas.split(",") if x.strip().isdigit()]
+            ventas = db.query(models.HistorialVenta).filter(models.HistorialVenta.id.in_(lista_ids)).all()
+            for v in ventas:
+                v.liquidado_al_dueno = True
+                v.saldo_por_cobrar = 0.0
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"Liquidación procesada para afiliado #{dueno_id}"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Liquidacion+procesada+con+exito", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
       
 @app.get("/ping")
 def mantener_despierto():
