@@ -398,49 +398,6 @@
         </div>
         {% endif %}
         {% if es_admin %}
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                <div class="border-b border-slate-100 pb-2 flex items-center justify-between">
-                    <h3 class="text-xs font-extrabold text-slate-800 uppercase">📋 Historial Detallado de Ventas</h3>
-                    <span class="text-[10px] font-bold text-slate-500">Últimos movimientos</span>
-                </div>
-                {% if ventas_detalle %}
-                    <div class="space-y-2.5">
-                        {% for v in ventas_detalle %}
-                            <div class="p-3.5 border rounded-xl {{ 'border-amber-300 bg-amber-50/40' if (v.es_pieza_ajena and not v.liquidado) else 'border-slate-200 bg-slate-50' }} flex flex-wrap justify-between items-center gap-3">
-                                <div class="space-y-1">
-                                    <div class="flex items-center gap-2">
-                                        <span class="bg-slate-900 text-orange-400 text-[10px] font-black px-2 py-0.5 rounded">ID #{{ v.producto_id }}</span>
-                                        <span class="font-extrabold text-slate-900 text-sm">{{ v.pieza }}</span>
-                                    </div>
-                                    <p class="text-xs text-slate-600 font-semibold">🚘 {{ v.vehiculo }} • 🕒 {{ v.fecha }}</p>
-                                    <p class="text-[11px] text-slate-700">
-                                        Vendido por: <strong>{{ v.vendedor }}</strong> • Dueño: <strong>{{ v.dueno }}</strong> • Venta: <strong class="text-emerald-700">${{ "{:,.2f}".format(v.precio_venta) }}</strong>
-                                    </p>
-                                </div>
-                                <div class="shrink-0">
-                                    {% if v.liquidado %}
-                                        <span class="text-[11px] font-extrabold text-emerald-700 bg-emerald-100 px-3 py-1.5 rounded-lg">✅ Pagado / Validado</span>
-                                    {% elif v.es_pieza_ajena %}
-                                        {% if es_admin %}
-                                            <form action="/ventas/validar-pago/{{ v.id }}" method="POST" onsubmit="return confirm('¿Confirmar que recibiste el pago de esta pieza?');">
-                                                <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl shadow uppercase">
-                                                    ✅ Recibí Pago
-                                                </button>
-                                            </form>
-                                        {% else %}
-                                            <span class="text-[11px] font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-lg">⏳ Pendiente validación Admin</span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-[11px] font-bold text-slate-500 bg-slate-200 px-3 py-1.5 rounded-lg">Inventario propio</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-xs text-slate-500 text-center py-6 font-bold">Aún no hay ventas registradas.</p>
-                {% endif %}
-            </div>
 
         <div id="vista-afiliados" class="vista-seccion hidden space-y-4">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
