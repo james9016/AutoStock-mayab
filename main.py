@@ -84,7 +84,7 @@ def vista_mostrador(request: Request):
 
         productos_sanitizados = sorted(productos_sanitizados, key=lambda x: x["id"])
 
-            liquidaciones_pendientes = {}
+        liquidaciones_pendientes = {}
         ventas_detalle = []
         if usuario and usuario.rol in [models.RolEnum.Administrador, models.RolEnum.Vendedor]:
             todas_ventas = db.query(models.HistorialVenta).order_by(models.HistorialVenta.id.desc()).limit(50).all()
