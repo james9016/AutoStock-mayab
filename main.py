@@ -84,18 +84,39 @@ def vista_mostrador(request: Request):
 
         productos_sanitizados = sorted(productos_sanitizados, key=lambda x: x["id"])
 
-        liquidaciones_pendientes = {}
-        if usuario and usuario.rol == models.RolEnum.Administrador:
-            ventas_no_liquidadas = db.query(models.HistorialVenta).filter(models.HistorialVenta.liquidado_al_dueno == False).all()
-            for v in ventas_no_liquidadas:
+            liquidaciones_pendientes = {}
+        ventas_detalle = []
+        if usuario and usuario.rol in [models.RolEnum.Administrador, models.RolEnum.Vendedor]:
+            todas_ventas = db.query(models.HistorialVenta).order_by(models.HistorialVenta.id.desc()).limit(50).all()
+            for v in todas_ventas:
                 prod = db.query(models.Producto).filter(models.Producto.id == v.producto_id).first()
-                if prod:
-                    dueno = db.query(models.Usuario).filter(models.Usuario.id == prod.dueno_id).first()
-                    if dueno:
-                        if dueno.id not in liquidaciones_pendientes:
-                            liquidaciones_pendientes[dueno.id] = {"dueno": dueno.nombre, "saldo": 0.0, "items": []}
-                        liquidaciones_pendientes[dueno.id]["saldo"] += v.saldo_por_cobrar
-                        liquidaciones_pendientes[dueno.id]["items"].append(v.id)
+                vendedor = db.query(models.Usuario).filter(models.Usuario.id == v.vendedor_id).first()
+                dueno = db.query(models.Usuario).filter(models.Usuario.id == prod.dueno_id).first() if prod else None
+                
+                es_pieza_ajena = bool(prod and v.vendedor_id != prod.dueno_id)
+                fecha_str = v.fecha_venta.strftime("%d/%m/%Y %H:%M") if getattr(v, "fecha_venta", None) else "Reciente"
+
+                ventas_detalle.append({
+                    "id": v.id,
+                    "producto_id": v.producto_id,
+                    "pieza": prod.nombre_refaccion if prod else f"Pieza #{v.producto_id}",
+                    "vehiculo": f"{prod.marca} {prod.modelo}" if prod else "",
+                    "vendedor": vendedor.nombre if vendedor else "Sistema",
+                    "vendedor_id": v.vendedor_id,
+                    "dueno": dueno.nombre if dueno else "Bodega",
+                    "dueno_id": prod.dueno_id if prod else None,
+                    "precio_venta": v.precio_venta_publico,
+                    "costo_dueno": v.precio_costo_dueno,
+                    "fecha": fecha_str,
+                    "liquidado": v.liquidado_al_dueno,
+                    "es_pieza_ajena": es_pieza_ajena
+                })
+
+                if not v.liquidado_al_dueno and prod and dueno:
+                    if dueno.id not in liquidaciones_pendientes:
+                        liquidaciones_pendientes[dueno.id] = {"dueno": dueno.nombre, "saldo": 0.0, "items": []}
+                    liquidaciones_pendientes[dueno.id]["saldo"] += v.saldo_por_cobrar
+                    liquidaciones_pendientes[dueno.id]["items"].append(v.id)
 
         return templates.TemplateResponse("mostrador.html", {
             "request": request, 
@@ -103,8 +124,10 @@ def vista_mostrador(request: Request):
             "productos": productos_sanitizados, 
             "usuarios": usuarios_sistema,
             "dict_vehiculos": json.dumps(seed.DICCIONARIO_VEHICULOS),
-            "liquidaciones": liquidaciones_pendientes
+            "liquidaciones": liquidaciones_pendientes,
+            "ventas_detalle": ventas_detalle
         })
+
     finally:
         db.close()
 
