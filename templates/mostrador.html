@@ -542,6 +542,9 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {% for a in anuncios_mercado %}
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+                                                {% if a.url_imagen %}
+                            <img src="{{ a.url_imagen }}" alt="{{ a.titulo }}" class="w-full h-44 object-cover rounded-xl border border-slate-200">
+                        {% endif %}
                         <div class="space-y-2">
                             <div class="flex justify-between items-center gap-2">
                                 <span class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 border border-orange-200">{{ a.categoria }}</span>
