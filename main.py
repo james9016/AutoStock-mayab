@@ -205,6 +205,35 @@ def registrar_usuario_publico(nombre: str = Form(...), usuario: str = Form(...),
     finally:
         db.close()
 
+@app.post("/mercado/publicar")
+def publicar_anuncio_mercado(request: Request, titulo: str = Form(...), categoria: str = Form(...), precio: float = Form(0.0), descripcion: str = Form(...), zona_cancun: str = Form("Cancún Centro"), url_imagen: str = Form(None)):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?error=Inicia+sesion+para+publicar", status_code=status.HTTP_303_SEE_OTHER)
+        db.add(models.AnuncioMercado(titulo=titulo, categoria=categoria, precio=precio, descripcion=descripcion, zona_cancun=zona_cancun, url_imagen=url_imagen or None, usuario_id=usuario.id))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Anuncio+publicado+en+Mercado+Local", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/mercado/eliminar/{anuncio_id}")
+def eliminar_anuncio_mercado(anuncio_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        anuncio = db.query(models.AnuncioMercado).filter(models.AnuncioMercado.id == anuncio_id).first()
+        if usuario and anuncio and (anuncio.usuario_id == usuario.id or usuario.rol in [models.RolEnum.Administrador, "Administrador"]):
+            db.delete(anuncio)
+            db.commit()
+            return RedirectResponse(url="/mostrador?msg=Anuncio+eliminado", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/mostrador?error=Sin+permiso", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
 @app.post("/productos/crear")
 def registrar_producto(
     request: Request,
