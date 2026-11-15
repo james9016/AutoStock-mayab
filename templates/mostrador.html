@@ -1076,6 +1076,30 @@
             });
         }
 
+        const inputFotoMercado = document.getElementById('foto-mercado');
+if (inputFotoMercado) {
+    inputFotoMercado.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxW = 700;
+                const scale = maxW / img.width;
+                canvas.width = img.width > maxW ? maxW : img.width;
+                canvas.height = img.width > maxW ? img.height * scale : img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                document.getElementById('url_imagen_mercado').value = canvas.toDataURL('image/jpeg', 0.72);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+    
         window.onload = inicializarFiltrosYFormularios;
     </script>
 </body>
