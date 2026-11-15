@@ -47,21 +47,28 @@ async def enviar_alerta_whatsapp_task(telefono: str, producto_id: int, nombre_pi
 @app.get("/", response_class=HTMLResponse)
 @app.get("/mostrador", response_class=HTMLResponse)
 def vista_mostrador(request: Request):
-    import database
-    import models
-    import security
-    import seed
-    
+    import database, models, security, seed
     db = next(database.get_db())
     try:
         usuario = security.obtener_usuario_actual(request, db)
         productos_raw = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).all()
         usuarios_sistema = db.query(models.Usuario).all()
         
-        # BÚNKER DE PROTECCIÓN DE PRECIOS: Sanitización de datos desde el Servidor
+        es_mecanico = bool(usuario and (usuario.rol == models.RolEnum.Mecanico or usuario.rol == "Mecanico"))
+        es_operador = bool(usuario and usuario.rol in [models.RolEnum.Administrador, models.RolEnum.Vendedor, "Administrador", "Vendedor"])
+
         productos_sanitizados = []
         for prod in productos_raw:
-            item = {
+            precio_final = float(prod.precio_sugerido)
+            tiene_descuento_taller = False
+
+            if es_mecanico:
+                ganancia = float(prod.precio_sugerido) - float(prod.precio_real)
+                if ganancia > 0:
+                    precio_final = round(float(prod.precio_sugerido) - (ganancia * 0.15), 2)
+                    tiene_descuento_taller = True
+
+            productos_sanitizados.append({
                 "id": prod.id,
                 "categoria": prod.categoria,
                 "nombre_refaccion": prod.nombre_refaccion,
@@ -69,47 +76,55 @@ def vista_mostrador(request: Request):
                 "modelo": prod.modelo,
                 "ano_grupo": prod.ano_grupo,
                 "compatibilidad": prod.compatibilidad,
-                "precio_sugerido": prod.precio_sugerido,
+                "precio_publico_original": float(prod.precio_sugerido),
+                "precio_sugerido": precio_final,
+                "tiene_descuento_taller": tiene_descuento_taller,
                 "dueno_id": prod.dueno_id,
                 "fecha_ingreso": prod.fecha_ingreso.isoformat() if prod.fecha_ingreso else None,
-                "precio_real": None,
-                "ubicacion_fisica": "🔒 Autentíquese para ver ubicación"
-            }
-            
-            if usuario and usuario.rol in [models.RolEnum.Administrador, models.RolEnum.Vendedor]:
-                item["precio_real"] = prod.precio_real
-                item["ubicacion_fisica"] = prod.ubicacion_fisica
-                
-            productos_sanitizados.append(item)
+                "precio_real": prod.precio_real if es_operador else None,
+                "ubicacion_fisica": prod.ubicacion_fisica if es_operador else "🔒 Autentíquese para ver ubicación"
+            })
 
         productos_sanitizados = sorted(productos_sanitizados, key=lambda x: x["id"])
 
+        solicitudes_ids = []
+        if usuario and (usuario.rol == models.RolEnum.Administrador or usuario.rol == "Administrador"):
+            regs = db.query(models.BitacoraAuditoria).filter(models.BitacoraAuditoria.accion_realizada == "SOLICITUD_VERIFICACION_ESPECIAL").all()
+            solicitudes_ids = [r.usuario_id for r in regs]
+
+        anuncios_raw = db.query(models.AnuncioMercado).order_by(models.AnuncioMercado.id.desc()).limit(60).all()
+        anuncios_mercado = []
+        for a in anuncios_raw:
+            autor = db.query(models.Usuario).filter(models.Usuario.id == a.usuario_id).first()
+            cat_texto = a.categoria.value if hasattr(a.categoria, "value") else str(a.categoria)
+            rol_autor = autor.rol.value if (autor and hasattr(autor.rol, "value")) else (str(autor.rol) if autor else "Publico_General")
+            anuncios_mercado.append({
+                "id": a.id, "titulo": a.titulo, "categoria": cat_texto, "precio": a.precio,
+                "descripcion": a.descripcion, "zona_cancun": a.zona_cancun, "url_imagen": a.url_imagen,
+                "usuario_id": a.usuario_id, "autor_nombre": autor.nombre if autor else "Usuario Cancún",
+                "autor_telefono": autor.telefono_celular if autor else "", "autor_rol": rol_autor,
+                "fecha": a.fecha_publicacion.strftime("%d/%m/%Y") if a.fecha_publicacion else "Reciente"
+            })
+
         liquidaciones_pendientes = {}
         ventas_detalle = []
-        if usuario and usuario.rol in [models.RolEnum.Administrador, models.RolEnum.Vendedor]:
+        if es_operador:
             todas_ventas = db.query(models.HistorialVenta).order_by(models.HistorialVenta.id.desc()).limit(50).all()
             for v in todas_ventas:
                 prod = db.query(models.Producto).filter(models.Producto.id == v.producto_id).first()
                 vendedor = db.query(models.Usuario).filter(models.Usuario.id == v.vendedor_id).first()
                 dueno = db.query(models.Usuario).filter(models.Usuario.id == prod.dueno_id).first() if prod else None
-                
                 es_pieza_ajena = bool(prod and v.vendedor_id != prod.dueno_id)
                 fecha_str = v.fecha_venta.strftime("%d/%m/%Y %H:%M") if getattr(v, "fecha_venta", None) else "Reciente"
 
                 ventas_detalle.append({
-                    "id": v.id,
-                    "producto_id": v.producto_id,
+                    "id": v.id, "producto_id": v.producto_id,
                     "pieza": prod.nombre_refaccion if prod else f"Pieza #{v.producto_id}",
                     "vehiculo": f"{prod.marca} {prod.modelo}" if prod else "",
-                    "vendedor": vendedor.nombre if vendedor else "Sistema",
-                    "vendedor_id": v.vendedor_id,
-                    "dueno": dueno.nombre if dueno else "Bodega",
-                    "dueno_id": prod.dueno_id if prod else None,
-                    "precio_venta": v.precio_venta_publico,
-                    "costo_dueno": v.precio_costo_dueno,
-                    "fecha": fecha_str,
-                    "liquidado": v.liquidado_al_dueno,
-                    "es_pieza_ajena": es_pieza_ajena
+                    "vendedor": vendedor.nombre if vendedor else "Sistema", "vendedor_id": v.vendedor_id,
+                    "dueno": dueno.nombre if dueno else "Bodega", "dueno_id": prod.dueno_id if prod else None,
+                    "precio_venta": v.precio_venta_publico, "costo_dueno": v.precio_costo_dueno,
+                    "fecha": fecha_str, "liquidado": v.liquidado_al_dueno, "es_pieza_ajena": es_pieza_ajena
                 })
 
                 if not v.liquidado_al_dueno and prod and dueno:
@@ -119,15 +134,11 @@ def vista_mostrador(request: Request):
                     liquidaciones_pendientes[dueno.id]["items"].append(v.id)
 
         return templates.TemplateResponse("mostrador.html", {
-            "request": request, 
-            "usuario": usuario, 
-            "productos": productos_sanitizados, 
-            "usuarios": usuarios_sistema,
+            "request": request, "usuario": usuario, "productos": productos_sanitizados,
+            "usuarios": usuarios_sistema, "solicitudes_ids": solicitudes_ids, "anuncios_mercado": anuncios_mercado,
             "dict_vehiculos": json.dumps(seed.DICCIONARIO_VEHICULOS),
-            "liquidaciones": liquidaciones_pendientes,
-            "ventas_detalle": ventas_detalle
+            "liquidaciones": liquidaciones_pendientes, "ventas_detalle": ventas_detalle
         })
-
     finally:
         db.close()
 
