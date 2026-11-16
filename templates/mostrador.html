@@ -1097,47 +1097,50 @@
             });
         }
 
-        const inputFoto = document.getElementById('foto-camara');
-        if (inputFoto) {
-            inputFoto.addEventListener('change', function(e) {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader(); reader.readAsDataURL(file);
-                reader.onload = function(event) {
-                    const img = new Image(); img.src = event.target.result;
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                        const MAX_WIDTH = 1000; let width = img.width, height = img.height;
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                        canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
-                        document.getElementById('url_imagen_string').value = canvas.toDataURL('image/jpeg', 0.7);
+        function procesarMultiplesFotos(inputElement, hiddenInputId, contadorId, maxFotos, maxAncho, calidad) {
+            if (!inputElement) return;
+            inputElement.addEventListener('change', async function(e) {
+                const files = Array.from(e.target.files);
+                if (!files.length) return;
+                
+                const contador = document.getElementById(contadorId);
+                if (files.length > maxFotos) {
+                    alert(`⚠️ Solo se permiten máximo ${maxFotos} fotos. Se tomarán las primeras ${maxFotos}.`);
+                }
+                
+                const seleccionadas = files.slice(0, maxFotos);
+                if (contador) contador.textContent = `⏳ Procesando ${seleccionadas.length} foto(s)...`;
+
+                const promesas = seleccionadas.map(file => new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = new Image();
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width, height = img.height;
+                            if (width > maxAncho) {
+                                height = Math.round(height * (maxAncho / width));
+                                width = maxAncho;
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            resolve(canvas.toDataURL('image/jpeg', calidad));
+                        };
+                        img.src = event.target.result;
                     };
-                };
+                    reader.readAsDataURL(file);
+                }));
+
+                const resultadosBase64 = await Promise.all(promesas);
+                document.getElementById(hiddenInputId).value = JSON.stringify(resultadosBase64);
+                if (contador) contador.textContent = `✅ ${resultadosBase64.length} foto(s) listas en alta calidad`;
             });
         }
 
-        const inputFotoMercado = document.getElementById('foto-mercado');
-if (inputFotoMercado) {
-    inputFotoMercado.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const maxW = 700;
-                const scale = maxW / img.width;
-                canvas.width = img.width > maxW ? maxW : img.width;
-                canvas.height = img.width > maxW ? img.height * scale : img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                document.getElementById('url_imagen_mercado').value = canvas.toDataURL('image/jpeg', 0.72);
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-}
+        procesarMultiplesFotos(document.getElementById('foto-camara'), 'url_imagen_string', 'contador-fotos-pieza', 6, 1200, 0.82);
+        procesarMultiplesFotos(document.getElementById('foto-mercado'), 'url_imagen_mercado', 'contador-fotos-mercado', 10, 1400, 0.88);
           let ultimoToqueAtras = 0;
         window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
 
