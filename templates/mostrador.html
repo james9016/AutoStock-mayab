@@ -547,9 +547,10 @@
                     <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Descripción y detalles</label>
                     <textarea name="descripcion" rows="2" placeholder="Describe el estado, año, detalles o qué pieza buscas..." class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold" required></textarea>
                 </div>
-                                <div>
-                    <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Foto del Artículo (Opcional)</label>
-                    <input type="file" id="foto-mercado" accept="image/*" class="w-full text-xs bg-slate-50 p-2 border border-dashed border-slate-400 rounded-xl">
+                                    <div>
+                    <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Fotos del Vehículo o Artículo (Máximo 10 - Alta Calidad)</label>
+                    <input type="file" id="foto-mercado" accept="image/*" multiple class="w-full text-xs bg-slate-50 p-2 border border-dashed border-slate-400 rounded-xl">
+                    <p id="contador-fotos-mercado" class="text-[10px] font-bold text-emerald-700 mt-1"></p>
                     <input type="hidden" name="url_imagen" id="url_imagen_mercado">
                 </div>
                                 <div class="flex gap-2 pt-2">
