@@ -250,6 +250,13 @@
                              data-id="{{ p.id }}" data-nombre="{{ p.nombre_refaccion }}" data-marca="{{ p.marca }}" data-modelo="{{ p.modelo }}" data-ano="{{ p.ano_grupo }}" data-precio="{{ p.precio_sugerido }}" data-texto="{{ p.nombre_refaccion }} {{ p.marca }} {{ p.modelo }} {{ p.compatibilidad if p.compatibilidad else '' }}">
                             
                             <div class="p-4 space-y-2.5 flex-1">
+                                                                {% if p.imagenes %}                                    <div class="flex gap-2 overflow-x-auto pb-1 snap-x">
+                                        {% for img_url in p.imagenes %}
+                                            <img src="{{ img_url }}" alt="{{ p.nombre_refaccion }}" class="h-36 w-44 shrink-0 object-cover rounded-xl border border-slate-200 snap-center">
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
                                 <div class="flex justify-between items-center gap-2">
                                     <div class="flex items-center gap-1.5">
                                         <span class="bg-slate-900 text-orange-400 text-xs font-black px-2.5 py-1 rounded-lg">ID #{{ p.id }}</span>
