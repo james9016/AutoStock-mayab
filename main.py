@@ -82,8 +82,9 @@ def vista_mostrador(request: Request):
                 "dueno_id": prod.dueno_id,
                 "fecha_ingreso": prod.fecha_ingreso.isoformat() if prod.fecha_ingreso else None,
                 "precio_real": prod.precio_real if es_operador else None,
-                "ubicacion_fisica": prod.ubicacion_fisica if es_operador else "🔒 Autentíquese para ver ubicación"
-            })
+                "ubicacion_fisica": prod.ubicacion_fisica if es_operador else "🔒 Autentíquese para ver ubicación",
+                                "imagenes": [img.url_imagen for img in prod.imagenes] if prod.imagenes else []
+        })
 
         productos_sanitizados = sorted(productos_sanitizados, key=lambda x: x["id"])
 
