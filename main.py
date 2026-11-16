@@ -279,8 +279,7 @@ def registrar_producto(
             for u_img in lista_urls[:6]:
                 if u_img:
                     db.add(models.ImagenesPieza(producto_id=nuevo_prod.id, url_imagen=u_img))
-                
-        
+                 
         audit = models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"Registro de refacción #{nuevo_prod.id} - {nombre_refaccion}")
         db.add(audit)
         db.commit()
