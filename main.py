@@ -101,13 +101,13 @@ def vista_mostrador(request: Request):
             rol_autor = autor.rol.value if (autor and hasattr(autor.rol, "value")) else (str(autor.rol) if autor else "Publico_General")
             fotos_anuncio = []
             if a.url_imagen:
-                if a.url_imagen.startswith("["):
-                    try:
-                        fotos_anuncio = json.loads(a.url_imagen)
-                    except Exception:
-                        fotos_anuncio = [a.url_imagen]
-                else:
-                    fotos_anuncio = [a.url_imagen]
+            if a.url_imagen.startswith("["):
+            try:
+            fotos_anuncio = json.loads(a.url_imagen)
+            except Exception:
+            fotos_anuncio = [a.url_imagen]
+            else:
+            fotos_anuncio = [a.url_imagen]
             anuncios_mercado.append({
                 "id": a.id, "titulo": a.titulo, "categoria": cat_texto, "precio": a.precio,
                 "descripcion": a.descripcion, "zona_cancun": a.zona_cancun, "url_imagen": a.url_imagen,
