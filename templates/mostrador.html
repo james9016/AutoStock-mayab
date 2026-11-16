@@ -1114,7 +1114,30 @@ if (inputFotoMercado) {
         reader.readAsDataURL(file);
     });
 }
-    
+          let ultimoToqueAtras = 0;
+        window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
+
+        window.addEventListener('popstate', function () {
+            const vistaInicio = document.getElementById('vista-inicio');
+            if (vistaInicio && vistaInicio.classList.contains('hidden')) {
+                cambiarVista('inicio');
+                window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
+                return;
+            }
+
+            const ahora = Date.now();
+            if (ahora - ultimoToqueAtras < 2000) {
+                window.history.back();
+            } else {
+                ultimoToqueAtras = ahora;
+                window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
+                const aviso = document.createElement('div');
+                aviso.textContent = '⚠️ Presiona Atrás de nuevo para salir';
+                aviso.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-lg z-50 border border-orange-500';
+                document.body.appendChild(aviso);
+                setTimeout(() => aviso.remove(), 2000);
+            }
+        });  
         window.onload = inicializarFiltrosYFormularios;
     </script>
 </body>
