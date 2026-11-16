@@ -538,7 +538,14 @@
                     <input type="file" id="foto-mercado" accept="image/*" class="w-full text-xs bg-slate-50 p-2 border border-dashed border-slate-400 rounded-xl">
                     <input type="hidden" name="url_imagen" id="url_imagen_mercado">
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl text-xs uppercase shadow">Publicar Ahora</button>
+                                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="document.getElementById('form-nuevo-anuncio').classList.add('hidden')" class="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold py-3 rounded-xl text-xs uppercase">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="w-2/3 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl text-xs uppercase shadow">
+                        Publicar Ahora
+                    </button>
+                </div>
             </form>
             {% endif %}
 
