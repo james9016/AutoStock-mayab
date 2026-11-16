@@ -99,7 +99,7 @@ def vista_mostrador(request: Request):
             autor = db.query(models.Usuario).filter(models.Usuario.id == a.usuario_id).first()
             cat_texto = a.categoria.value if hasattr(a.categoria, "value") else str(a.categoria)
             rol_autor = autor.rol.value if (autor and hasattr(autor.rol, "value")) else (str(autor.rol) if autor else "Publico_General")
-                       fotos_anuncio = []
+            fotos_anuncio = []
             if a.url_imagen:
                 if a.url_imagen.startswith("["):
                     try:
