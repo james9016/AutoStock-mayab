@@ -567,8 +567,19 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {% for a in anuncios_mercado %}
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3">
-                                                {% if a.url_imagen %}
-                            <img src="{{ a.url_imagen }}" alt="{{ a.titulo }}" class="w-full h-44 object-cover rounded-xl border border-slate-200">
+                                                {% if a.imagenes %}
+                            <div class="relative">
+                                <div class="flex gap-2 overflow-x-auto pb-1 snap-x">
+                                    {% for img_url in a.imagenes %}
+                                        <img src="{{ img_url }}" alt="{{ a.titulo }}" class="w-full h-52 shrink-0 object-cover rounded-xl border border-slate-200 snap-center">
+                                    {% endfor %}
+                                </div>
+                                {% if a.imagenes|length > 1 %}
+                                    <span class="absolute bottom-3 right-2 bg-slate-900/80 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                                        📸 {{ a.imagenes|length }} fotos (desliza)
+                                    </span>
+                                {% endif %}
+                            </div>
                         {% endif %}
                         <div class="space-y-2">
                             <div class="flex justify-between items-center gap-2">
