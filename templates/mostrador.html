@@ -218,10 +218,12 @@
                         </div>
 
                         <div>
-                            <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Foto Cámara</label>
-                            <input type="file" id="foto-camara" accept="image/*" class="w-full text-xs bg-slate-50 p-2 border border-dashed border-slate-400 rounded-xl">
+                            <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Fotos de la Pieza (Máximo 6)</label>
+                            <input type="file" id="foto-camara" accept="image/*" multiple class="w-full text-xs bg-slate-50 p-2 border border-dashed border-slate-400 rounded-xl">
+                            <p id="contador-fotos-pieza" class="text-[10px] font-bold text-emerald-700 mt-1"></p>
                             <input type="hidden" name="url_imagen" id="url_imagen_string">
                         </div>
+
 
                         <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-3 rounded-xl shadow-md uppercase text-xs">
                             ➕ Registrar Refacción
