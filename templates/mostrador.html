@@ -937,13 +937,16 @@
             const cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
             const items = obtenerCatalogo().filter(p => cart.includes(p.id));
             if (!items.length) return;
+            
+            const telefonoNegocio = "529987363470";
             let total = 0;
             let lineas = items.map(p => {
                 total += p.precio;
-                return `• ID #${p.id}: ${p.nombre} (${p.marca} ${p.modelo} ${p.ano}) - $${p.precio.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+                return `🔹 *ID #${p.id}* — ${p.nombre}\n   🚘 Vehículo: ${p.marca} ${p.modelo} (${p.ano})\n   💲 Precio: $${p.precio.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
             });
-            const mensaje = `Hola AutoStock Mayab, me interesa confirmar disponibilidad y compra de:\n\n${lineas.join('\n')}\n\n*Total Estimado: $${total.toLocaleString('es-MX', {minimumFractionDigits: 2})}*`;
-            window.open(`https://wa.me{encodeURIComponent(mensaje)}`, '_blank');
+            
+            const mensaje = `📋 *REQUERIMIENTO DE PIEZA - AUTOSTOCK MAYAB*\n\nHola, solicito confirmar disponibilidad y compra de las siguientes refacciones:\n\n${lineas.join('\n\n')}\n\n💰 *Total Estimado: $${total.toLocaleString('es-MX', {minimumFractionDigits: 2})}*`;
+            window.open(`https://wa.me{telefonoNegocio}?text=${encodeURIComponent(mensaje)}`, '_blank');
         }
 
         function inicializarFiltrosYFormularios() {
