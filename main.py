@@ -318,15 +318,10 @@ def registrar_producto(
         db.add(nuevo_prod)
         db.commit()
         db.refresh(nuevo_prod)
-        if url_imagen:
-            try:
-                lista_urls = json.loads(url_imagen) if url_imagen.startswith("[") else [url_imagen]
-            except Exception:
-                lista_urls = [url_imagen]
-            for u_img in lista_urls[:6]:
-                if u_img:
-                    db.add(models.ImagenesPieza(producto_id=nuevo_prod.id, url_imagen=u_img))
-                 
+        urls_pieza = subir_fotos_a_storage(url_imagen, "piezas", 6)
+        for u_img in urls_pieza:
+            db.add(models.ImagenesPieza(producto_id=nuevo_prod.id, url_imagen=u_img))
+            
         audit = models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"Registro de refacción #{nuevo_prod.id} - {nombre_refaccion}")
         db.add(audit)
         db.commit()
