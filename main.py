@@ -269,7 +269,7 @@ def publicar_anuncio_mercado(request: Request, titulo: str = Form(...), categori
         usuario = security.obtener_usuario_actual(request, db)
         if not usuario:
             return RedirectResponse(url="/mostrador?error=Inicia+sesion+para+publicar", status_code=status.HTTP_303_SEE_OTHER)
-                urls_mercado = subir_fotos_a_storage(url_imagen, "mercado", 10)
+        urls_mercado = subir_fotos_a_storage(url_imagen, "mercado", 10)
         url_guardar = json.dumps(urls_mercado) if urls_mercado else None
         db.add(models.AnuncioMercado(titulo=titulo, categoria=categoria, precio=precio, descripcion=descripcion, zona_cancun=zona_cancun, url_imagen=url_guardar, usuario_id=usuario.id))
         db.commit()
