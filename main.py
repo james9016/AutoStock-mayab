@@ -39,6 +39,51 @@ if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 templates = Jinja2Templates(directory="templates")
+import base64
+import uuid
+import urllib.request
+
+def subir_fotos_a_storage(url_imagen_raw: str, carpeta: str, limite: int) -> list:
+    if not url_imagen_raw:
+        return []
+    supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
+    supabase_key = os.getenv("SUPABASE_KEY", "")
+    
+    try:
+        lista_items = json.loads(url_imagen_raw) if url_imagen_raw.startswith("[") else [url_imagen_raw]
+    except Exception:
+        lista_items = [url_imagen_raw]
+        
+    urls_finales = []
+    for item in lista_items[:limite]:
+        if not item:
+            continue
+        if item.startswith("http"):
+            urls_finales.append(item)
+            continue
+        if item.startswith("data:image") and supabase_url and supabase_key:
+            try:
+                encabezado, b64_data = item.split(",", 1)
+                img_bytes = base64.b64decode(b64_data)
+                nombre_archivo = f"{carpeta}/{uuid.uuid4().hex}.jpg"
+                endpoint = f"{supabase_url}/storage/v1/object/fotos-autostock/{nombre_archivo}"
+                
+                req = urllib.request.Request(endpoint, data=img_bytes, method="POST")
+                req.add_header("Authorization", f"Bearer {supabase_key}")
+                req.add_header("apikey", supabase_key)
+                req.add_header("Content-Type", "image/jpeg")
+                
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    if resp.status in (200, 201):
+                        url_publica = f"{supabase_url}/storage/v1/object/public/fotos-autostock/{nombre_archivo}"
+                        urls_finales.append(url_publica)
+            except Exception as e:
+                print(f"[STORAGE ERROR] No se pudo subir imagen: {e}")
+                urls_finales.append(item)
+        else:
+            urls_finales.append(item)
+            
+    return urls_finales
 
 async def enviar_alerta_whatsapp_task(telefono: str, producto_id: int, nombre_pieza: str):
     # Proceso asíncrono seguro en segundo plano para notificar salidas de inventario
