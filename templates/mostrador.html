@@ -1149,8 +1149,19 @@
 
         procesarMultiplesFotos(document.getElementById('foto-camara'), 'url_imagen_string', 'contador-fotos-pieza', 6, 1200, 0.82);
         procesarMultiplesFotos(document.getElementById('foto-mercado'), 'url_imagen_mercado', 'contador-fotos-mercado', 10, 1400, 0.88);
-          let ultimoToqueAtras = 0;
+        let ultimoToqueAtras = 0;
+        let historialBlindado = false;
+
+        function blindarHistorialAndroid() {
+            if (!historialBlindado) {
+                window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
+                historialBlindado = true;
+            }
+        }
+
         window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
+        document.addEventListener('touchstart', blindarHistorialAndroid, { once: true });
+        document.addEventListener('click', blindarHistorialAndroid, { once: true });
 
         window.addEventListener('popstate', function () {
             const vistaInicio = document.getElementById('vista-inicio');
@@ -1161,19 +1172,23 @@
             }
 
             const ahora = Date.now();
-            if (ahora - ultimoToqueAtras < 2000) {
+            if (ahora - ultimoToqueAtras < 2500) {
                 window.history.back();
             } else {
                 ultimoToqueAtras = ahora;
                 window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
                 const aviso = document.createElement('div');
-                aviso.textContent = '⚠️ Presiona Atrás de nuevo para salir';
+                aviso.textContent = 'Presiona Atrás de nuevo para salir';
                 aviso.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-lg z-50 border border-orange-500';
                 document.body.appendChild(aviso);
-                setTimeout(() => aviso.remove(), 2000);
+                setTimeout(() => aviso.remove(), 2500);
             }
-        });  
-        window.onload = inicializarFiltrosYFormularios;
+        });
+
+        window.onload = function() {
+            inicializarFiltrosYFormularios();
+            if (window.lucide) lucide.createIcons();
+        };
     </script>
 </body>
 </html>
