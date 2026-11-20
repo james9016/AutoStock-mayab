@@ -631,38 +631,36 @@
         </div>
     </main>
     <!-- BARRA DE NAVEGACIÓN INFERIOR ESTILO MERCADO LIBRE -->
+    <!-- BARRA DE NAVEGACIÓN INFERIOR PROFESIONAL -->
     <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-40">
         <div class="max-w-7xl mx-auto flex justify-around items-center h-16 px-1">
             <button type="button" onclick="cambiarVista('inicio')" id="nav-inicio" class="nav-btn flex-1 flex flex-col items-center justify-center text-orange-600 font-extrabold transition">
-                <span class="text-xl leading-none">🏠</span>
+                <i data-lucide="home" class="w-5 h-5"></i>
                 <span class="text-[10px] mt-1">Inicio</span>
             </button>
             <button type="button" onclick="cambiarVista('mercado')" id="nav-mercado" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
-                <span class="text-xl leading-none">🏪</span>
+                <i data-lucide="store" class="w-5 h-5"></i>
                 <span class="text-[10px] mt-1">Mercado</span>
             </button>
             <button type="button" onclick="cambiarVista('favoritos')" id="nav-favoritos" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition relative">
-                <span class="text-xl leading-none">❤️</span>
+                <i data-lucide="heart" class="w-5 h-5"></i>
                 <span id="badge-fav" class="hidden absolute top-1.5 right-1/4 bg-red-500 text-white text-[9px] font-black px-1.5 rounded-full">0</span>
                 <span class="text-[10px] mt-1">Favoritos</span>
             </button>
-
             <button type="button" onclick="cambiarVista('carrito')" id="nav-carrito" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition relative">
-                <span class="text-xl leading-none">🛒</span>
+                <i data-lucide="shopping-cart" class="w-5 h-5"></i>
                 <span id="badge-cart" class="hidden absolute top-1.5 right-1/4 bg-orange-500 text-slate-950 text-[9px] font-black px-1.5 rounded-full">0</span>
                 <span class="text-[10px] mt-1">Carrito</span>
             </button>
-
             {% if es_operador %}
             <button type="button" onclick="cambiarVista('ventas')" id="nav-ventas" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
-                <span class="text-xl leading-none">💰</span>
+                <i data-lucide="wallet" class="w-5 h-5"></i>
                 <span class="text-[10px] mt-1">Mis Ventas</span>
             </button>
             {% endif %}
-
             {% if es_admin %}
             <button type="button" onclick="cambiarVista('afiliados')" id="nav-afiliados" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
-                <span class="text-xl leading-none">🤝</span>
+                <i data-lucide="users" class="w-5 h-5"></i>
                 <span class="text-[10px] mt-1">Afiliados</span>
             </button>
             {% endif %}
