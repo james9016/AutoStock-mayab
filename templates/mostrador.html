@@ -301,7 +301,7 @@
                                         </p>
                                         {% if p.precio_real %}
                                             <p class="flex justify-between items-center border-t border-slate-200 pt-1.5">
-                                                <span class="text-slate-500 font-bold">💰 Costo Dueño:</span>
+                                                <span class="text-slate-500 font-bold inline-flex items-center gap-1"><i data-lucide="dollar-sign" class="w-3.5 h-3.5 text-emerald-600"></i> Costo Dueño:</span>
                                                 <span class="font-black text-slate-700">${{ "{:,.2f}".format(p.precio_real) }}</span>
                                             </p>
                                         {% endif %}
