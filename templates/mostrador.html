@@ -880,10 +880,13 @@
             if (bFav) { bFav.textContent = favs.length; bFav.classList.toggle('hidden', favs.length === 0); }
             if (bCart) { bCart.textContent = cart.length; bCart.classList.toggle('hidden', cart.length === 0); }
 
-            document.querySelectorAll('[id^="fav-btn-"]').forEach(btn => {
+                        document.querySelectorAll('[id^="fav-btn-"]').forEach(btn => {
                 const pid = btn.id.replace('fav-btn-', '');
-                btn.textContent = favs.includes(pid) ? '❤️' : '🤍';
+                btn.innerHTML = favs.includes(pid)
+                    ? '<i data-lucide="heart" class="w-5 h-5 fill-red-500 text-red-500"></i>'
+                    : '<i data-lucide="heart" class="w-5 h-5 text-slate-400"></i>';
             });
+            if (window.lucide) lucide.createIcons();
         }
 
         function renderizarFavoritos() {
