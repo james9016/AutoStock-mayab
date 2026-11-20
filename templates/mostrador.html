@@ -327,7 +327,7 @@
                                     <div class="flex items-center gap-1.5">
                                         <button type="button" onclick="agregarAlCarrito('{{ p.id }}')" class="bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 text-xs font-extrabold px-3 py-2.5 rounded-xl shadow transition" title="Agregar a cotización">
 
-                                            🛒
+                                            <i data-lucide="shopping-cart" class="w-4 h-4"></i>
                                         </button>
                                         <form action="/productos/vender/{{ p.id }}" method="POST" onsubmit="return confirm('¿Confirmar venta de refacción #{{ p.id }}?');">
                                             <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black px-3.5 py-2.5 rounded-xl shadow transition uppercase tracking-wider">
