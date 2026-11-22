@@ -321,8 +321,9 @@ def registrar_usuario_publico(nombre: str = Form(...), usuario: str = Form(...),
         db.close()
 
 @app.post("/mercado/publicar")
-def publicar_anuncio_mercado(request: Request, titulo: str = Form(...), categoria: str = Form(...), precio: float = Form(0.0), descripcion: str = Form(...), zona_cancun: str = Form("Cancún Centro"), url_imagen: str = Form(None)):
+def publicar_anuncio_mercado(request: Request, titulo: str = Form(...), categoria: str = Form(...), precio: float = Form(0.0), descripcion: str = Form(...), zona_cancun: str = Form("Cancún Centro"), es_subasta: str = Form("no"), url_imagen: str = Form(None)):
     import database, models, security
+    from datetime import timedelta
     db = next(database.get_db())
     try:
         usuario = security.obtener_usuario_actual(request, db)
@@ -330,9 +331,15 @@ def publicar_anuncio_mercado(request: Request, titulo: str = Form(...), categori
             return RedirectResponse(url="/mostrador?error=Inicia+sesion+para+publicar", status_code=status.HTTP_303_SEE_OTHER)
         urls_mercado = subir_fotos_a_storage(url_imagen, "mercado", 10)
         url_guardar = json.dumps(urls_mercado) if urls_mercado else None
-        db.add(models.AnuncioMercado(titulo=titulo, categoria=categoria, precio=precio, descripcion=descripcion, zona_cancun=zona_cancun, url_imagen=url_guardar, usuario_id=usuario.id))
+        es_sub = (es_subasta == "si")
+        fin_sub = (datetime.now(timezone.utc) + timedelta(hours=24)) if es_sub else None
+        db.add(models.AnuncioMercado(
+            titulo=titulo, categoria=categoria, precio=precio, descripcion=descripcion,
+            zona_cancun=zona_cancun, url_imagen=url_guardar, usuario_id=usuario.id,
+            es_subasta=es_sub, subasta_fin=fin_sub, puja_actual=precio if es_sub else 0.0
+        ))
         db.commit()
-        return RedirectResponse(url="/mostrador?msg=Anuncio+publicado+en+Mercado+Local", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/mostrador?msg=Publicado+en+Mercado+Local", status_code=status.HTTP_303_SEE_OTHER)
     finally:
         db.close()
 
