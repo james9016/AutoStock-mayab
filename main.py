@@ -728,7 +728,152 @@ def marcar_anuncio_vendido(anuncio_id: int, request: Request):
         return RedirectResponse(url="/mostrador?msg=Marcado+como+vendido", status_code=status.HTTP_303_SEE_OTHER)
     finally:
         db.close()
-    
+
+@app.post("/urgente/crear")
+def crear_solicitud_urgente(request: Request, titulo: str = Form(...), vehiculo: str = Form(...), detalles: str = Form(...), zona_cancun: str = Form("Cancún")):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?error=Inicia+sesion+para+publicar", status_code=status.HTTP_303_SEE_OTHER)
+        db.add(models.SolicitudUrgente(usuario_id=usuario.id, titulo=titulo, vehiculo=vehiculo, detalles=detalles, zona_cancun=zona_cancun))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Solicitud+urgente+publicada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/urgente/responder/{sol_id}")
+def responder_solicitud_urgente(sol_id: int, mensaje: str = Form(...), precio_ofrecido: float = Form(None), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?error=Inicia+sesion+para+responder", status_code=status.HTTP_303_SEE_OTHER)
+        db.add(models.RespuestaUrgente(solicitud_id=sol_id, usuario_id=usuario.id, mensaje=mensaje, precio_ofrecido=precio_ofrecido))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Respuesta+enviada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/urgente/cerrar/{sol_id}")
+def cerrar_solicitud_urgente(sol_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        sol = db.query(models.SolicitudUrgente).filter(models.SolicitudUrgente.id == sol_id).first()
+        if usuario and sol and (sol.usuario_id == usuario.id or usuario.rol in [models.RolEnum.Administrador, "Administrador"]):
+            sol.resuelto = True
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Solicitud+marcada+como+conseguida", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/diagnostico/crear")
+def crear_diagnostico(request: Request, vehiculo: str = Form(...), sintoma: str = Form(...), descripcion: str = Form(...)):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?error=Inicia+sesion+para+consultar", status_code=status.HTTP_303_SEE_OTHER)
+        db.add(models.DiagnosticoForo(usuario_id=usuario.id, vehiculo=vehiculo, sintoma=sintoma, descripcion=descripcion))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Consulta+publicada+en+Diagnostico", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/diagnostico/comentar/{foro_id}")
+def comentar_diagnostico(foro_id: int, comentario: str = Form(...), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?error=Inicia+sesion+para+comentar", status_code=status.HTTP_303_SEE_OTHER)
+        db.add(models.ComentarioDiagnostico(diagnostico_id=foro_id, usuario_id=usuario.id, comentario=comentario))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Aporte+publicado", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/diagnostico/solucionado/{foro_id}")
+def solucionar_diagnostico(foro_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        foro = db.query(models.DiagnosticoForo).filter(models.DiagnosticoForo.id == foro_id).first()
+        if usuario and foro and (foro.usuario_id == usuario.id or usuario.rol in [models.RolEnum.Administrador, "Administrador"]):
+            foro.solucionado = True
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Falla+marcada+como+solucionada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/productos/editar/{prod_id}")
+def editar_producto(prod_id: int, nombre_refaccion: str = Form(...), ubicacion_fisica: str = Form(...), condicion: str = Form("Original Usada - Excelente"), precio_real: float = Form(...), precio_sugerido: float = Form(...), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        prod = db.query(models.Producto).filter(models.Producto.id == prod_id).first()
+        if prod:
+            prod.nombre_refaccion = nombre_refaccion
+            prod.ubicacion_fisica = ubicacion_fisica
+            prod.condicion = condicion
+            prod.precio_real = precio_real
+            prod.precio_sugerido = precio_sugerido
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"Edición de pieza #{prod.id}"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Pieza+actualizada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/productos/apartar/{prod_id}")
+def apartar_producto(prod_id: int, request: Request):
+    import database, models, security
+    from datetime import timedelta
+    db = next(database.get_db())
+    try:
+        operador = security.PermisoRol(["Administrador", "Vendedor"])(security.obtener_usuario_actual(request, db))
+        prod = db.query(models.Producto).filter(models.Producto.id == prod_id).first()
+        if prod:
+            ahora = datetime.now(timezone.utc)
+            if prod.apartado_hasta and prod.apartado_hasta > ahora:
+                prod.apartado_hasta = None
+                msg = "Apartado+liberado"
+            else:
+                prod.apartado_hasta = ahora + timedelta(hours=2)
+                msg = "Pieza+apartada+por+2+horas"
+            db.add(models.BitacoraAuditoria(usuario_id=operador.id, accion_realizada=f"Cambio apartado pieza #{prod.id}"))
+            db.commit()
+            return RedirectResponse(url=f"/mostrador?msg={msg}", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/mostrador", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/ventas/devolver/{venta_id}")
+def devolver_venta(venta_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        venta = db.query(models.HistorialVenta).filter(models.HistorialVenta.id == venta_id).first()
+        if venta and venta.estado_venta == models.EstadoVentaEnum.Completada:
+            venta.estado_venta = models.EstadoVentaEnum.Cancelada_Devuelta
+            venta.saldo_por_cobrar = 0.0
+            prod = db.query(models.Producto).filter(models.Producto.id == venta.producto_id).first()
+            if prod:
+                prod.cantidad_disponible = (prod.cantidad_disponible or 0) + 1
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"Devolución registrada de venta #{venta.id}"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Devolucion+procesada+y+pieza+reingresada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
 @app.get("/ping")
 def mantener_despierto():
     return {"estado": "activo"}
