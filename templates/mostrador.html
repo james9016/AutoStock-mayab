@@ -914,7 +914,64 @@
                 </div>
             </form>
             {% endif %}
+            <!-- FEED MARKETPLACE 2 COLUMNAS (VISTA 1) + SUBASTAS 24H -->
+            <div id="panel-mercado-grid" class="space-y-3">
+                <div class="flex gap-2">
+                    <input type="text" id="filtro-texto-mercado" oninput="filtrarMercadoLocal()" placeholder="Buscar en Mercado Cancún (rines, herramienta, región...)" class="flex-1 bg-white border border-slate-300 px-3 py-2 rounded-xl text-xs font-bold">
+                </div>
 
+                <div id="grid-anuncios-mercado" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {% for a in anuncios_mercado %}
+                        <div class="card-mercado group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer flex flex-col relative {{ 'opacity-65' if a.vendido else '' }}"
+                             data-subasta="{{ '1' if a.es_subasta else '0' }}"
+                             data-texto="{{ a.titulo }} {{ a.categoria }} {{ a.zona_cancun }} {{ a.descripcion }}"
+                             onclick='abrirDetalleMercado({{ a|tojson }})'>
+                            
+                            <div class="relative aspect-square bg-slate-100 overflow-hidden">
+                                {% if a.imagenes %}
+                                    <img src="{{ a.imagenes[0] }}" alt="{{ a.titulo }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200">
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center text-slate-400">
+                                        <i data-lucide="image" class="w-8 h-8"></i>
+                                    </div>
+                                {% endif %}
+
+                                {% if a.vendido %}
+                                    <span class="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-lg uppercase shadow">Vendido</span>
+                                {% elif a.es_subasta %}
+                                    <span class="absolute top-2 left-2 bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-lg uppercase shadow flex items-center gap-1">
+                                        <i data-lucide="clock" class="w-3 h-3"></i> Subasta 24h
+                                    </span>
+                                {% endif %}
+
+                                {% if a.imagenes|length > 1 %}
+                                    <span class="absolute bottom-2 right-2 bg-slate-900/75 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                                        1/{{ a.imagenes|length }}
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="p-2.5 flex-1 flex flex-col justify-between space-y-1">
+                                <div>
+                                    <p class="text-sm font-black text-slate-900 leading-tight">
+                                        ${{ "{:,.0f}".format(a.puja_actual if a.es_subasta else a.precio) }}
+                                        {% if a.es_subasta %}<span class="text-[9px] font-bold text-amber-700 block">Puja actual</span>{% endif %}
+                                    </p>
+                                    <h3 class="text-xs font-bold text-slate-700 line-clamp-2 leading-snug mt-0.5">{{ a.titulo }}</h3>
+                                </div>
+                                <p class="text-[10px] text-slate-400 font-semibold truncate flex items-center gap-1 pt-1">
+                                    <i data-lucide="map-pin" class="w-3 h-3 text-orange-500 shrink-0"></i> {{ a.zona_cancun }}
+                                </p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="col-span-full bg-white p-8 rounded-2xl border border-slate-200 text-center text-xs text-slate-500 font-bold">
+                            Aún no hay artículos publicados en Mercado Local Cancún. ¡Sé el primero en publicar!
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
     </main>
     <!-- BARRA DE NAVEGACIÓN INFERIOR ESTILO MERCADO LIBRE -->
     <!-- BARRA DE NAVEGACIÓN INFERIOR PROFESIONAL -->
