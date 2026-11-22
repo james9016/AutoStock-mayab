@@ -634,7 +634,101 @@ def procesar_liquidacion(dueno_id: int, ids_ventas: str = Form(""), request: Req
         return RedirectResponse(url="/mostrador?msg=Liquidacion+procesada+con+exito", status_code=status.HTTP_303_SEE_OTHER)
     finally:
         db.close()
-      
+
+@app.post("/garaje/agregar")
+def agregar_garaje(request: Request, marca: str = Form(...), modelo: str = Form(...), ano: str = Form(...), apodo: str = Form("")):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?error=Inicia+sesion+para+guardar+tu+auto", status_code=status.HTTP_303_SEE_OTHER)
+        db.add(models.GarajeUsuario(usuario_id=usuario.id, marca=marca, modelo=modelo, ano=ano, apodo=apodo))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Auto+guardado+en+Mi+Garaje", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/garaje/eliminar/{auto_id}")
+def eliminar_garaje(auto_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        auto = db.query(models.GarajeUsuario).filter(models.GarajeUsuario.id == auto_id).first()
+        if usuario and auto and auto.usuario_id == usuario.id:
+            db.delete(auto)
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Vehiculo+eliminado", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/taller/guardar-perfil")
+def guardar_perfil_taller(request: Request, nombre_taller: str = Form(...), colonia_region: str = Form(...), especialidad: str = Form("Mecánica General"), margen_porcentaje: float = Form(15.0), pin_seguridad: str = Form("1234")):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?error=Inicia+sesion+primero", status_code=status.HTTP_303_SEE_OTHER)
+        perfil = db.query(models.PerfilTaller).filter(models.PerfilTaller.usuario_id == usuario.id).first()
+        if perfil:
+            perfil.nombre_taller = nombre_taller
+            perfil.colonia_region = colonia_region
+            perfil.especialidad = especialidad
+            perfil.margen_porcentaje = margen_porcentaje
+            perfil.pin_seguridad = pin_seguridad.strip()[:4] or "1234"
+        else:
+            db.add(models.PerfilTaller(
+                usuario_id=usuario.id, nombre_taller=nombre_taller, colonia_region=colonia_region,
+                especialidad=especialidad, margen_porcentaje=margen_porcentaje,
+                pin_seguridad=pin_seguridad.strip()[:4] or "1234"
+            ))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Perfil+de+Taller+actualizado", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/mercado/pujar/{anuncio_id}")
+def pujar_subasta(anuncio_id: int, monto: float = Form(...), request: Request = None):
+    import database, models, security
+    from datetime import timedelta
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?error=Inicia+sesion+para+pujar", status_code=status.HTTP_303_SEE_OTHER)
+        anuncio = db.query(models.AnuncioMercado).filter(models.AnuncioMercado.id == anuncio_id).first()
+        ahora = datetime.now(timezone.utc)
+        if not anuncio or not anuncio.es_subasta or anuncio.vendido or (anuncio.subasta_fin and anuncio.subasta_fin <= ahora):
+            return RedirectResponse(url="/mostrador?error=Subasta+finalizada+o+no+disponible", status_code=status.HTTP_303_SEE_OTHER)
+        minimo = float(anuncio.puja_actual or anuncio.precio or 0) + 50.0
+        if monto < minimo:
+            return RedirectResponse(url=f"/mostrador?error=La+puja+minima+es+${int(minimo)}", status_code=status.HTTP_303_SEE_OTHER)
+        anuncio.puja_actual = monto
+        anuncio.ganador_id = usuario.id
+        if anuncio.subasta_fin and (anuncio.subasta_fin - ahora).total_seconds() <= 30:
+            anuncio.subasta_fin = anuncio.subasta_fin + timedelta(minutes=2)
+        db.add(models.PujaSubasta(anuncio_id=anuncio.id, usuario_id=usuario.id, monto=monto))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Puja+registrada+con+exito", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/mercado/vendido/{anuncio_id}")
+def marcar_anuncio_vendido(anuncio_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        anuncio = db.query(models.AnuncioMercado).filter(models.AnuncioMercado.id == anuncio_id).first()
+        if usuario and anuncio and (anuncio.usuario_id == usuario.id or usuario.rol in [models.RolEnum.Administrador, "Administrador"]):
+            anuncio.vendido = True
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Marcado+como+vendido", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+    
 @app.get("/ping")
 def mantener_despierto():
     return {"estado": "activo"}
