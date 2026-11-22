@@ -363,9 +363,10 @@ def registrar_producto(
     request: Request,
     categoria: str = Form(...), nombre_refaccion: str = Form(...),
     marca: str = Form(...), modelo: str = Form(...), ano_grupo: str = Form(...),
-    compatibilidad: str = Form(None), ubicacion_fisica: str = Form(...),
-    dueno_id: int = Form(...), precio_real: float = Form(...),
-    precio_sugerido: float = Form(...), url_imagen: str = Form(None)
+    compatibilidad: str = Form(None), condicion: str = Form("Original Usada - Excelente"),
+    ubicacion_fisica: str = Form(...), dueno_id: int = Form(...),
+    precio_real: float = Form(...), precio_sugerido: float = Form(...),
+    url_imagen: str = Form(None)
 ):
     import database
     import models
@@ -378,9 +379,9 @@ def registrar_producto(
         nuevo_prod = models.Producto(
             categoria=categoria, nombre_refaccion=nombre_refaccion, marca=marca,
             modelo=modelo, ano_grupo=ano_grupo, compatibilidad=compatibilidad,
-            ubicacion_fisica=ubicacion_fisica, dueno_id=dueno_id,
+            condicion=condicion, ubicacion_fisica=ubicacion_fisica, dueno_id=dueno_id,
             precio_real=precio_real, precio_sugerido=precio_sugerido
-        )
+)
         db.add(nuevo_prod)
         db.commit()
         db.refresh(nuevo_prod)
