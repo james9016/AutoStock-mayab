@@ -618,7 +618,102 @@
                         </label>
                     </div>
                 </div>
-                
+                         <!-- HOJA VISUAL DE COTIZACIÓN / RESUMEN (CAPTURABLE EN PNG Y PDF) -->
+                <div id="tarjeta-cotizacion-export" class="bg-slate-900 text-white p-5 rounded-2xl shadow-lg space-y-3 border-t-4 border-orange-500">
+                    <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+                        <div>
+                            <span id="export-nombre-taller" class="text-sm font-black uppercase text-orange-400 block">AUTOSTOCK MAYAB • CANCÚN</span>
+                            <span id="export-colonia-taller" class="text-[10px] text-slate-400">Bodega Central: A 1 calle de Ruta 5 y Av. Tulum</span>
+                        </div>
+                        <span id="export-fecha" class="text-[10px] text-slate-400 font-bold"></span>
+                    </div>
+
+                    <div id="export-info-cliente" class="hidden text-xs bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-700 font-bold text-slate-200"></div>
+
+                    <div id="export-lista-items" class="space-y-1.5 text-xs border-b border-slate-800 pb-3"></div>
+
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between text-slate-300">
+                            <span>Subtotal Refacciones:</span>
+                            <span id="subtotal-piezas" class="font-bold">$0.00</span>
+                        </div>
+                        <div id="row-mano-obra" class="hidden flex justify-between text-emerald-400">
+                            <span>Mano de Obra (Instalación):</span>
+                            <span id="subtotal-mano-obra" class="font-bold">$0.00</span>
+                        </div>
+                        <div id="row-insumos" class="hidden flex justify-between text-slate-300">
+                            <span>Insumos / Adicionales:</span>
+                            <span id="subtotal-insumos" class="font-bold">$0.00</span>
+                        </div>
+                        <div id="row-envio" class="hidden flex justify-between text-orange-300">
+                            <span>Envío Local Cancún:</span>
+                            <span id="subtotal-envio" class="font-bold">$0.00</span>
+                        </div>
+                        <div id="row-garantia" class="hidden text-[10px] text-slate-400 pt-1"></div>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-700">
+                        <span class="text-xs uppercase font-extrabold text-slate-300">Total Final</span>
+                        <span id="total-carrito" class="text-2xl font-black text-orange-400">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- BOTONES DE ACCIÓN: COMPRAR Y ENVIAR COTIZACIÓN AL CLIENTE -->
+                <div class="space-y-2">
+                    <button type="button" onclick="enviarPedidoWhatsApp()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3.5 rounded-xl shadow-lg uppercase text-xs tracking-wider transition flex items-center justify-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        <span>Comprar / Enviar Pedido por WhatsApp</span>
+                    </button>
+
+                    {% if es_mecanico or es_admin %}
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 space-y-2 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-extrabold uppercase text-slate-700">Enviar Cotización al Cliente</span>
+                            <button type="button" onclick="guardarBorradorCotizacion()" class="text-[10px] font-extrabold text-slate-500 hover:text-slate-800 underline">Guardar borrador</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" onclick="exportarCotizacionImagen()" class="bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-2.5 rounded-xl text-[11px] flex items-center justify-center gap-1 shadow-sm">
+                                <i data-lucide="image" class="w-3.5 h-3.5"></i> Imagen
+                            </button>
+                            <button type="button" onclick="exportarCotizacionPDF()" class="bg-slate-800 hover:bg-slate-900 text-white font-extrabold py-2.5 rounded-xl text-[11px] flex items-center justify-center gap-1 shadow-sm">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
+                            </button>
+                            <button type="button" onclick="enviarCotizacionClienteWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded-xl text-[11px] flex items-center justify-center gap-1 shadow-sm">
+                                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- RECOMENDACIÓN DE TALLERES VERIFICADOS EN CANCÚN -->
+                {% if talleres_directorio %}
+                <div class="bg-orange-50 border border-orange-200 p-4 rounded-2xl space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-orange-900 flex items-center gap-1.5">
+                            <i data-lucide="wrench" class="w-4 h-4 text-orange-600"></i> ¿Necesitas quién instale tu pieza?
+                        </span>
+                        <button type="button" onclick="cambiarVista('comunidad')" class="text-[11px] font-extrabold text-orange-700 underline">Ver todos</button>
+                    </div>
+                    <p class="text-[11px] text-orange-800">Talleres verificados en Cancún listos para instalar tus refacciones:</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {% for t in talleres_directorio[:2] %}
+                        <div class="bg-white p-2.5 rounded-xl border border-orange-200 flex justify-between items-center gap-2">
+                            <div>
+                                <p class="text-xs font-extrabold text-slate-900">{{ t.nombre_taller }}</p>
+                                <p class="text-[10px] text-slate-500">{{ t.colonia_region }} • {{ t.especialidad }}</p>
+                            </div>
+                            <a href="https://wa.me{{ t.telefono|replace(' ','')|replace('-','') }}?text={{ ('Hola ' ~ t.nombre_taller ~ ', compré una refacción en AutoStock Mayab y me gustaría cotizar la instalación.')|urlencode }}" target="_blank" class="bg-emerald-500 text-slate-950 text-[10px] font-black px-2.5 py-1.5 rounded-lg shrink-0">
+                                Cotizar
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
         {% if es_operador %}
         <div id="vista-ventas" class="vista-seccion hidden space-y-4">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
