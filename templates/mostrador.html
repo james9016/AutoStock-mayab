@@ -511,24 +511,65 @@
         </div>
 
         <div id="vista-carrito" class="vista-seccion hidden space-y-4">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                    <h2 class="text-base font-extrabold text-slate-900 uppercase">🛒 Carrito de Compra</h2>
-                    <p class="text-xs text-slate-500">Resumen de refacciones seleccionadas</p>
+                    <h2 class="text-base font-extrabold text-slate-900 uppercase flex items-center gap-1.5">
+                        <i data-lucide="shopping-cart" class="w-5 h-5 text-orange-500"></i>
+                        <span id="titulo-vista-carrito">Carrito y Cotizador</span>
+                    </h2>
+                    <p class="text-xs text-slate-500">Configura tu entrega en Cancún o arma una cotización para tu cliente</p>
                 </div>
-                <button type="button" onclick="vaciarCarrito()" class="text-xs font-extrabold text-red-600 hover:underline">Vaciar</button>
+                <div class="flex items-center gap-2">
+                    {% if es_mecanico or es_admin %}
+                    <button type="button" onclick="cargarBorradorCotizacion()" class="text-xs font-extrabold text-blue-600 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200">
+                        Recuperar Borrador
+                    </button>
+                    {% endif %}
+                    <button type="button" onclick="vaciarCarrito()" class="text-xs font-extrabold text-red-600 hover:underline">Vaciar</button>
+                </div>
             </div>
+
+            <!-- ETIQUETA DE VEHÍCULO / CLIENTE -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <label class="block text-[10px] font-extrabold text-slate-500 uppercase">Etiqueta del Pedido / Cliente / Vehículo</label>
+                <input type="text" id="cotiz-cliente-auto" oninput="recalcularCarrito()" placeholder="Ej: Neon 2003 - Sr. Carlos / Tsuru Blanco" class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+
+                {% if es_mecanico or es_admin %}
+                <!-- HERRAMIENTAS DE COTIZACIÓN PARA TALLER -->
+                <div class="pt-2 border-t border-slate-100 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-slate-800 flex items-center gap-1">
+                            <i data-lucide="wrench" class="w-4 h-4 text-emerald-600"></i> Opciones de Taller / Presupuesto
+                        </span>
+                        <button type="button" onclick="document.getElementById('box-mano-obra').classList.toggle('hidden')" class="text-xs font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg">
+                            + Agregar mano de obra
+                        </button>
+                    </div>
+
+                    <div id="box-mano-obra" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Mano de Obra ($)</label>
+                            <input type="number" id="cotiz-mano-obra" value="0" min="0" oninput="recalcularCarrito()" class="w-full bg-white border border-slate-300 p-2 rounded-lg text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Insumos / Envío ($)</label>
+                            <input type="number" id="cotiz-insumos" value="0" min="0" oninput="recalcularCarrito()" class="w-full bg-white border border-slate-300 p-2 rounded-lg text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Garantía</label>
+                            <select id="cotiz-garantia" onchange="recalcularCarrito()" class="w-full bg-white border border-slate-300 p-2 rounded-lg text-xs font-bold">
+                                <option value="Sin garantía (Pieza eléctrica)">Sin garantía (Eléctrica)</option>
+                                <option value="15 días de garantía en instalación">15 días de garantía</option>
+                                <option value="30 días de garantía por escrito" selected>30 días de garantía</option>
+                                <option value="90 días de garantía">90 días de garantía</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
             <div id="contenedor-carrito" class="space-y-3"></div>
-            <div id="resumen-carrito" class="hidden bg-slate-900 text-white p-5 rounded-2xl shadow-lg space-y-4 border-t-4 border-orange-500">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs uppercase font-bold text-slate-400">Total Estimado PVP</span>
-                    <span id="total-carrito" class="text-2xl font-black text-orange-400">$0.00</span>
-                </div>
-                <button type="button" onclick="enviarPedidoWhatsApp()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3.5 rounded-xl shadow uppercase text-xs tracking-wider flex items-center justify-center gap-2">
-                    <span>📲</span> <span>Solicitar / Confirmar Pedido</span>
-                </button>
-            </div>
-        </div>
 
         {% if es_operador %}
         <div id="vista-ventas" class="vista-seccion hidden space-y-4">
