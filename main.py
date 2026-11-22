@@ -156,13 +156,18 @@ def vista_mostrador(request: Request):
                 else:
                     fotos_anuncio = [a.url_imagen]
             anuncios_mercado.append({
-                "id": a.id, "titulo": a.titulo, "categoria": cat_texto, "precio": a.precio,
-                "imagenes": fotos_anuncio,
-                "descripcion": a.descripcion, "zona_cancun": a.zona_cancun, "url_imagen": a.url_imagen,
-                "usuario_id": a.usuario_id, "autor_nombre": autor.nombre if autor else "Usuario Cancún",
-                "autor_telefono": autor.telefono_celular if autor else "", "autor_rol": rol_autor,
-                "fecha": a.fecha_publicacion.strftime("%d/%m/%Y") if a.fecha_publicacion else "Reciente"
-            })
+           "id": a.id, "titulo": a.titulo, "categoria": cat_texto, "precio": a.precio,
+           "imagenes": fotos_anuncio,
+           "descripcion": a.descripcion, "zona_cancun": a.zona_cancun, "url_imagen": a.url_imagen,
+           "vendido": bool(a.vendido),
+           "es_subasta": bool(a.es_subasta),
+           "subasta_fin": a.subasta_fin.isoformat() if a.subasta_fin else None,
+           "puja_actual": float(a.puja_actual or a.precio or 0),
+           "ganador_id": a.ganador_id,
+           "usuario_id": a.usuario_id, "autor_nombre": autor.nombre if autor else "Usuario Cancún",
+           "autor_telefono": autor.telefono_celular if autor else "", "autor_rol": rol_autor,
+           "fecha": a.fecha_publicacion.strftime("%d/%m/%Y") if a.fecha_publicacion else "Reciente"
+       })
 
         liquidaciones_pendientes = {}
         ventas_detalle = []
