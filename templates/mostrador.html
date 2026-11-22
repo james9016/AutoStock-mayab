@@ -255,6 +255,99 @@
                             <label class="block text-[10px] font-extrabold text-slate-600 uppercase mb-1">Medida, Voltaje o Especificación Técnica</label>
                             <input type="text" id="input-medida-generica" oninput="document.getElementById('input-compat-final').value = this.value" placeholder="Ej: 12V 600A Grupo 24 / Rin 15 195-65 / Sintético 5W-30" class="w-full bg-white border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
                         </div>
+                                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Condición Física</label>
+                                <select name="condicion" class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                                    <option value="Original Usada - Excelente">Original Usada - Excelente</option>
+                                    <option value="Original Usada - Funcional con detalles">Original Usada - Detalles estéticos</option>
+                                    <option value="Reconstruida / Remanufacturada">Reconstruida / Remanufacturada</option>
+                                    <option value="Nueva / Genérica">Nueva / Genérica</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Ubicación Bodega (Pasillo/Anaquel)</label>
+                                <input type="text" name="ubicacion_fisica" placeholder="Ej: Pasillo B - Anaquel 4" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Afiliado Dueño (Interno)</label>
+                                <select name="dueno_id" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                                    {% for u in usuarios %}
+                                        <option value="{{ u.id }}">{{ u.nombre }} ({{ u.rol.value if u.rol.value else u.rol }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Costo Dueño ($)</label>
+                                <input type="number" step="0.01" name="precio_real" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Precio Público ($)</label>
+                                <input type="number" step="0.01" name="precio_sugerido" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Fotos Reales de la Pieza (Máximo 6)</label>
+                            <input type="file" id="foto-camara" accept="image/*" multiple class="w-full text-xs bg-slate-50 p-2 border border-dashed border-slate-400 rounded-xl">
+                            <p id="contador-fotos-pieza" class="text-[10px] font-bold text-emerald-700 mt-1"></p>
+                            <input type="hidden" name="url_imagen" id="url_imagen_string">
+                        </div>
+
+                        <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-3 rounded-xl shadow-md uppercase text-xs flex items-center justify-center gap-1.5">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Registrar en Bodega Central
+                        </button>
+                    </form>
+                </section>
+            {% endif %}
+
+            <!-- BANNER DE MI GARAJE Y ORDENAMIENTO RÁPIDO -->
+            <section class="space-y-3">
+                <div id="banner-garaje-activo" class="hidden bg-slate-900 text-white p-3 rounded-2xl border border-orange-500/40 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-orange-500/20 text-orange-400 p-2 rounded-xl"><i data-lucide="car" class="w-4 h-4"></i></span>
+                        <div>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase block leading-none">Mi Garaje Activo</span>
+                            <span id="texto-auto-garaje" class="text-xs font-extrabold text-white"></span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" id="btn-toggle-garaje-filtro" onclick="alternarFiltroGaraje()" class="bg-orange-500 text-slate-950 text-[11px] font-black px-3 py-1.5 rounded-xl transition">
+                            Ver todo el inventario
+                        </button>
+                        <button type="button" onclick="abrirModalGaraje()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold px-2.5 py-1.5 rounded-xl border border-slate-700">
+                            Cambiar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between border-b border-slate-200 pb-2 gap-2">
+                    <h2 class="text-base font-extrabold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                        <i data-lucide="package" class="w-5 h-5 text-orange-500"></i>
+                        <span>Inventario Disponible</span>
+                        <span id="contador-resultados" class="text-xs font-bold text-slate-500 normal-case">({{ productos|length }})</span>
+                    </h2>
+
+                    <!-- ORDENAMIENTO RÁPIDO -->
+                    <div class="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                        <button type="button" onclick="ordenarCatalogo('recientes', this)" class="btn-orden px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-slate-900 text-white transition">Recientes</button>
+                        <button type="button" onclick="ordenarCatalogo('menor', this)" class="btn-orden px-2.5 py-1 rounded-lg text-[10px] font-extrabold text-slate-600 hover:bg-slate-100 transition">Menor $</button>
+                        <button type="button" onclick="ordenarCatalogo('mayor', this)" class="btn-orden px-2.5 py-1 rounded-lg text-[10px] font-extrabold text-slate-600 hover:bg-slate-100 transition">Mayor $</button>
+                    </div>
+                </div>
+
+                <!-- AVISO SIN RESULTADOS + LISTA DE ESPERA -->
+                <div id="box-sin-resultados" class="hidden bg-white border border-slate-200 rounded-2xl p-6 text-center space-y-3 shadow-sm">
+                    <p class="text-sm font-extrabold text-slate-800">No encontramos esa pieza en el inventario actual.</p>
+                    <p class="text-xs text-slate-500">Publícala en nuestro muro urgente para que talleres y deshuesaderos de Cancún te avisen si la tienen.</p>
+                    <button type="button" onclick="cambiarVista('mercado'); activarSubtabMercado('busco')" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shadow inline-flex items-center gap-1.5">
+                        <i data-lucide="megaphone" class="w-4 h-4"></i> Solicitar en "¿Quién la tiene?"
+                    </button>
+                                    </div>
+                                
         </div>
         <div id="vista-favoritos" class="vista-seccion hidden space-y-4">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
