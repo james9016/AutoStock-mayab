@@ -838,7 +838,7 @@
             </div>
         </div>
         {% endif %}
-                <div id="vista-mercado" class="vista-seccion hidden space-y-4">
+                 <div id="vista-mercado" class="vista-seccion hidden space-y-4">
             <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-md border-b-4 border-orange-500 flex flex-wrap justify-between items-center gap-3">
                 <div>
                     <h2 class="text-base font-extrabold uppercase flex items-center gap-2"><span>🏪</span> <span>Mercado Local Cancún</span></h2>
@@ -929,38 +929,8 @@
                             <p class="text-xs text-slate-600">{{ a.descripcion }}</p>
                             <div class="flex items-center gap-1.5 pt-1">
                                 <span class="text-xs font-bold text-slate-800">👤 {{ a.autor_nombre }}</span>
-                                {% if a.autor_rol == 'Mecanico' %}
-                                    <span class="text-[10px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">🔧 Taller Verificado</span>
-                                {% elif a.autor_rol in ['Vendedor', 'Administrador'] %}
-                                    <span class="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">✅ Afiliado Oficial</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                            <span class="text-lg font-black text-slate-900">{{ '$' + '{:,.2f}'.format(a.precio) if a.precio > 0 else 'A tratar / Busco' }}</span>
-                            <div class="flex items-center gap-1.5">
-                                {% if a.autor_telefono %}
-                                    <a href="https://whatsapp.com{{ a.autor_telefono | replace('+', '') | replace(' ', '') }}&text=Hola%20{{ a.autor_nombre }},%20vi%20tu%20anuncio%20en%20Mercado%20Local%20AutoStock%20Mayab:%20{{ a.titulo }}" target="_blank" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black px-3 py-2 rounded-xl shadow uppercase">
-                                        💬 WhatsApp
-                                    </a>
-                                {% endif %}
-                                {% if usuario and (usuario.id == a.usuario_id or es_admin) %}
-                                    <form action="/mercado/eliminar/{{ a.id }}" method="POST" onsubmit="return confirm('¿Eliminar este anuncio?');">
-                                        <button type="submit" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-extrabold px-2.5 py-2 rounded-xl" title="Borrar">🗑️</button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                {% else %}
-                    <div class="col-span-full bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center space-y-2">
-                        <span class="text-3xl block">🏪</span>
-                        <p class="text-xs font-extrabold text-slate-700 uppercase">Aún no hay anuncios en el Mercado Local</p>
-                        <p class="text-xs text-slate-500">Sé el primero en publicar un auto para reparar, herramientas o rines en Cancún.</p>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
+                                {% if
+
     </main>
     <!-- BARRA DE NAVEGACIÓN INFERIOR ESTILO MERCADO LIBRE -->
     <!-- BARRA DE NAVEGACIÓN INFERIOR PROFESIONAL -->
