@@ -54,8 +54,9 @@ class Usuario(Base):
     lista_espera = relationship("ListaEspera", back_populates="vendedor")
     auditorias = relationship("BitacoraAuditoria", back_populates="usuario")
     anuncios = relationship("AnuncioMercado", back_populates="autor", cascade="all, delete-orphan")
-
-class Producto(Base):
+    garaje = relationship("GarajeUsuario", back_populates="usuario", cascade="all, delete-orphan")
+    perfil_taller = relationship("PerfilTaller", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
+    class Producto(Base):
     __tablename__ = "productos"
     id = Column(Integer, primary_key=True, index=True)
     categoria = Column(Enum(CategoriaEnum, native_enum=False), nullable=False)
@@ -64,11 +65,13 @@ class Producto(Base):
     modelo = Column(String, nullable=False, index=True)
     ano_grupo = Column(String, nullable=False)
     compatibilidad = Column(String, nullable=True)
+    condicion = Column(String, nullable=False, default="Original Usada - Excelente")
     cantidad_disponible = Column(Integer, default=1, nullable=False)
     ubicacion_fisica = Column(String, nullable=False)
     dueno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     precio_real = Column(Float, nullable=False)
     precio_sugerido = Column(Float, nullable=False)
+    apartado_hasta = Column(DateTime, nullable=True)
     fecha_ingreso = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relaciones
@@ -121,26 +124,4 @@ class BitacoraAuditoria(Base):
 
     # Relaciones
     usuario = relationship("Usuario", back_populates="auditorias")
-
-class AnuncioMercado(Base):
-    __tablename__ = "anuncios_mercado"
-    id = Column(Integer, primary_key=True, index=True)
-    titulo = Column(String, nullable=False, index=True)
-    categoria = Column(Enum(CategoriaMercadoEnum, native_enum=False), nullable=False)
-    precio = Column(Float, nullable=False, default=0.0)
-    descripcion = Column(String, nullable=False)
-    zona_cancun = Column(String, nullable=False, default="Cancún Centro")
-    url_imagen = Column(String, nullable=True)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    fecha_publicacion = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-
-    # Relaciones
-    autor = relationship("Usuario", back_populates="anuncios")
-
-# BLINDAJE LOGÍSTICO
-# Modifica la secuencia de PostgreSQL para arrancar folios de productos desde 1000
-event.listen(
-    Producto.__table__,
-    "after_create",
-    DDL("ALTER SEQUENCE productos_id_seq RESTART WITH 1000;").execute_if(dialect="postgresql")
-)
+    
