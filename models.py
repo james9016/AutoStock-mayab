@@ -56,7 +56,8 @@ class Usuario(Base):
     anuncios = relationship("AnuncioMercado", back_populates="autor", cascade="all, delete-orphan")
     garaje = relationship("GarajeUsuario", back_populates="usuario", cascade="all, delete-orphan")
     perfil_taller = relationship("PerfilTaller", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
-    class Producto(Base):
+   
+class Producto(Base):
     __tablename__ = "productos"
     id = Column(Integer, primary_key=True, index=True)
     categoria = Column(Enum(CategoriaEnum, native_enum=False), nullable=False)
