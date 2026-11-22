@@ -121,6 +121,8 @@ def vista_mostrador(request: Request):
                 "modelo": prod.modelo,
                 "ano_grupo": prod.ano_grupo,
                 "compatibilidad": prod.compatibilidad,
+                "condicion": prod.condicion or "Original Usada - Excelente",
+           "apartado": bool(prod.apartado_hasta and prod.apartado_hasta > datetime.now(timezone.utc)),
                 "precio_publico_original": float(prod.precio_sugerido),
                 "precio_sugerido": precio_final,
                 "tiene_descuento_taller": tiene_descuento_taller,
