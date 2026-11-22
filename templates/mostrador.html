@@ -347,6 +347,58 @@
                         <i data-lucide="megaphone" class="w-4 h-4"></i> Solicitar en "¿Quién la tiene?"
                     </button>
                                     </div>
+                         <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for p in productos %}
+                        {% set dias_almacen = ((datetime.utcnow() - p.fecha_ingreso).days) if (p.fecha_ingreso and datetime) else 0 %}
+                        {% set es_estancado = dias_almacen > 90 %}
+                        {% set es_universal = (p.marca|lower == 'universal') %}
+                        
+                        <div class="card-refaccion border rounded-2xl bg-white flex flex-col justify-between overflow-hidden shadow-sm transition hover:shadow-md {{ 'border-amber-400 bg-amber-50/20' if p.apartado else ('border-red-400 bg-red-50/30' if (es_estancado and es_operador) else 'border-slate-200') }}"
+                             data-id="{{ p.id }}"
+                             data-nombre="{{ p.nombre_refaccion }}"
+                             data-marca="{{ p.marca }}"
+                             data-modelo="{{ p.modelo }}"
+                             data-ano="{{ p.ano_grupo }}"
+                             data-compat="{{ p.compatibilidad if p.compatibilidad else '' }}"
+                             data-universal="{{ '1' if es_universal else '0' }}"
+                             data-precio="{{ p.precio_sugerido }}"
+                             data-texto="{{ p.nombre_refaccion }} {{ p.marca }} {{ p.modelo }} {{ p.ano_grupo }} {{ p.compatibilidad if p.compatibilidad else '' }} {{ p.condicion }}">
+                            
+                            <div class="p-4 space-y-2.5 flex-1">
+                                {% if p.imagenes %}
+                                    <div class="relative">
+                                        <div class="flex gap-2 overflow-x-auto pb-1 snap-x">
+                                            {% for img_url in p.imagenes %}
+                                                <img src="{{ img_url }}" alt="{{ p.nombre_refaccion }}" onclick='abrirLightbox({{ p.imagenes|tojson }}, {{ loop.index0 }})' class="h-40 w-48 shrink-0 object-cover rounded-xl border border-slate-200 snap-center cursor-zoom-in">
+                                            {% endfor %}
+                                        </div>
+                                        {% if p.imagenes|length > 1 %}
+                                            <span class="absolute bottom-2 right-2 bg-slate-900/80 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full pointer-events-none">
+                                                {{ p.imagenes|length }} fotos
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                <div class="flex justify-between items-center gap-2">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="bg-slate-900 text-orange-400 text-xs font-black px-2.5 py-1 rounded-lg">ID #{{ p.id }}</span>
+                                        <span class="text-[10px] font-extrabold text-slate-600 uppercase bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg truncate max-w-[130px]">
+                                            {{ p.categoria.value if p.categoria.value else p.categoria }}
+                                        </span>
+                                        {% if p.apartado %}
+                                            <span class="text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-lg">Apartada 2h</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="compartirPiezaWhatsApp('{{ p.id }}', '{{ p.nombre_refaccion|e }}', '{{ p.marca|e }} {{ p.modelo|e }} ({{ p.ano_grupo }})', '{{ p.precio_sugerido }}')" class="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-emerald-600 transition" title="Compartir con mi mecánico">
+                                            <i data-lucide="share-2" class="w-4 h-4"></i>
+                                        </button>
+                                        <button type="button" onclick="toggleFavorito('{{ p.id }}')" id="fav-btn-{{ p.id }}" class="p-1.5 rounded-full hover:bg-slate-100 transition" title="Guardar en favoritos">
+                                            <i data-lucide="heart" class="w-4 h-4 text-slate-400"></i>
+                                        </button>
+                                    </div>
+                                </div>
                                 
         </div>
         <div id="vista-favoritos" class="vista-seccion hidden space-y-4">
