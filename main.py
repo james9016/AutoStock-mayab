@@ -196,11 +196,63 @@ def vista_mostrador(request: Request):
                     liquidaciones_pendientes[dueno.id]["saldo"] += v.saldo_por_cobrar
                     liquidaciones_pendientes[dueno.id]["items"].append(v.id)
 
+        mi_garaje = db.query(models.GarajeUsuario).filter(models.GarajeUsuario.usuario_id == usuario.id).all() if usuario else []
+        mi_taller = db.query(models.PerfilTaller).filter(models.PerfilTaller.usuario_id == usuario.id).first() if usuario else None
+        talleres_raw = db.query(models.PerfilTaller).all()
+        talleres_directorio = []
+        for t in talleres_raw:
+            u_taller = db.query(models.Usuario).filter(models.Usuario.id == t.usuario_id).first()
+            if u_taller:
+                talleres_directorio.append({
+                    "id": t.id, "nombre_taller": t.nombre_taller, "colonia_region": t.colonia_region,
+                    "especialidad": t.especialidad, "telefono": u_taller.telefono_celular, "encargado": u_taller.nombre
+                })
+
+        solicitudes_raw = db.query(models.SolicitudUrgente).order_by(models.SolicitudUrgente.id.desc()).limit(40).all()
+        solicitudes_urgentes = []
+        for s in solicitudes_raw:
+            u_sol = db.query(models.Usuario).filter(models.Usuario.id == s.usuario_id).first()
+            resps = []
+            for r in s.respuestas:
+                u_res = db.query(models.Usuario).filter(models.Usuario.id == r.usuario_id).first()
+                resps.append({
+                    "id": r.id, "autor": u_res.nombre if u_res else "Usuario",
+                    "telefono": u_res.telefono_celular if u_res else "",
+                    "mensaje": r.mensaje, "precio_ofrecido": r.precio_ofrecido
+                })
+            solicitudes_urgentes.append({
+                "id": s.id, "usuario_id": s.usuario_id, "autor": u_sol.nombre if u_sol else "Usuario",
+                "telefono": u_sol.telefono_celular if u_sol else "", "titulo": s.titulo,
+                "vehiculo": s.vehiculo, "detalles": s.detalles, "zona_cancun": s.zona_cancun,
+                "resuelto": bool(s.resuelto), "respuestas": resps
+            })
+
+        foros_raw = db.query(models.DiagnosticoForo).order_by(models.DiagnosticoForo.id.desc()).limit(40).all()
+        diagnosticos_foro = []
+        for f in foros_raw:
+            u_foro = db.query(models.Usuario).filter(models.Usuario.id == f.usuario_id).first()
+            coms = []
+            for c in f.comentarios:
+                u_com = db.query(models.Usuario).filter(models.Usuario.id == c.usuario_id).first()
+                rol_com = u_com.rol.value if (u_com and hasattr(u_com.rol, "value")) else (str(u_com.rol) if u_com else "")
+                coms.append({
+                    "id": c.id, "autor": u_com.nombre if u_com else "Usuario",
+                    "es_mecanico": rol_com in ["Mecanico", "Administrador"],
+                    "comentario": c.comentario
+                })
+            diagnosticos_foro.append({
+                "id": f.id, "usuario_id": f.usuario_id, "autor": u_foro.nombre if u_foro else "Usuario",
+                "vehiculo": f.vehiculo, "sintoma": f.sintoma, "descripcion": f.descripcion,
+                "solucionado": bool(f.solucionado), "comentarios": coms
+            })
+
         return templates.TemplateResponse("mostrador.html", {
             "request": request, "usuario": usuario, "productos": productos_sanitizados,
             "usuarios": usuarios_sistema, "solicitudes_ids": solicitudes_ids, "anuncios_mercado": anuncios_mercado,
             "dict_vehiculos": json.dumps(seed.DICCIONARIO_VEHICULOS),
-            "liquidaciones": liquidaciones_pendientes, "ventas_detalle": ventas_detalle
+            "liquidaciones": liquidaciones_pendientes, "ventas_detalle": ventas_detalle,
+            "mi_garaje": mi_garaje, "mi_taller": mi_taller, "talleres_directorio": talleres_directorio,
+            "solicitudes_urgentes": solicitudes_urgentes, "diagnosticos_foro": diagnosticos_foro
         })
     finally:
         db.close()
