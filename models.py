@@ -124,4 +124,111 @@ class BitacoraAuditoria(Base):
 
     # Relaciones
     usuario = relationship("Usuario", back_populates="auditorias")
-    
+    class AnuncioMercado(Base):
+    __tablename__ = "anuncios_mercado"
+    id = Column(Integer, primary_key=True, index=True)
+    titulo = Column(String, nullable=False, index=True)
+    categoria = Column(Enum(CategoriaMercadoEnum, native_enum=False), nullable=False)
+    precio = Column(Float, nullable=False, default=0.0)
+    descripcion = Column(String, nullable=False)
+    zona_cancun = Column(String, nullable=False, default="Cancún Centro")
+    url_imagen = Column(String, nullable=True)
+    vendido = Column(Boolean, default=False, nullable=False)
+    es_subasta = Column(Boolean, default=False, nullable=False)
+    subasta_fin = Column(DateTime, nullable=True)
+    puja_actual = Column(Float, default=0.0, nullable=False)
+    ganador_id = Column(Integer, nullable=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    fecha_publicacion = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relaciones
+    autor = relationship("Usuario", back_populates="anuncios")
+    pujas = relationship("PujaSubasta", back_populates="anuncio", cascade="all, delete-orphan")
+
+class PujaSubasta(Base):
+    __tablename__ = "pujas_subasta"
+    id = Column(Integer, primary_key=True, index=True)
+    anuncio_id = Column(Integer, ForeignKey("anuncios_mercado.id"), nullable=False)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    monto = Column(Float, nullable=False)
+    fecha_puja = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    anuncio = relationship("AnuncioMercado", back_populates="pujas")
+
+class GarajeUsuario(Base):
+    __tablename__ = "garaje_usuarios"
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    marca = Column(String, nullable=False)
+    modelo = Column(String, nullable=False)
+    ano = Column(String, nullable=False)
+    apodo = Column(String, nullable=True)
+
+    usuario = relationship("Usuario", back_populates="garaje")
+
+class PerfilTaller(Base):
+    __tablename__ = "perfiles_taller"
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), unique=True, nullable=False)
+    nombre_taller = Column(String, nullable=False)
+    colonia_region = Column(String, nullable=False)
+    especialidad = Column(String, nullable=False, default="Mecánica General")
+    margen_porcentaje = Column(Float, nullable=False, default=15.0)
+    pin_seguridad = Column(String, nullable=False, default="1234")
+
+    usuario = relationship("Usuario", back_populates="perfil_taller")
+
+class SolicitudUrgente(Base):
+    __tablename__ = "solicitudes_urgentes"
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    titulo = Column(String, nullable=False)
+    vehiculo = Column(String, nullable=False)
+    detalles = Column(String, nullable=False)
+    zona_cancun = Column(String, nullable=False, default="Cancún")
+    resuelto = Column(Boolean, default=False, nullable=False)
+    fecha_creacion = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    respuestas = relationship("RespuestaUrgente", back_populates="solicitud", cascade="all, delete-orphan")
+
+class RespuestaUrgente(Base):
+    __tablename__ = "respuestas_urgentes"
+    id = Column(Integer, primary_key=True, index=True)
+    solicitud_id = Column(Integer, ForeignKey("solicitudes_urgentes.id"), nullable=False)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    mensaje = Column(String, nullable=False)
+    precio_ofrecido = Column(Float, nullable=True)
+    fecha_respuesta = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    solicitud = relationship("SolicitudUrgente", back_populates="respuestas")
+
+class DiagnosticoForo(Base):
+    __tablename__ = "diagnosticos_foro"
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    vehiculo = Column(String, nullable=False)
+    sintoma = Column(String, nullable=False)
+    descripcion = Column(String, nullable=False)
+    solucionado = Column(Boolean, default=False, nullable=False)
+    fecha_creacion = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    comentarios = relationship("ComentarioDiagnostico", back_populates="diagnostico", cascade="all, delete-orphan")
+
+class ComentarioDiagnostico(Base):
+    __tablename__ = "comentarios_diagnostico"
+    id = Column(Integer, primary_key=True, index=True)
+    diagnostico_id = Column(Integer, ForeignKey("diagnosticos_foro.id"), nullable=False)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    comentario = Column(String, nullable=False)
+    fecha_comentario = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    diagnostico = relationship("DiagnosticoForo", back_populates="comentarios")
+
+# BLINDAJE LOGÍSTICO
+# Modifica la secuencia de PostgreSQL para arrancar folios de productos desde 1000
+event.listen(
+    Producto.__table__,
+    "after_create",
+    DDL("ALTER SEQUENCE productos_id_seq RESTART WITH 1000;").execute_if(dialect="postgresql")
+    )
+
