@@ -124,7 +124,8 @@ class BitacoraAuditoria(Base):
 
     # Relaciones
     usuario = relationship("Usuario", back_populates="auditorias")
-    class AnuncioMercado(Base):
+    
+class AnuncioMercado(Base):
     __tablename__ = "anuncios_mercado"
     id = Column(Integer, primary_key=True, index=True)
     titulo = Column(String, nullable=False, index=True)
