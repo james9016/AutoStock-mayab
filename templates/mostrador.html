@@ -1997,4 +1997,60 @@
             res.classList.remove('hidden');
             recalcularCarrito();
         }
+            function recalcularCarrito() {
+            const cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            const items = obtenerCatalogo().filter(p => cart.includes(p.id));
+            const subPiezas = items.reduce((acc, p) => acc + p.precio, 0);
+            const manoObra = parseFloat(document.getElementById('cotiz-mano-obra')?.value || 0) || 0;
+            const insumos = parseFloat(document.getElementById('cotiz-insumos')?.value || 0) || 0;
+            const garantia = document.getElementById('cotiz-garantia')?.value || '';
+            const etiqueta = (document.getElementById('cotiz-cliente-auto')?.value || '').trim();
+
+            const modEntrega = document.querySelector('input[name="modalidad_entrega"]:checked')?.value || 'patio';
+            const boxZona = document.getElementById('box-zona-envio');
+            if (boxZona) boxZona.classList.toggle('hidden', modEntrega !== 'domicilio');
+
+            let costoEnvio = 0;
+            if (modEntrega === 'domicilio') {
+                const valZona = document.getElementById('select-zona-envio')?.value || '45|Zona Centro';
+                costoEnvio = parseFloat(valZona.split('|')[0]) || 0;
+            }
+
+            const totalFinal = subPiezas + manoObra + insumos + costoEnvio;
+
+            document.getElementById('export-nombre-taller').textContent = TALLER_PERFIL.nombre;
+            document.getElementById('export-colonia-taller').textContent = TALLER_PERFIL.colonia;
+            document.getElementById('export-fecha').textContent = new Date().toLocaleDateString('es-MX');
+
+            const boxCli = document.getElementById('export-info-cliente');
+            if (etiqueta) { boxCli.textContent = 'Trabajo / Cliente: ' + etiqueta; boxCli.classList.remove('hidden'); }
+            else boxCli.classList.add('hidden');
+
+            document.getElementById('export-lista-items').innerHTML = items.map(p => `
+                <div class="flex justify-between gap-2">
+                    <span class="text-slate-200">• [#${p.id}] ${p.nombre} (${p.marca} ${p.modelo})</span>
+                    <span class="font-bold text-white shrink-0">$${p.precio.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('subtotal-piezas').textContent = '$' + subPiezas.toLocaleString('es-MX', {minimumFractionDigits: 2});
+
+            const rMo = document.getElementById('row-mano-obra');
+            if (manoObra > 0) { rMo.classList.remove('hidden'); document.getElementById('subtotal-mano-obra').textContent = '$' + manoObra.toLocaleString('es-MX', {minimumFractionDigits: 2}); }
+            else rMo.classList.add('hidden');
+
+            const rIns = document.getElementById('row-insumos');
+            if (insumos > 0) { rIns.classList.remove('hidden'); document.getElementById('subtotal-insumos').textContent = '$' + insumos.toLocaleString('es-MX', {minimumFractionDigits: 2}); }
+            else rIns.classList.add('hidden');
+
+            const rEnv = document.getElementById('row-envio');
+            if (costoEnvio > 0) { rEnv.classList.remove('hidden'); document.getElementById('subtotal-envio').textContent = '$' + costoEnvio.toLocaleString('es-MX', {minimumFractionDigits: 2}); }
+            else rEnv.classList.add('hidden');
+
+            const rGar = document.getElementById('row-garantia');
+            if (document.getElementById('cotiz-garantia')) { rGar.classList.remove('hidden'); rGar.textContent = 'Garantía: ' + garantia; }
+            else rGar.classList.add('hidden');
+
+            document.getElementById('total-carrito').textContent = '$' + totalFinal.toLocaleString('es-MX', {minimumFractionDigits: 2});
+        }
         
