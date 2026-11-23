@@ -1427,6 +1427,58 @@
         </div>
     </div>
     {% endif %}
+        <!-- VISTA 2: DETALLE DE PRODUCTO MERCADO LOCAL -->
+    <div id="modal-detalle-mercado" class="fixed inset-0 bg-slate-950/80 hidden z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm" onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+            <div class="relative bg-slate-900">
+                <button type="button" onclick="document.getElementById('modal-detalle-mercado').classList.add('hidden')" class="absolute top-3 right-3 z-10 bg-slate-900/80 text-white w-9 h-9 rounded-full font-black text-lg flex items-center justify-center border border-slate-700">&times;</button>
+                <div id="detalle-carrusel-fotos" onscroll="actualizarPuntosDetalle()" class="flex overflow-x-auto snap-x snap-mandatory h-72 sm:h-80 scroll-smooth"></div>
+                <div id="detalle-puntos-indicadores" class="absolute bottom-3 inset-x-0 flex justify-center gap-1.5 pointer-events-none"></div>
+            </div>
+
+            <div class="p-5 overflow-y-auto space-y-3 flex-1">
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <span id="detalle-categoria" class="text-[10px] font-extrabold uppercase bg-orange-100 text-orange-800 px-2 py-0.5 rounded-md"></span>
+                        <h3 id="detalle-titulo" class="text-lg font-black text-slate-900 mt-1 leading-snug"></h3>
+                    </div>
+                    <p id="detalle-precio" class="text-2xl font-black text-emerald-600 shrink-0"></p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                    <span id="detalle-zona" class="font-bold flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-lg"></span>
+                    <span id="detalle-autor" class="font-bold flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-lg"></span>
+                </div>
+
+                <!-- BLOQUE SUBASTA 24H -->
+                <div id="detalle-box-subasta" class="hidden bg-amber-50 border border-amber-300 p-3.5 rounded-2xl space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-black text-amber-900 uppercase">Subasta Activa (24h)</span>
+                        <span id="detalle-reloj-subasta" class="text-xs font-black bg-amber-200 text-amber-950 px-2.5 py-1 rounded-lg"></span>
+                    </div>
+                    <p id="detalle-info-puja" class="text-xs text-amber-800 font-bold"></p>
+                    <form id="form-pujar-detalle" method="POST" class="flex gap-2">
+                        <input type="number" step="10" id="input-monto-puja" name="monto" required class="flex-1 bg-white border border-amber-400 px-3 py-2 rounded-xl text-sm font-black">
+                        <button type="submit" class="bg-slate-900 text-amber-400 font-black text-xs px-4 py-2 rounded-xl uppercase shadow">Pujar</button>
+                    </form>
+                </div>
+
+                <p id="detalle-descripcion" class="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200 whitespace-pre-line"></p>
+
+                <div id="detalle-acciones" class="space-y-2 pt-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA 3: LIGHTBOX PANTALLA COMPLETA -->
+    <div id="modal-lightbox" class="fixed inset-0 bg-black hidden z-[60] flex flex-col justify-between select-none">
+        <div class="flex items-center justify-between px-4 py-3 text-white z-10 bg-gradient-to-b from-black/80 to-transparent">
+            <button type="button" onclick="cerrarLightbox()" class="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white font-black text-xl flex items-center justify-center" aria-label="Cerrar">&times;</button>
+            <span id="lightbox-contador" class="text-xs font-extrabold tracking-widest bg-white/15 px-3 py-1 rounded-full">1 / 1</span>
+            <div class="w-10"></div>
+        </div>
+        <div id="lightbox-carrusel" onscroll="actualizarContadorLightbox()" class="flex-1 flex overflow-x-auto snap-x snap-mandatory items-center scroll-smooth"></div>
+    </div>
     
     <script>
         const VEHICULOS = {% if dict_vehiculos %}{{ dict_vehiculos|safe }}{% else %}{}{% endif %};
