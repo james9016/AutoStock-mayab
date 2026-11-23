@@ -2265,4 +2265,77 @@
             actualizarBadgesYCorazones();
             filtrarProductos();
         }
-        
+               function procesarMultiplesFotos(inputElement, hiddenInputId, contadorId, maxFotos, maxAncho, calidad) {
+            if (!inputElement) return;
+            inputElement.addEventListener('change', async function(e) {
+                const files = Array.from(e.target.files);
+                if (!files.length) return;
+                const contador = document.getElementById(contadorId);
+                const seleccionadas = files.slice(0, maxFotos);
+                if (contador) contador.textContent = `Procesando ${seleccionadas.length} foto(s)...`;
+                const promesas = seleccionadas.map(file => new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = new Image();
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width, height = img.height;
+                            if (width > maxAncho) { height = Math.round(height * (maxAncho / width)); width = maxAncho; }
+                            canvas.width = width; canvas.height = height;
+                            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                            resolve(canvas.toDataURL('image/jpeg', calidad));
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }));
+                const resultadosBase64 = await Promise.all(promesas);
+                document.getElementById(hiddenInputId).value = JSON.stringify(resultadosBase64);
+                if (contador) contador.textContent = `${resultadosBase64.length} foto(s) listas en alta calidad`;
+            });
+        }
+
+        procesarMultiplesFotos(document.getElementById('foto-camara'), 'url_imagen_string', 'contador-fotos-pieza', 6, 1200, 0.82);
+        procesarMultiplesFotos(document.getElementById('foto-mercado'), 'url_imagen_mercado', 'contador-fotos-mercado', 10, 1400, 0.88);
+
+        let ultimoToqueAtras = 0;
+        let historialBlindado = false;
+        function blindarHistorialAndroid() {
+            if (!historialBlindado) {
+                window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
+                historialBlindado = true;
+            }
+        }
+        window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
+        document.addEventListener('touchstart', blindarHistorialAndroid, { once: true });
+        document.addEventListener('click', blindarHistorialAndroid, { once: true });
+
+        window.addEventListener('popstate', function () {
+            const vistaInicio = document.getElementById('vista-inicio');
+            if (vistaInicio && vistaInicio.classList.contains('hidden')) {
+                cambiarVista('inicio');
+                window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
+                return;
+            }
+            const ahora = Date.now();
+            if (ahora - ultimoToqueAtras < 2500) {
+                window.history.back();
+            } else {
+                ultimoToqueAtras = ahora;
+                window.history.pushState({ pagina: 'autostock' }, '', window.location.href);
+                const aviso = document.createElement('div');
+                aviso.textContent = 'Presiona Atrás de nuevo para salir';
+                aviso.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-lg z-50 border border-orange-500';
+                document.body.appendChild(aviso);
+                setTimeout(() => aviso.remove(), 2500);
+            }
+        });
+
+        window.onload = function() {
+            inicializarFiltrosYFormularios();
+            if (window.lucide) lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
+
