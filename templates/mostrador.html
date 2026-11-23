@@ -1115,6 +1115,38 @@
                     </div>
                 {% endfor %}
             </div>
+                        <!-- PANEL DIRECTORIO DE TALLERES VERIFICADOS EN CANCÚN -->
+            <div id="panel-comunidad-talleres" class="hidden space-y-3">
+                <div class="flex gap-2">
+                    <input type="text" id="filtro-talleres-zona" oninput="filtrarTalleresZona()" placeholder="Filtrar taller por región, colonia o especialidad (ej. Kabah, Eléctrico)..." class="w-full bg-white border border-slate-300 px-3 py-2.5 rounded-xl text-xs font-bold">
+                </div>
+
+                <div id="grid-talleres-directorio" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {% for t in talleres_directorio %}
+                        <div class="card-taller bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between gap-3" data-texto="{{ t.nombre_taller }} {{ t.colonia_region }} {{ t.especialidad }}">
+                            <div>
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">Taller Verificado</span>
+                                    <span class="text-[10px] font-extrabold text-orange-700 bg-orange-50 px-2 py-0.5 rounded-md">{{ t.especialidad }}</span>
+                                </div>
+                                <h4 class="font-extrabold text-slate-900 text-base mt-1.5">{{ t.nombre_taller }}</h4>
+                                <p class="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-orange-500"></i> {{ t.colonia_region }}
+                                </p>
+                            </div>
+                            <a href="https://wa.me{{ t.telefono|replace(' ','')|replace('-','') }}?text={{ ('Hola ' ~ t.nombre_taller ~ ', los encontré en AutoStock Mayab Cancún y necesito cotizar un servicio.')|urlencode }}" target="_blank" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs py-2.5 rounded-xl text-center uppercase tracking-wider shadow-sm transition">
+                                Cotizar Instalación por WhatsApp
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="col-span-full bg-white p-6 rounded-2xl border border-slate-200 text-center text-xs text-slate-500 font-bold">
+                            Aún no hay talleres registrados en el directorio. Si eres mecánico afiliado, configura tu taller desde tu menú.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+            
     </main>
     <!-- BARRA DE NAVEGACIÓN INFERIOR ESTILO MERCADO LIBRE -->
     <!-- BARRA DE NAVEGACIÓN INFERIOR PROFESIONAL -->
