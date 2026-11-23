@@ -1043,7 +1043,78 @@
                     {% endfor %}
                 </div>
             </div>
-                                                                              </div>
+                <!-- VISTA COMUNIDAD: DIAGNÓSTICO COMUNITARIO Y TALLERES VERIFICADOS -->
+        <div id="vista-comunidad" class="vista-seccion hidden space-y-4">
+            <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-md border-b-4 border-orange-500">
+                <h2 class="text-base font-extrabold uppercase flex items-center gap-1.5">
+                    <i data-lucide="wrench" class="w-5 h-5 text-orange-400"></i> Comunidad y Talleres Cancún
+                </h2>
+                <p class="text-xs text-slate-300">Consulta fallas con mecánicos verificados o agenda tu instalación</p>
+            </div>
+
+            <div class="flex gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                <button type="button" onclick="activarSubtabComunidad('diagnostico', this)" class="subtab-comunidad flex-1 py-2 px-3 rounded-xl text-xs font-extrabold bg-slate-900 text-white transition">Diagnóstico Comunitario</button>
+                <button type="button" onclick="activarSubtabComunidad('talleres', this)" class="subtab-comunidad flex-1 py-2 px-3 rounded-xl text-xs font-extrabold text-slate-600 hover:bg-slate-100 transition">Talleres Verificados</button>
+            </div>
+
+            <!-- PANEL DIAGNÓSTICO COMUNITARIO -->
+            <div id="panel-comunidad-diagnostico" class="space-y-3">
+                {% if usuario %}
+                <form action="/diagnostico/crear" method="POST" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+                    <h3 class="text-xs font-extrabold uppercase text-slate-800">Describe la falla de tu auto</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" name="vehiculo" placeholder="Vehículo (Ej: Dodge Neon 2003 2.0)" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                        <input type="text" name="sintoma" placeholder="Síntoma (Ej: Se apaga al frenar / No da marcha)" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                    </div>
+                    <textarea name="descripcion" rows="2" placeholder="Explica cuándo pasa, ruidos o códigos de escáner..." required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs"></textarea>
+                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-orange-400 font-extrabold py-2.5 rounded-xl text-xs uppercase">Publicar Consulta</button>
+                </form>
+                {% endif %}
+
+                {% for f in diagnosticos_foro %}
+                    <div class="bg-white p-4 rounded-2xl border {{ 'border-emerald-300' if f.solucionado else 'border-slate-200' }} shadow-sm space-y-2.5">
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded {{ 'bg-emerald-100 text-emerald-800' if f.solucionado else 'bg-blue-100 text-blue-800' }}">
+                                    {{ 'Solucionado' if f.solucionado else 'En Diagnóstico' }}
+                                </span>
+                                <h4 class="font-extrabold text-slate-900 text-sm mt-1">{{ f.sintoma }}</h4>
+                                <p class="text-xs font-bold text-slate-600">{{ f.vehiculo }} • <span class="font-normal text-slate-400">Por {{ f.autor }}</span></p>
+                            </div>
+                            {% if usuario and (usuario.id == f.usuario_id or es_admin) and not f.solucionado %}
+                                <form action="/diagnostico/solucionado/{{ f.id }}" method="POST">
+                                    <button type="submit" class="bg-emerald-600 text-white text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg">Solucionado</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                        <p class="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100">{{ f.descripcion }}</p>
+
+                        {% if f.comentarios %}
+                            <div class="space-y-1.5 pl-2 border-l-2 border-orange-400">
+                                {% for c in f.comentarios %}
+                                    <div class="text-xs bg-slate-50 p-2 rounded-xl">
+                                        <span class="font-extrabold {{ 'text-emerald-700' if c.es_mecanico else 'text-slate-800' }}">
+                                            {{ c.autor }} {% if c.es_mecanico %}(Taller Verificado){% endif %}:
+                                        </span>
+                                        <span class="text-slate-600">{{ c.comentario }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% if usuario %}
+                            <form action="/diagnostico/comentar/{{ f.id }}" method="POST" class="flex gap-1.5 pt-1">
+                                <input type="text" name="comentario" placeholder="Escribe posible causa o solución..." required class="flex-1 bg-slate-50 border border-slate-300 px-2.5 py-1.5 rounded-xl text-xs">
+                                <button type="submit" class="bg-orange-500 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl">Aportar</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 text-center text-xs text-slate-500 font-bold">
+                        Aún no hay consultas de diagnóstico. ¡Publica una falla para recibir ayuda de talleres!
+                    </div>
+                {% endfor %}
+            </div>
     </main>
     <!-- BARRA DE NAVEGACIÓN INFERIOR ESTILO MERCADO LIBRE -->
     <!-- BARRA DE NAVEGACIÓN INFERIOR PROFESIONAL -->
