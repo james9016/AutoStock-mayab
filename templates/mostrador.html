@@ -1876,4 +1876,125 @@
                 c.classList.toggle('hidden', q && !txt.includes(q));
             });
         }
+               // --- CARRITO, COTIZADOR PRO Y CHECKOUT CANCÚN ---
+        function obtenerCatalogo() {
+            const lista = [];
+            document.querySelectorAll('.card-refaccion').forEach(c => {
+                const base = parseFloat(c.dataset.precio || 0);
+                const final = modoClienteActivo ? Math.round(base * (1 + (TALLER_PERFIL.margen / 100))) : base;
+                lista.push({
+                    id: c.dataset.id,
+                    nombre: c.dataset.nombre,
+                    marca: c.dataset.marca,
+                    modelo: c.dataset.modelo,
+                    ano: c.dataset.ano,
+                    precio: final
+                });
+            });
+            return lista;
+        }
+
+        function toggleFavorito(id) {
+            let favs = JSON.parse(localStorage.getItem('autostock_favs') || '[]');
+            id = String(id);
+            if (favs.includes(id)) favs = favs.filter(x => x !== id);
+            else favs.push(id);
+            localStorage.setItem('autostock_favs', JSON.stringify(favs));
+            actualizarBadgesYCorazones();
+            if (!document.getElementById('vista-favoritos').classList.contains('hidden')) renderizarFavoritos();
+        }
+
+        function agregarAlCarrito(id, irAlCarrito) {
+            let cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            id = String(id);
+            if (!cart.includes(id)) cart.push(id);
+            localStorage.setItem('autostock_cart', JSON.stringify(cart));
+            actualizarBadgesYCorazones();
+            if (irAlCarrito) cambiarVista('carrito');
+            else alert('Refacción #' + id + ' agregada al carrito.');
+        }
+
+        function quitarDelCarrito(id) {
+            let cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            cart = cart.filter(x => x !== String(id));
+            localStorage.setItem('autostock_cart', JSON.stringify(cart));
+            actualizarBadgesYCorazones();
+            renderizarCarrito();
+        }
+
+        function vaciarCarrito() {
+            localStorage.removeItem('autostock_cart');
+            actualizarBadgesYCorazones();
+            renderizarCarrito();
+        }
+
+        function actualizarBadgesYCorazones() {
+            const favs = JSON.parse(localStorage.getItem('autostock_favs') || '[]');
+            const cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            const bFav = document.getElementById('badge-fav');
+            const bCart = document.getElementById('badge-cart');
+            if (bFav) { bFav.textContent = favs.length; bFav.classList.toggle('hidden', favs.length === 0); }
+            if (bCart) { bCart.textContent = cart.length; bCart.classList.toggle('hidden', cart.length === 0); }
+
+            document.querySelectorAll('[id^="fav-btn-"]').forEach(btn => {
+                const pid = btn.id.replace('fav-btn-', '');
+                btn.innerHTML = favs.includes(pid)
+                    ? '<i data-lucide="heart" class="w-4 h-4 fill-red-500 text-red-500"></i>'
+                    : '<i data-lucide="heart" class="w-4 h-4 text-slate-400"></i>';
+            });
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function renderizarFavoritos() {
+            const favs = JSON.parse(localStorage.getItem('autostock_favs') || '[]');
+            const items = obtenerCatalogo().filter(p => favs.includes(p.id));
+            const cont = document.getElementById('contenedor-favoritos');
+            if (!items.length) {
+                cont.innerHTML = '<div class="col-span-full bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-500 font-bold text-sm">Aún no tienes piezas guardadas en favoritos.</div>';
+                return;
+            }
+            cont.innerHTML = items.map(p => `
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between gap-3">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="bg-slate-900 text-orange-400 text-xs font-black px-2 py-0.5 rounded">ID #${p.id}</span>
+                            <button onclick="toggleFavorito('${p.id}')" class="text-xs text-red-500 font-bold">Quitar</button>
+                        </div>
+                        <h3 class="font-extrabold text-slate-900 text-base">${p.nombre}</h3>
+                        <p class="text-xs text-slate-500 font-bold">${p.marca} ${p.modelo} (${p.ano})</p>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                        <span class="font-black text-lg text-slate-900">$${p.precio.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                        <button onclick="agregarAlCarrito('${p.id}', true)" class="bg-orange-500 text-slate-950 text-xs font-black px-3 py-2 rounded-xl">Comprar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderizarCarrito() {
+            const cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            const items = obtenerCatalogo().filter(p => cart.includes(p.id));
+            const cont = document.getElementById('contenedor-carrito');
+            const res = document.getElementById('resumen-carrito');
+            if (!items.length) {
+                cont.innerHTML = '<div class="bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-500 font-bold text-sm">Tu carrito está vacío. Agrega refacciones desde el inicio.</div>';
+                res.classList.add('hidden');
+                return;
+            }
+            cont.innerHTML = items.map(p => `
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center gap-3">
+                    <div>
+                        <span class="bg-slate-900 text-orange-400 text-[10px] font-black px-2 py-0.5 rounded">ID #${p.id}</span>
+                        <h4 class="font-extrabold text-slate-900 text-sm mt-1">${p.nombre}</h4>
+                        <p class="text-xs text-slate-500 font-semibold">${p.marca} ${p.modelo} (${p.ano})</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-black text-base text-slate-900 block">$${p.precio.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                        <button onclick="quitarDelCarrito('${p.id}')" class="text-xs text-red-500 font-bold mt-1">Eliminar</button>
+                    </div>
+                </div>
+            `).join('');
+            res.classList.remove('hidden');
+            recalcularCarrito();
+        }
         
