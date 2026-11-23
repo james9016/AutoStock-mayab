@@ -1566,4 +1566,160 @@
             aplicarModoClienteVisual();
             if (!document.getElementById('vista-carrito').classList.contains('hidden')) renderizarCarrito();
         }
+             // --- MI GARAJE ---
+        function abrirModalGaraje() {
+            const m = document.getElementById('modal-garaje');
+            if (m) m.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function seleccionarAutoGaraje(marca, modelo, ano) {
+            localStorage.setItem('autostock_garaje_activo', JSON.stringify({ marca, modelo, ano }));
+            filtroGarajeActivo = true;
+            localStorage.setItem('autostock_filtro_garaje', '1');
+            document.getElementById('modal-garaje').classList.add('hidden');
+            aplicarEstadoGaraje();
+            filtrarProductos();
+        }
+
+        function guardarAutoGarajeLocal(e) {
+            const marca = document.getElementById('garaje-marca').value;
+            const modelo = document.getElementById('garaje-modelo').value;
+            const ano = document.getElementById('garaje-ano').value;
+            if (marca && modelo && ano) {
+                localStorage.setItem('autostock_garaje_activo', JSON.stringify({ marca, modelo, ano }));
+                filtroGarajeActivo = true;
+                localStorage.setItem('autostock_filtro_garaje', '1');
+            }
+            if (!USUARIO_ACTUAL_ID) {
+                e.preventDefault();
+                document.getElementById('modal-garaje').classList.add('hidden');
+                aplicarEstadoGaraje();
+                filtrarProductos();
+            }
+        }
+
+        function alternarFiltroGaraje() {
+            filtroGarajeActivo = !filtroGarajeActivo;
+            localStorage.setItem('autostock_filtro_garaje', filtroGarajeActivo ? '1' : '0');
+            aplicarEstadoGaraje();
+            filtrarProductos();
+        }
+
+        function aplicarEstadoGaraje() {
+            const auto = JSON.parse(localStorage.getItem('autostock_garaje_activo') || 'null');
+            const banner = document.getElementById('banner-garaje-activo');
+            const labelTop = document.getElementById('label-garaje-top');
+            const txtAuto = document.getElementById('texto-auto-garaje');
+            const btnToggle = document.getElementById('btn-toggle-garaje-filtro');
+
+            if (auto && auto.marca) {
+                if (labelTop) labelTop.textContent = `${auto.marca} ${auto.modelo}`;
+                if (banner) banner.classList.remove('hidden');
+                if (txtAuto) txtAuto.textContent = `${auto.marca} ${auto.modelo} (${auto.ano})`;
+                if (btnToggle) {
+                    btnToggle.textContent = filtroGarajeActivo ? 'Ver todo el inventario' : `Filtrar para ${auto.modelo}`;
+                    btnToggle.className = filtroGarajeActivo
+                        ? 'bg-slate-800 text-orange-400 border border-orange-500/40 text-[11px] font-black px-3 py-1.5 rounded-xl transition'
+                        : 'bg-orange-500 text-slate-950 text-[11px] font-black px-3 py-1.5 rounded-xl transition';
+                }
+            } else {
+                if (labelTop) labelTop.textContent = 'Mi Garaje';
+                if (banner) banner.classList.add('hidden');
+            }
+        }
+
+        // --- PIEZA GENÉRICA Y COMPATIBILIDAD CRUZADA ---
+        function togglePiezaGenerica(esGenerica) {
+            const bloqueVeh = document.getElementById('bloque-vehiculo-base');
+            const bloqueMed = document.getElementById('bloque-medida-generica');
+            const fMarca = document.getElementById('form-marca');
+            const fModelo = document.getElementById('form-modelo');
+            const fAno = document.getElementById('form-ano-grupo');
+            const fIni = document.getElementById('form-ano-inicio');
+            const fFin = document.getElementById('form-ano-fin');
+
+            if (esGenerica) {
+                bloqueVeh.classList.add('hidden');
+                bloqueMed.classList.remove('hidden');
+                fMarca.innerHTML = '<option value="Universal" selected>Universal</option>';
+                fModelo.innerHTML = '<option value="Multimarca" selected>Multimarca</option>';
+                fAno.value = 'Todos';
+                fIni.required = false;
+                fFin.required = false;
+            } else {
+                bloqueVeh.classList.remove('hidden');
+                bloqueMed.classList.add('hidden');
+                fIni.required = true;
+                fFin.required = true;
+                inicializarFiltrosYFormularios();
+            }
+        }
+
+        function agregarCompatibilidadExtra() {
+            const inp = document.getElementById('input-compat-extra');
+            const val = inp.value.trim();
+            if (!val) return;
+            compatibilidadesExtra.push(val);
+            inp.value = '';
+            renderizarTagsCompat();
+        }
+
+        function quitarCompatibilidadExtra(idx) {
+            compatibilidadesExtra.splice(idx, 1);
+            renderizarTagsCompat();
+        }
+
+        function renderizarTagsCompat() {
+            const cont = document.getElementById('lista-tags-compat');
+            const finalInp = document.getElementById('input-compat-final');
+            if (!cont || !finalInp) return;
+            cont.innerHTML = compatibilidadesExtra.map((t, i) => `
+                <span class="bg-emerald-100 text-emerald-900 text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-emerald-300">
+                    ${t} <button type="button" onclick="quitarCompatibilidadExtra(${i})" class="text-red-600 font-black">&times;</button>
+                </span>
+            `).join('');
+            finalInp.value = compatibilidadesExtra.join(' | ');
+        }
+
+        // --- ORDENAMIENTO Y BÚSQUEDA CRUZADA ---
+        function ordenarCatalogo(criterio, btnEl) {
+            document.querySelectorAll('.btn-orden').forEach(b => {
+                b.classList.remove('bg-slate-900', 'text-white');
+                b.classList.add('text-slate-600');
+            });
+            if (btnEl) {
+                btnEl.classList.add('bg-slate-900', 'text-white');
+                btnEl.classList.remove('text-slate-600');
+            }
+            const grid = document.getElementById('grid-productos');
+            if (!grid) return;
+            const cards = Array.from(grid.querySelectorAll('.card-refaccion'));
+            cards.sort((a, b) => {
+                const pA = parseFloat(a.dataset.precio || 0);
+                const pB = parseFloat(b.dataset.precio || 0);
+                const idA = parseInt(a.dataset.id || 0);
+                const idB = parseInt(b.dataset.id || 0);
+                if (criterio === 'menor') return pA - pB;
+                if (criterio === 'mayor') return pB - pA;
+                return idB - idA;
+            });
+            cards.forEach(c => grid.appendChild(c));
+        }
+
+        function abrirModalEditarPieza(id, nombre, ubicacion, condicion, real, sugerido) {
+            document.getElementById('titulo-modal-editar').textContent = 'Editar Refacción #' + id;
+            document.getElementById('form-editar-pieza').action = '/productos/editar/' + id;
+            document.getElementById('edit-nombre').value = nombre;
+            document.getElementById('edit-ubicacion').value = ubicacion;
+            document.getElementById('edit-condicion').value = condicion;
+            document.getElementById('edit-real').value = real;
+            document.getElementById('edit-sugerido').value = sugerido;
+            document.getElementById('modal-editar-pieza').classList.remove('hidden');
+        }
+
+        function compartirPiezaWhatsApp(id, nombre, auto, precio) {
+            const txt = `Hola, revisa esta refacción en *AutoStock Mayab Cancún*:\n🔹 *ID #${id}* — ${nombre}\n🚘 ${auto}\n💲 Precio: $${parseFloat(precio).toLocaleString('es-MX', {minimumFractionDigits: 2})}\n¿Es la que ocupa mi auto?`;
+            window.open(`https://wa.me{encodeURIComponent(txt)}`, '_blank');
+        }
         
