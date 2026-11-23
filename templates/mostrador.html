@@ -1308,6 +1308,46 @@
         </div>
     </div>
     {% endif %}
+        <!-- MODAL MI GARAJE -->
+    <div id="modal-garaje" class="fixed inset-0 bg-slate-950/75 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm" onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border-t-4 border-orange-500 p-5 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                <h3 class="text-sm font-extrabold uppercase text-slate-900 flex items-center gap-1.5">
+                    <i data-lucide="car" class="w-4 h-4 text-orange-500"></i> Mi Garaje (Filtro Automático)
+                </h3>
+                <button type="button" onclick="document.getElementById('modal-garaje').classList.add('hidden')" class="text-slate-400 hover:text-red-500 text-xl font-black">&times;</button>
+            </div>
+            <p class="text-xs text-slate-500">Guarda tu vehículo para filtrar automáticamente refacciones y piezas compatibles al entrar.</p>
+
+            {% if mi_garaje %}
+                <div class="space-y-2">
+                    {% for g in mi_garaje %}
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                            <button type="button" onclick="seleccionarAutoGaraje('{{ g.marca }}', '{{ g.modelo }}', '{{ g.ano }}')" class="text-left flex-1">
+                                <span class="text-xs font-extrabold text-slate-900 block">{{ g.marca }} {{ g.modelo }} ({{ g.ano }})</span>
+                                <span class="text-[10px] text-orange-600 font-bold">Tocar para activar este auto</span>
+                            </button>
+                            <form action="/garaje/eliminar/{{ g.id }}" method="POST">
+                                <button type="submit" class="text-red-500 text-xs font-bold px-2 py-1">Quitar</button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form onsubmit="guardarAutoGarajeLocal(event)" action="/garaje/agregar" method="POST" class="space-y-2.5 pt-2 border-t border-slate-100">
+                <div class="grid grid-cols-3 gap-2">
+                    <select id="garaje-marca" name="marca" required class="bg-slate-50 border border-slate-300 p-2 rounded-xl text-xs font-bold"></select>
+                    <select id="garaje-modelo" name="modelo" required class="bg-slate-50 border border-slate-300 p-2 rounded-xl text-xs font-bold"><option value="">Modelo...</option></select>
+                    <select id="garaje-ano" name="ano" required class="bg-slate-50 border border-slate-300 p-2 rounded-xl text-xs font-bold"></select>
+                </div>
+                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-orange-400 font-extrabold py-2.5 rounded-xl text-xs uppercase shadow">
+                    Guardar Vehículo en Mi Garaje
+                </button>
+            </form>
+        </div>
+    </div>
+    
     <script>
         const VEHICULOS = {% if dict_vehiculos %}{{ dict_vehiculos|safe }}{% else %}{}{% endif %};
 
