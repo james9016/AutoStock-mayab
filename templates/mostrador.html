@@ -2137,4 +2137,93 @@
             msg += `\n💳 *Forma de pago:* ${pago}\n💰 *TOTAL A PAGAR: ${totalTxt}*`;
             window.open(`https://wa.me{encodeURIComponent(msg)}`, '_blank');
         }
+               // --- BUSCADOR CRUZADO Y FORMULARIOS ---
+        function filtrarProductos() {
+            const q = (document.getElementById('buscador-inteligente')?.value || '').toLowerCase().trim();
+            const fMarca = (document.getElementById('filtro-marca')?.value || '').toLowerCase();
+            const fModelo = (document.getElementById('filtro-modelo')?.value || '').toLowerCase();
+            const fAno = (document.getElementById('filtro-ano')?.value || '').toLowerCase();
+            const autoGaraje = JSON.parse(localStorage.getItem('autostock_garaje_activo') || 'null');
+
+            let visibles = 0;
+            document.querySelectorAll('.card-refaccion').forEach(card => {
+                const texto = (card.dataset.texto || '').toLowerCase();
+                const cMarca = (card.dataset.marca || '').toLowerCase();
+                const cModelo = (card.dataset.modelo || '').toLowerCase();
+                const cAno = (card.dataset.ano || '').toLowerCase();
+                const cCompat = (card.dataset.compat || '').toLowerCase();
+                const esUniv = card.dataset.universal === '1';
+
+                let ok = true;
+                if (q && !texto.includes(q)) ok = false;
+
+                if (ok && fMarca) {
+                    const matchBase = cMarca === fMarca && (!fModelo || cModelo === fModelo);
+                    const matchCompat = cCompat.includes(fMarca) && (!fModelo || cCompat.includes(fModelo));
+                    if (!matchBase && !matchCompat && !esUniv) ok = false;
+                }
+                if (ok && fAno && !esUniv && !cAno.includes(fAno) && !cCompat.includes(fAno)) ok = false;
+
+                if (ok && !q && !fMarca && autoGaraje && autoGaraje.marca && filtroGarajeActivo) {
+                    const gM = autoGaraje.marca.toLowerCase();
+                    const gMod = autoGaraje.modelo.toLowerCase();
+                    const matchGaraje = (cMarca === gM && cModelo === gMod) || (cCompat.includes(gM) && cCompat.includes(gMod));
+                    if (!matchGaraje && !esUniv) ok = false;
+                }
+
+                card.classList.toggle('hidden', !ok);
+                if (ok) visibles++;
+            });
+
+            const contRes = document.getElementById('contador-resultados');
+            if (contRes) contRes.textContent = `(${visibles})`;
+            const boxSin = document.getElementById('box-sin-resultados');
+            if (boxSin) boxSin.classList.toggle('hidden', visibles > 0);
+        }
+
+        function inicializarFiltrosYFormularios() {
+            const selFMarca = document.getElementById('filtro-marca');
+            const selFModelo = document.getElementById('filtro-modelo');
+            const selFAno = document.getElementById('filtro-ano');
+            const formMarca = document.getElementById('form-marca');
+            const formModelo = document.getElementById('form-modelo');
+            const formAnoIni = document.getElementById('form-ano-inicio');
+            const formAnoFin = document.getElementById('form-ano-fin');
+            const formAnoGrupo = document.getElementById('form-ano-grupo');
+            const gMarca = document.getElementById('garaje-marca');
+            const gModelo = document.getElementById('garaje-modelo');
+            const gAno = document.getElementById('garaje-ano');
+
+            const marcas = Object.keys(VEHICULOS).sort();
+            [selFMarca, formMarca, gMarca].forEach((sel, idx) => {
+                if (!sel) return;
+                sel.innerHTML = idx === 0 ? '<option value="">Todas las Marcas</option>' : '<option value="">Marca...</option>';
+                marcas.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+            });
+
+            if (selFMarca && selFModelo) {
+                selFMarca.addEventListener('change', () => {
+                    const mods = VEHICULOS[selFMarca.value] || [];
+                    selFModelo.innerHTML = '<option value="">Todos los Modelos</option>';
+                    mods.forEach(mod => selFModelo.innerHTML += `<option value="${mod}">${mod}</option>`);
+                    filtrarProductos();
+                });
+                selFModelo.addEventListener('change', filtrarProductos);
+            }
+
+            if (formMarca && formModelo) {
+                formMarca.addEventListener('change', () => {
+                    const mods = VEHICULOS[formMarca.value] || [];
+                    formModelo.innerHTML = '<option value="">Selecciona modelo...</option>';
+                    mods.forEach(mod => formModelo.innerHTML += `<option value="${mod}">${mod}</option>`);
+                });
+            }
+
+            if (gMarca && gModelo) {
+                gMarca.addEventListener('change', () => {
+                    const mods = VEHICULOS[gMarca.value] || [];
+                    gModelo.innerHTML = '<option value="">Modelo...</option>';
+                    mods.forEach(mod => gModelo.innerHTML += `<option value="${mod}">${mod}</option>`);
+                });
+        }
         
