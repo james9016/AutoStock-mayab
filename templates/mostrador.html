@@ -1722,4 +1722,158 @@
             const txt = `Hola, revisa esta refacción en *AutoStock Mayab Cancún*:\n🔹 *ID #${id}* — ${nombre}\n🚘 ${auto}\n💲 Precio: $${parseFloat(precio).toLocaleString('es-MX', {minimumFractionDigits: 2})}\n¿Es la que ocupa mi auto?`;
             window.open(`https://wa.me{encodeURIComponent(txt)}`, '_blank');
         }
+               // --- MERCADO 3 VISTAS, LIGHTBOX Y COMUNIDAD ---
+        function activarSubtabMercado(tab, btn) {
+            document.querySelectorAll('.subtab-mercado').forEach(b => {
+                b.classList.remove('bg-slate-900', 'text-white');
+                b.classList.add('text-slate-600');
+            });
+            if (btn) {
+                btn.classList.add('bg-slate-900', 'text-white');
+                btn.classList.remove('text-slate-600');
+            }
+            const gridPanel = document.getElementById('panel-mercado-grid');
+            const buscoPanel = document.getElementById('panel-mercado-busco');
+            if (tab === 'busco') {
+                gridPanel.classList.add('hidden');
+                buscoPanel.classList.remove('hidden');
+            } else {
+                buscoPanel.classList.add('hidden');
+                gridPanel.classList.remove('hidden');
+                document.querySelectorAll('.card-mercado').forEach(c => {
+                    const esSub = c.dataset.subasta === '1';
+                    c.classList.toggle('hidden', tab === 'subastas' && !esSub);
+                });
+            }
+        }
+
+        function abrirFormMercado(tipo) {
+            const f = document.getElementById('form-nuevo-anuncio');
+            const esSub = (tipo === 'subasta');
+            document.getElementById('input-es-subasta').value = esSub ? 'si' : 'no';
+            document.getElementById('titulo-form-mercado').textContent = esSub ? 'Nueva Subasta por 24 Horas' : 'Nueva Publicación en Cancún';
+            document.getElementById('label-precio-mercado').textContent = esSub ? 'Precio Inicial Subasta ($ MXN)' : 'Precio ($ MXN)';
+            f.classList.remove('hidden');
+        }
+
+        function filtrarMercadoLocal() {
+            const q = (document.getElementById('filtro-texto-mercado')?.value || '').toLowerCase().trim();
+            document.querySelectorAll('.card-mercado').forEach(c => {
+                const txt = (c.dataset.texto || '').toLowerCase();
+                c.classList.toggle('hidden', q && !txt.includes(q));
+            });
+        }
+
+        function abrirDetalleMercado(a) {
+            const modal = document.getElementById('modal-detalle-mercado');
+            const carrusel = document.getElementById('detalle-carrusel');
+            const puntos = document.getElementById('detalle-puntos');
+            const fotos = (a.imagenes && a.imagenes.length) ? a.imagenes : [];
+
+            carrusel.innerHTML = fotos.length ? fotos.map((url, idx) => `
+                <img src="${url}" onclick='abrirLightbox(${JSON.stringify(fotos)}, ${idx})' class="w-full h-72 shrink-0 object-cover snap-center cursor-zoom-in">
+            `).join('') : '<div class="w-full h-64 flex items-center justify-center text-slate-500 text-xs">Sin fotos</div>';
+
+            puntos.innerHTML = fotos.map((_, i) => `<span class="punto-detalle w-2 h-2 rounded-full ${i === 0 ? 'bg-orange-500' : 'bg-white/50'}"></span>`).join('');
+            carrusel.onscroll = () => {
+                const idx = Math.round(carrusel.scrollLeft / (carrusel.clientWidth || 1));
+                document.querySelectorAll('.punto-detalle').forEach((p, i) => {
+                    p.className = `punto-detalle w-2 h-2 rounded-full ${i === idx ? 'bg-orange-500' : 'bg-white/50'}`;
+                });
+            };
+
+            const badge = document.getElementById('detalle-badge-estado');
+            if (a.vendido) {
+                badge.textContent = 'VENDIDO';
+                badge.className = 'text-[10px] font-black uppercase px-2 py-0.5 rounded bg-red-100 text-red-700';
+            } else if (a.es_subasta) {
+                badge.textContent = 'SUBASTA 24H';
+                badge.className = 'text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800';
+            } else {
+                badge.textContent = a.categoria;
+                badge.className = 'text-[10px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700';
+            }
+
+            document.getElementById('detalle-titulo').textContent = a.titulo;
+            const precioMostrar = a.es_subasta ? (a.puja_actual || a.precio) : a.precio;
+            document.getElementById('detalle-precio').textContent = '$' + parseFloat(precioMostrar).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+            document.getElementById('detalle-zona').textContent = a.zona_cancun;
+            document.getElementById('detalle-autor').textContent = a.autor_nombre;
+            document.getElementById('detalle-descripcion').textContent = a.descripcion;
+
+            const boxSub = document.getElementById('detalle-box-subasta');
+            if (a.es_subasta && !a.vendido) {
+                boxSub.classList.remove('hidden');
+                const minPuja = parseFloat(precioMostrar) + 50;
+                document.getElementById('detalle-info-puja').textContent = `Puja mínima siguiente: $${minPuja.toLocaleString('es-MX')}`;
+                document.getElementById('form-pujar-detalle').action = `/mercado/pujar/${a.id}`;
+                document.getElementById('input-puja-detalle').min = minPuja;
+                document.getElementById('input-puja-detalle').value = minPuja;
+                if (a.subasta_fin) {
+                    const diff = new Date(a.subasta_fin) - new Date();
+                    const hrs = Math.max(0, Math.floor(diff / 3600000));
+                    const mins = Math.max(0, Math.floor((diff % 3600000) / 60000));
+                    document.getElementById('detalle-reloj-subasta').textContent = diff > 0 ? `Cierra en ${hrs}h ${mins}m` : 'Finalizada';
+                }
+            } else {
+                boxSub.classList.add('hidden');
+            }
+
+            const acciones = document.getElementById('detalle-acciones');
+            const tel = (a.autor_telefono || '').replace(/\D/g, '');
+            let htmlAcc = tel ? `<a href="https://wa.me{tel}?text=${encodeURIComponent('Hola ' + a.autor_nombre + ', vi tu publicación "' + a.titulo + '" en AutoStock Mayab Cancún.')}" target="_blank" class="block w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl text-center text-xs uppercase shadow">Contactar por WhatsApp</a>` : '';
+
+            if (USUARIO_ACTUAL_ID && (USUARIO_ACTUAL_ID === a.usuario_id || ES_ADMIN)) {
+                htmlAcc += `<div class="flex gap-2">
+                    ${!a.vendido ? `<form action="/mercado/vendido/${a.id}" method="POST" class="flex-1"><button type="submit" class="w-full bg-slate-800 text-white font-extrabold py-2.5 rounded-xl text-xs">Marcar Vendido</button></form>` : ''}
+                    <form action="/mercado/eliminar/${a.id}" method="POST" class="flex-1" onsubmit="return confirm('¿Eliminar publicación?');"><button type="submit" class="w-full bg-red-100 text-red-700 font-extrabold py-2.5 rounded-xl text-xs">Eliminar</button></form>
+                </div>`;
+            }
+            acciones.innerHTML = htmlAcc;
+            modal.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function abrirLightbox(fotos, indiceInicial) {
+            if (!fotos || !fotos.length) return;
+            const modal = document.getElementById('modal-lightbox');
+            const carrusel = document.getElementById('lightbox-carrusel');
+            const contador = document.getElementById('lightbox-contador');
+            carrusel.innerHTML = fotos.map(url => `
+                <div class="w-full h-full shrink-0 flex items-center justify-center snap-center p-2">
+                    <img src="${url}" class="max-h-full max-w-full object-contain">
+                </div>
+            `).join('');
+            modal.classList.remove('hidden');
+            contador.textContent = `${indiceInicial + 1} / ${fotos.length}`;
+            setTimeout(() => {
+                carrusel.scrollLeft = indiceInicial * carrusel.clientWidth;
+            }, 20);
+            carrusel.onscroll = () => {
+                const idx = Math.round(carrusel.scrollLeft / (carrusel.clientWidth || 1));
+                contador.textContent = `${Math.min(fotos.length, idx + 1)} / ${fotos.length}`;
+            };
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function activarSubtabComunidad(tab, btn) {
+            document.querySelectorAll('.subtab-comunidad').forEach(b => {
+                b.classList.remove('bg-slate-900', 'text-white');
+                b.classList.add('text-slate-600');
+            });
+            if (btn) {
+                btn.classList.add('bg-slate-900', 'text-white');
+                btn.classList.remove('text-slate-600');
+            }
+            document.getElementById('panel-comunidad-diagnostico').classList.toggle('hidden', tab !== 'diagnostico');
+            document.getElementById('panel-comunidad-talleres').classList.toggle('hidden', tab !== 'talleres');
+        }
+
+        function filtrarTalleresZona() {
+            const q = (document.getElementById('filtro-talleres-zona')?.value || '').toLowerCase().trim();
+            document.querySelectorAll('.card-taller').forEach(c => {
+                const txt = (c.dataset.texto || '').toLowerCase();
+                c.classList.toggle('hidden', q && !txt.includes(q));
+            });
+        }
         
