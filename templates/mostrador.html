@@ -1160,6 +1160,10 @@
                 <i data-lucide="store" class="w-5 h-5"></i>
                 <span class="text-[10px] mt-1">Mercado</span>
             </button>
+            <button type="button" onclick="cambiarVista('comunidad')" id="nav-comunidad" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
+                <i data-lucide="wrench" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-1">Talleres</span>
+            </button>
             <button type="button" onclick="cambiarVista('favoritos')" id="nav-favoritos" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition relative">
                 <i data-lucide="heart" class="w-5 h-5"></i>
                 <span id="badge-fav" class="hidden absolute top-1.5 right-1/4 bg-red-500 text-white text-[9px] font-black px-1.5 rounded-full">0</span>
@@ -1173,13 +1177,13 @@
             {% if es_operador %}
             <button type="button" onclick="cambiarVista('ventas')" id="nav-ventas" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
                 <i data-lucide="wallet" class="w-5 h-5"></i>
-                <span class="text-[10px] mt-1">Mis Ventas</span>
+                <span class="text-[10px] mt-1">Ventas</span>
             </button>
             {% endif %}
             {% if es_admin %}
             <button type="button" onclick="cambiarVista('afiliados')" id="nav-afiliados" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
                 <i data-lucide="users" class="w-5 h-5"></i>
-                <span class="text-[10px] mt-1">Afiliados</span>
+                <span class="text-[10px] mt-1">Admin</span>
             </button>
             {% endif %}
         </div>
