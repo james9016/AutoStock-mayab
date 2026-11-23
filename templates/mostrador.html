@@ -2053,4 +2053,88 @@
 
             document.getElementById('total-carrito').textContent = '$' + totalFinal.toLocaleString('es-MX', {minimumFractionDigits: 2});
         }
+                function guardarBorradorCotizacion() {
+            const borrador = {
+                cart: JSON.parse(localStorage.getItem('autostock_cart') || '[]'),
+                cliente: document.getElementById('cotiz-cliente-auto')?.value || '',
+                mo: document.getElementById('cotiz-mano-obra')?.value || 0,
+                ins: document.getElementById('cotiz-insumos')?.value || 0,
+                gar: document.getElementById('cotiz-garantia')?.value || ''
+            };
+            localStorage.setItem('autostock_borrador_cotiz', JSON.stringify(borrador));
+            alert('Borrador de cotización guardado.');
+        }
+
+        function cargarBorradorCotizacion() {
+            const b = JSON.parse(localStorage.getItem('autostock_borrador_cotiz') || 'null');
+            if (!b) return alert('No hay borrador guardado.');
+            localStorage.setItem('autostock_cart', JSON.stringify(b.cart || []));
+            if (document.getElementById('cotiz-cliente-auto')) document.getElementById('cotiz-cliente-auto').value = b.cliente;
+            if (document.getElementById('cotiz-mano-obra')) document.getElementById('cotiz-mano-obra').value = b.mo;
+            if (document.getElementById('cotiz-insumos')) document.getElementById('cotiz-insumos').value = b.ins;
+            if (document.getElementById('cotiz-garantia')) document.getElementById('cotiz-garantia').value = b.gar;
+            actualizarBadgesYCorazones();
+            renderizarCarrito();
+        }
+
+        async function exportarCotizacionImagen() {
+            const card = document.getElementById('tarjeta-cotizacion-export');
+            if (!window.html2canvas || !card) return alert('Cargando generador de imagen...');
+            const canvas = await html2canvas(card, { scale: 2, backgroundColor: '#0f172a' });
+            const link = document.createElement('a');
+            link.download = 'Cotizacion_AutoStock_Mayab.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function exportarCotizacionPDF() {
+            window.print();
+        }
+
+        function enviarCotizacionClienteWhatsApp() {
+            const cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            const items = obtenerCatalogo().filter(p => cart.includes(p.id));
+            if (!items.length) return;
+            const etiqueta = document.getElementById('cotiz-cliente-auto')?.value || '';
+            const mo = parseFloat(document.getElementById('cotiz-mano-obra')?.value || 0) || 0;
+            const ins = parseFloat(document.getElementById('cotiz-insumos')?.value || 0) || 0;
+            const gar = document.getElementById('cotiz-garantia')?.value || '';
+            const totalTxt = document.getElementById('total-carrito').textContent;
+
+            let msg = `*COTIZACIÓN — ${TALLER_PERFIL.nombre}*\n📍 ${TALLER_PERFIL.colonia}\n`;
+            if (etiqueta) msg += `🚘 *Trabajo:* ${etiqueta}\n`;
+            msg += `\n*Refacciones:*\n`;
+            items.forEach(p => { msg += `• ${p.nombre} (${p.marca} ${p.modelo}) — $${p.precio.toLocaleString('es-MX', {minimumFractionDigits: 2})}\n`; });
+            if (mo > 0) msg += `\n🔧 *Mano de obra:* $${mo.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            if (ins > 0) msg += `\n🛢️ *Insumos:* $${ins.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            if (gar) msg += `\n🛡️ *Garantía:* ${gar}`;
+            msg += `\n\n💰 *TOTAL FINAL: ${totalTxt}*`;
+            window.open(`https://wa.me{encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function enviarPedidoWhatsApp() {
+            const cart = JSON.parse(localStorage.getItem('autostock_cart') || '[]');
+            const items = obtenerCatalogo().filter(p => cart.includes(p.id));
+            if (!items.length) return;
+            const mod = document.querySelector('input[name="modalidad_entrega"]:checked')?.value || 'patio';
+            const pago = document.querySelector('input[name="forma_pago"]:checked')?.value || 'Efectivo';
+            const totalTxt = document.getElementById('total-carrito').textContent;
+            const etiqueta = document.getElementById('cotiz-cliente-auto')?.value || '';
+
+            let msg = `*REQUERIMIENTO DE PIEZA - AUTOSTOCK MAYAB*\n`;
+            if (etiqueta) msg += `👤 *Ref:* ${etiqueta}\n`;
+            msg += `\n`;
+            items.forEach(p => { msg += `🔹 *ID #${p.id}* — ${p.nombre} (${p.marca} ${p.modelo} ${p.ano}): $${p.precio.toLocaleString('es-MX', {minimumFractionDigits: 2})}\n`; });
+
+            if (mod === 'domicilio') {
+                const zona = (document.getElementById('select-zona-envio')?.value || '').split('|') || 'Cancún';
+                const dir = document.getElementById('direccion-envio-texto')?.value || '';
+                msg += `\n🛵 *Entrega:* Envío a Domicilio (${zona})`;
+                if (dir) msg += `\n📍 *Dirección:* ${dir}`;
+            } else {
+                msg += `\n🏢 *Entrega:* Recoger en Patio (Ruta 5 y Av. Tulum, Cancún)`;
+            }
+            msg += `\n💳 *Forma de pago:* ${pago}\n💰 *TOTAL A PAGAR: ${totalTxt}*`;
+            window.open(`https://wa.me{encodeURIComponent(msg)}`, '_blank');
+        }
         
