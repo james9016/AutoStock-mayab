@@ -2226,4 +2226,43 @@
                     mods.forEach(mod => gModelo.innerHTML += `<option value="${mod}">${mod}</option>`);
                 });
         }
+                const anoActual = new Date().getFullYear() + 1;
+            if (selFAno) {
+                for (let y = anoActual; y >= 1980; y--) selFAno.innerHTML += `<option value="${y}">${y}</option>`;
+                selFAno.addEventListener('change', filtrarProductos);
+            }
+            if (gAno) {
+                gAno.innerHTML = '<option value="">Año...</option>';
+                for (let y = anoActual; y >= 1980; y--) gAno.innerHTML += `<option value="${y}">${y}</option>`;
+            }
+            if (formAnoIni && formAnoFin && formAnoGrupo) {
+                for (let y = anoActual; y >= 1980; y--) {
+                    formAnoIni.innerHTML += `<option value="${y}">${y}</option>`;
+                    formAnoFin.innerHTML += `<option value="${y}">${y}</option>`;
+                }
+                const syncRango = () => { formAnoGrupo.value = `${formAnoIni.value} - ${formAnoFin.value}`; };
+                formAnoIni.addEventListener('change', syncRango);
+                formAnoFin.addEventListener('change', syncRango);
+                syncRango();
+            }
+
+            const buscador = document.getElementById('buscador-inteligente');
+            if (buscador) buscador.addEventListener('input', filtrarProductos);
+
+            const btnVoz = document.getElementById('btn-voz');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (btnVoz && SpeechRecognition) {
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'es-MX';
+                btnVoz.addEventListener('click', () => { recognition.start(); });
+                recognition.onresult = (e) => {
+                    if (buscador) { buscador.value = e.results.transcript; filtrarProductos(); }
+                };
+            }
+
+            aplicarEstadoGaraje();
+            aplicarModoClienteVisual();
+            actualizarBadgesYCorazones();
+            filtrarProductos();
+        }
         
