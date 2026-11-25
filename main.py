@@ -416,4 +416,102 @@ async def enviar_alerta_whatsapp_task(telefono: str, producto_id: int, nombre_pi
         })
     finally:
         db.close()
-            
+     @app.post("/auth/login")
+def login(request: Request, usuario: str = Form(...), contrasena: str = Form(...)):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        user = db.query(models.Usuario).filter(models.Usuario.usuario == usuario.strip().lower()).first()
+        if not user or not security.verificar_password(contrasena, user.contrasena_hash):
+            return RedirectResponse(url="/mostrador?error=Usuario+o+contraseña+incorrectos", status_code=status.HTTP_303_SEE_OTHER)
+        token = security.crear_token_acceso(data={"sub": user.usuario})
+        response = RedirectResponse(url="/mostrador?msg=Bienvenido+de+nuevo", status_code=status.HTTP_303_SEE_OTHER)
+        response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True, secure=security.es_entorno_seguro(request), samesite="lax", max_age=security.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+        return response
+    finally:
+        db.close()
+
+@app.post("/auth/registro")
+def registrar_usuario_publico(request: Request, nombre: str = Form(...), usuario: str = Form(...), telefono_celular: str = Form(...), contrasena: str = Form(...), solicitar_especial: str = Form(None)):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        user_norm = re.sub(r"[^a-z0-9._-]", "", usuario.strip().lower())
+        tel_limpio = re.sub(r"[^\d+]", "", telefono_celular.strip())
+        if len(user_norm) < 3:
+            return RedirectResponse(url="/mostrador?error=El+usuario+debe+tener+al+menos+3+caracteres", status_code=status.HTTP_303_SEE_OTHER)
+        if len(contrasena) < 8:
+            return RedirectResponse(url="/mostrador?error=La+contraseña+debe+tener+mínimo+8+caracteres", status_code=status.HTTP_303_SEE_OTHER)
+        if len(re.sub(r"\D", "", tel_limpio)) < 10:
+            return RedirectResponse(url="/mostrador?error=Ingresa+un+número+celular+válido+a+10+dígitos", status_code=status.HTTP_303_SEE_OTHER)
+        if db.query(models.Usuario).filter(models.Usuario.usuario == user_norm).first():
+            return RedirectResponse(url="/mostrador?error=Ese+nombre+de+usuario+ya+está+en+uso", status_code=status.HTTP_303_SEE_OTHER)
+
+        nuevo_usuario = models.Usuario(nombre=nombre.strip(), usuario=user_norm, contrasena_hash=security.obtener_password_hash(contrasena), rol=models.RolEnum.Publico_General, telefono_celular=tel_limpio)
+        db.add(nuevo_usuario)
+        db.commit()
+        db.refresh(nuevo_usuario)
+        if solicitar_especial == "si":
+            db.add(models.BitacoraAuditoria(usuario_id=nuevo_usuario.id, accion_realizada="SOLICITUD_VERIFICACION_ESPECIAL"))
+            db.commit()
+        token = security.crear_token_acceso(data={"sub": nuevo_usuario.usuario})
+        response = RedirectResponse(url="/mostrador?msg=Cuenta+creada+exitosamente", status_code=status.HTTP_303_SEE_OTHER)
+        response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True, secure=security.es_entorno_seguro(request), samesite="lax", max_age=security.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+        return response
+    finally:
+        db.close()
+
+@app.get("/auth/logout")
+def logout():
+    response = RedirectResponse(url="/mostrador", status_code=status.HTTP_303_SEE_OTHER)
+    response.delete_cookie("access_token")
+    return response
+
+@app.post("/usuarios/aprobar/{user_id}")
+def aprobar_usuario(user_id: int, nuevo_rol: str = Form(...), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        user_target = db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
+        if not user_target:
+            return RedirectResponse(url="/mostrador?tab=afiliados&error=Usuario+no+encontrado", status_code=status.HTTP_303_SEE_OTHER)
+        if nuevo_rol in ["Vendedor", "Mecanico", "Administrador", "Publico_General"]:
+            user_target.rol = getattr(models.RolEnum, nuevo_rol)
+        db.query(models.BitacoraAuditoria).filter(models.BitacoraAuditoria.usuario_id == user_target.id, models.BitacoraAuditoria.accion_realizada == "SOLICITUD_VERIFICACION_ESPECIAL").delete()
+        db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[ROL] Asignación de rol {nuevo_rol} a @{user_target.usuario}"))
+        db.commit()
+        return RedirectResponse(url="/mostrador?tab=afiliados&msg=Rol+actualizado", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/usuarios/reset-password/{user_id}")
+def resetear_password_admin(user_id: int, nueva_clave: str = Form(...), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        if len(nueva_clave.strip()) < 8:
+            return RedirectResponse(url="/mostrador?tab=afiliados&error=La+clave+temporal+debe+tener+mínimo+8+caracteres", status_code=status.HTTP_303_SEE_OTHER)
+        user_target = db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
+        if user_target:
+            user_target.contrasena_hash = security.obtener_password_hash(nueva_clave.strip())
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[SEGURIDAD] Reseteo de contraseña a @{user_target.usuario}"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=afiliados&msg=Contraseña+temporal+asignada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/usuarios/quitar-strikes/{user_id}")
+def quitar_strikes_admin(user_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        db.query(models.BitacoraAuditoria).filter(models.BitacoraAuditoria.usuario_id == user_id, models.BitacoraAuditoria.accion_realizada == "INCUMPLIMIENTO_SUBASTA").delete()
+        db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[SUBASTA] Strikes limpiados al usuario #{user_id}"))
+        db.commit()
+        return RedirectResponse(url="/mostrador?tab=afiliados&msg=Strikes+restablecidos", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
