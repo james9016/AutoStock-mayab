@@ -2994,4 +2994,113 @@
             abrirModalPorId('modal-detalle-mercado');
             activarSpinnersFormularios();
         }
+           // --- COMUNIDAD, FORO Y SUBTABS ADMIN ---
+        function activarSubtabComunidad(tab, btn) {
+            document.querySelectorAll('.subtab-comunidad').forEach(b => {
+                b.classList.remove('bg-slate-900', 'text-white');
+                b.classList.add('text-slate-600');
+            });
+            const btnObj = btn || document.getElementById(`btn-subtab-${tab}`);
+            if (btnObj) {
+                btnObj.classList.add('bg-slate-900', 'text-white');
+                btnObj.classList.remove('text-slate-600');
+            }
+            document.getElementById('panel-comunidad-diagnostico')?.classList.toggle('hidden', tab !== 'diagnostico');
+            document.getElementById('panel-comunidad-talleres')?.classList.toggle('hidden', tab !== 'talleres');
+        }
+
+        function filtrarForoDiagnostico() {
+            const q = (document.getElementById('filtro-foro-texto')?.value || '').trim().toLowerCase();
+            document.querySelectorAll('.card-foro').forEach(c => {
+                c.classList.toggle('hidden', q && !(c.dataset.texto || '').toLowerCase().includes(q));
+            });
+        }
+
+        function filtrarTalleresZona() {
+            const q = (document.getElementById('filtro-talleres-zona')?.value || '').trim().toLowerCase();
+            document.querySelectorAll('.card-taller').forEach(c => {
+                c.classList.toggle('hidden', q && !(c.dataset.texto || '').toLowerCase().includes(q));
+            });
+        }
+
+        function activarSubtabAdmin(tab, btn) {
+            document.querySelectorAll('.subtab-admin').forEach(b => {
+                b.classList.remove('bg-slate-900', 'text-white');
+                b.classList.add('text-slate-600');
+            });
+            if (btn) {
+                btn.classList.add('bg-slate-900', 'text-white');
+                btn.classList.remove('text-slate-600');
+            }
+            document.getElementById('panel-admin-directorio')?.classList.toggle('hidden', tab !== 'directorio');
+            document.getElementById('panel-admin-bitacora')?.classList.toggle('hidden', tab !== 'bitacora');
+        }
+
+        function filtrarUsuariosAdmin() {
+            const q = (document.getElementById('filtro-usuarios-admin')?.value || '').trim().toLowerCase();
+            document.querySelectorAll('.card-usuario-admin').forEach(c => {
+                c.classList.toggle('hidden', q && !(c.dataset.texto || '').toLowerCase().includes(q));
+            });
+        }
+
+        function filtrarBitacoraAdmin() {
+            const q = (document.getElementById('filtro-bitacora')?.value || '').trim().toLowerCase();
+            document.querySelectorAll('.item-bitacora').forEach(c => {
+                c.classList.toggle('hidden', q && !(c.dataset.texto || '').toLowerCase().includes(q));
+            });
+        }
+
+        // --- ALTA RÁPIDA ADMIN: PIEZA GENÉRICA, COMPATIBILIDAD Y RANGOS DE AÑO ---
+        let tagsCompatExtra = [];
+        function agregarCompatibilidadExtra() {
+            const inp = document.getElementById('input-compat-extra');
+            const val = (inp?.value || '').trim();
+            if (!val) return;
+            tagsCompatExtra.push(val);
+            inp.value = '';
+            renderizarTagsCompat();
+        }
+
+        function renderizarTagsCompat() {
+            const cont = document.getElementById('lista-tags-compat');
+            const hid = document.getElementById('input-compat-final');
+            if (!cont || !hid) return;
+            cont.innerHTML = tagsCompatExtra.map((t, idx) => `
+                <span class="bg-slate-800 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                    ${t} <button type="button" onclick="tagsCompatExtra.splice(${idx}, 1); renderizarTagsCompat();" class="text-orange-400 font-black">&times;</button>
+                </span>
+            `).join('');
+            hid.value = tagsCompatExtra.join(' / ');
+        }
+
+        function togglePiezaGenerica(esGenerica) {
+            const bVeh = document.getElementById('bloque-vehiculo-base');
+            const bGen = document.getElementById('bloque-medida-generica');
+            const fMarca = document.getElementById('form-marca');
+            const fModelo = document.getElementById('form-modelo');
+            const fAno = document.getElementById('form-ano-grupo');
+            if (esGenerica) {
+                bVeh?.classList.add('hidden');
+                bGen?.classList.remove('hidden');
+                if (fMarca) { fMarca.innerHTML = '<option value="Universal" selected>Universal</option>'; }
+                if (fModelo) { fModelo.innerHTML = '<option value="Multimarca" selected>Multimarca</option>'; }
+                if (fAno) fAno.value = 'Todos';
+            } else {
+                bVeh?.classList.remove('hidden');
+                bGen?.classList.add('hidden');
+                poblarSelectMarcas(fMarca, 'Selecciona marca...');
+                if (fModelo) fModelo.innerHTML = '<option value="">Selecciona marca...</option>';
+                sincronizarRangoAnosAlta();
+            }
+        }
+
+        function sincronizarRangoAnosAlta() {
+            const ini = document.getElementById('form-ano-inicio')?.value || '';
+            const fin = document.getElementById('form-ano-fin')?.value || '';
+            const hid = document.getElementById('form-ano-grupo');
+            if (!hid || !ini || !fin) return;
+            const a = parseInt(ini, 10), b = parseInt(fin, 10);
+            const min = Math.min(a, b), max = Math.max(a, b);
+            hid.value = (min === max) ? String(min) : `${min} - ${max}`;
+        }
         
