@@ -2882,4 +2882,116 @@
                 card.classList.toggle('hidden', !ok);
             });
         }
+            function abrirDetalleMercado(idAnuncio) {
+            const a = ANUNCIOS_MAP[String(idAnuncio)];
+            if (!a) return;
+
+            const carrusel = document.getElementById('detalle-carrusel-fotos');
+            const puntos = document.getElementById('detalle-puntos-indicadores');
+            carrusel.innerHTML = '';
+            puntos.innerHTML = '';
+
+            if (a.imagenes && a.imagenes.length) {
+                a.imagenes.forEach((src, idx) => {
+                    const img = document.createElement('img');
+                    img.src = src;
+                    img.className = 'w-full h-full object-cover snap-center shrink-0 cursor-zoom-in';
+                    img.onclick = () => abrirLightbox(a.imagenes, idx);
+                    carrusel.appendChild(img);
+                    if (a.imagenes.length > 1) {
+                        const dot = document.createElement('span');
+                        dot.className = 'w-2 h-2 rounded-full bg-white/80 shadow';
+                        puntos.appendChild(dot);
+                    }
+                });
+            } else {
+                carrusel.innerHTML = '<div class="w-full h-full flex items-center justify-center text-slate-500 text-xs font-bold">Sin fotos publicadas</div>';
+            }
+
+            document.getElementById('detalle-categoria').textContent = a.categoria;
+            document.getElementById('detalle-titulo').textContent = a.titulo;
+            const precioAct = a.es_subasta ? a.puja_actual : a.precio;
+            document.getElementById('detalle-precio').textContent = `$${Number(precioAct).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+            document.getElementById('detalle-zona').innerHTML = `<i data-lucide="map-pin" class="w-3.5 h-3.5 text-orange-500"></i> ${a.zona_cancun}`;
+            document.getElementById('detalle-autor').innerHTML = `<i data-lucide="user" class="w-3.5 h-3.5 text-slate-400"></i> ${a.autor_nombre}`;
+            document.getElementById('detalle-fecha').textContent = a.fecha;
+            document.getElementById('detalle-descripcion').textContent = a.descripcion;
+
+            const boxSub = document.getElementById('detalle-box-subasta');
+            const formPujar = document.getElementById('form-pujar-subasta');
+            const histPujas = document.getElementById('detalle-historial-pujas');
+
+            if (a.es_subasta) {
+                boxSub.classList.remove('hidden');
+                document.getElementById('detalle-tiempo-subasta').textContent = a.subasta_expirada ? 'FINALIZADA' : 'Activa (24h)';
+                document.getElementById('detalle-ganador-info').textContent = a.ganador_nombre
+                    ? `Postor líder: ${a.ganador_nombre} ($${Number(a.puja_actual).toLocaleString('es-MX')})`
+                    : 'Sin pujas todavía — ¡Sé el primero!';
+
+                if (!a.vendido && !a.subasta_expirada && USUARIO_ID && USUARIO_ID !== a.usuario_id) {
+                    formPujar.classList.remove('hidden');
+                    formPujar.action = `/mercado/pujar/${a.id}`;
+                    const minPuja = Number(a.puja_actual) + 50;
+                    const inpPuja = document.getElementById('input-monto-puja');
+                    inpPuja.min = minPuja;
+                    inpPuja.value = minPuja;
+                } else {
+                    formPujar.classList.add('hidden');
+                }
+
+                if (a.historial_pujas && a.historial_pujas.length) {
+                    histPujas.innerHTML = `<p class="font-extrabold text-amber-900 uppercase text-[10px]">Últimas pujas:</p>` +
+                        a.historial_pujas.map((pj, idx) => `
+                            <div class="flex justify-between items-center text-slate-700">
+                                <span>${idx === 0 ? '👑' : '•'} ${pj.nombre} ${pj.strikes > 0 ? `<span class="text-red-600 font-bold">(⚠️ ${pj.strikes} strike)</span>` : ''}</span>
+                                <span class="font-black">$${Number(pj.monto).toLocaleString('es-MX')} <span class="text-slate-400 font-normal">(${pj.hora})</span></span>
+                            </div>
+                        `).join('');
+                } else {
+                    histPujas.innerHTML = '<p class="text-slate-500 italic">Sin historial de pujas.</p>';
+                }
+            } else {
+                boxSub.classList.add('hidden');
+            }
+
+            const acc = document.getElementById('detalle-acciones-usuario');
+            let html = '';
+            const telAutor = (a.autor_telefono || '').replace(/\D/g, '');
+            if (telAutor && !a.vendido) {
+                const msgWa = `Hola ${a.autor_nombre}, vi tu publicación "${a.titulo}" en AutoStock Mayab Cancún.`;
+                html += `<a href="https://wa.me{telAutor}?text=${encodeURIComponent(msgWa)}" target="_blank" class="block w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl text-center text-xs uppercase shadow">Contactar Vendedor por WhatsApp</a>`;
+            } else if (!USUARIO_ID) {
+                html += `<button type="button" onclick="cerrarModalActivo(); abrirModalPorId('modal-login')" class="w-full bg-slate-900 text-orange-400 font-extrabold py-3 rounded-xl text-xs uppercase">Inicia sesión para contactar o pujar</button>`;
+            }
+
+            if (USUARIO_ID && (USUARIO_ID === a.usuario_id || ES_ADMIN)) {
+                if (a.es_subasta && a.ganador_id && !a.vendido) {
+                    const telGan = (a.ganador_telefono || '').replace(/\D/g, '');
+                    if (telGan) {
+                        html += `<a href="https://wa.me{telGan}?text=${encodeURIComponent(`Hola ${a.ganador_nombre}, ganaste la subasta de "${a.titulo}" en AutoStock Mayab Cancún por $${Number(a.puja_actual).toLocaleString('es-MX')}.`)}" target="_blank" class="block w-full bg-blue-600 text-white font-extrabold py-2.5 rounded-xl text-center text-xs uppercase">💬 Contactar Ganador (${a.ganador_nombre})</a>`;
+                    }
+                    html += `
+                        <form action="/mercado/subasta-incumplida/${a.id}" method="POST" class="form-con-carga" onsubmit="return confirm('¿Reportar que el ganador no concretó? Se le aplicará 1 strike y la subasta pasará al 2do postor o se reactivará 24h.');">
+                            <button type="submit" class="w-full bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-extrabold py-2.5 rounded-xl text-xs uppercase">⚠️ No Concretó (Pasar al 2.º Lugar / Reactivar)</button>
+                        </form>
+                    `;
+                }
+                if (!a.vendido) {
+                    html += `
+                        <form action="/mercado/vendido/${a.id}" method="POST" class="form-con-carga">
+                            <button type="submit" class="w-full bg-slate-800 text-white font-extrabold py-2.5 rounded-xl text-xs uppercase">✅ Marcar como Vendido</button>
+                        </form>
+                    `;
+                }
+                html += `
+                    <form action="/mercado/eliminar/${a.id}" method="POST" class="form-con-carga" onsubmit="return confirm('¿Eliminar esta publicación permanentemente?');">
+                        <button type="submit" class="w-full bg-red-50 text-red-700 border border-red-200 font-extrabold py-2 rounded-xl text-xs uppercase">🗑️ Eliminar Publicación</button>
+                    </form>
+                `;
+            }
+
+            acc.innerHTML = html;
+            abrirModalPorId('modal-detalle-mercado');
+            activarSpinnersFormularios();
+        }
         
