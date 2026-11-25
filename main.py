@@ -620,4 +620,138 @@ def apartar_producto(prod_id: int, request: Request):
         return RedirectResponse(url="/mostrador", status_code=status.HTTP_303_SEE_OTHER)
     finally:
         db.close()
-                
+   @app.post("/productos/vender/{id}")
+def marcar_como_vendido(id: int, request: Request, bg_tasks: BackgroundTasks, metodo_pago: str = Form("Efectivo"), tipo_cliente: str = Form("Publico")):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.PermisoRol(["Administrador", "Vendedor"])(security.obtener_usuario_actual(request, db))
+        prod = db.query(models.Producto).filter(models.Producto.id == id).first()
+        if not prod or prod.cantidad_disponible <= 0:
+            return RedirectResponse(url="/mostrador?error=Stock+no+disponible", status_code=status.HTTP_303_SEE_OTHER)
+        precio_cobrado = float(prod.precio_sugerido)
+        ganancia_base = precio_cobrado - float(prod.precio_real)
+        if tipo_cliente == "Taller" and ganancia_base > 0:
+            precio_cobrado = round(precio_cobrado - (ganancia_base * 0.15), 2)
+        prod.cantidad_disponible -= 1
+        if prod.cantidad_disponible == 0:
+            prod.apartado_hasta = None
+        venta = models.HistorialVenta(producto_id=prod.id, vendedor_id=usuario.id, estado_venta=models.EstadoVentaEnum.Completada, precio_costo_dueno=prod.precio_real, precio_venta_publico=precio_cobrado, ganancia_comision=round(precio_cobrado - float(prod.precio_real), 2), liquidado_al_dueno=False, saldo_por_cobrar=prod.precio_real)
+        db.add(venta)
+        dueno = db.query(models.Usuario).filter(models.Usuario.id == prod.dueno_id).first()
+        if dueno and dueno.telefono_celular:
+            bg_tasks.add_task(enviar_alerta_whatsapp_task, dueno.telefono_celular, prod.id, prod.nombre_refaccion)
+        db.add(models.BitacoraAuditoria(usuario_id=usuario.id, accion_realizada=f"[VENTA] Pieza #{prod.id} ({prod.nombre_refaccion}) vendida en ${precio_cobrado:,.2f} ({metodo_pago} / {tipo_cliente})"))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Venta+registrada+en+caja", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/ventas/devolver/{venta_id}")
+def devolver_venta(venta_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        venta = db.query(models.HistorialVenta).filter(models.HistorialVenta.id == venta_id).first()
+        if venta and venta.estado_venta == models.EstadoVentaEnum.Completada:
+            ya_liquidada = bool(venta.liquidado_al_dueno)
+            venta.estado_venta = models.EstadoVentaEnum.Cancelada_Devuelta
+            if ya_liquidada:
+                venta.liquidado_al_dueno = False
+                venta.saldo_por_cobrar = -abs(float(venta.precio_costo_dueno or 0))
+            else:
+                venta.saldo_por_cobrar = 0.0
+            prod = db.query(models.Producto).filter(models.Producto.id == venta.producto_id).first()
+            if prod:
+                prod.cantidad_disponible = (prod.cantidad_disponible or 0) + 1
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[DEVOLUCIÓN] Venta #{venta.id} cancelada — Pieza #{venta.producto_id} reingresada"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=ventas&msg=Devolución+procesada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/liquidaciones/procesar/{dueno_id}")
+def procesar_liquidacion(dueno_id: int, ids_ventas: str = Form(""), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        if ids_ventas:
+            lista_ids = [int(x) for x in ids_ventas.split(",") if x.strip().isdigit()]
+            ventas = db.query(models.HistorialVenta).filter(models.HistorialVenta.id.in_(lista_ids)).all()
+            total_pagado = sum(float(v.saldo_por_cobrar or 0) for v in ventas)
+            for v in ventas:
+                v.liquidado_al_dueno = True
+                v.saldo_por_cobrar = 0.0
+            socio = db.query(models.Usuario).filter(models.Usuario.id == dueno_id).first()
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[LIQUIDACIÓN] Corte liquidado a {socio.nombre if socio else dueno_id} por ${total_pagado:,.2f}"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=ventas&msg=Liquidación+procesada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.get("/inventario/exportar/csv")
+def exportar_inventario_excel(request: Request, dueno_id: str = "todos"):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.PermisoRol(["Administrador", "Vendedor"])(security.obtener_usuario_actual(request, db))
+        rol_val = usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)
+        query = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0)
+        if rol_val != "Administrador" or dueno_id == "mio":
+            query = query.filter(models.Producto.dueno_id == usuario.id)
+            nombre_archivo, titulo_reporte = f"Inventario_{usuario.usuario}.xlsx", f"INVENTARIO: {usuario.nombre.upper()}"
+        elif dueno_id.isdigit():
+            socio = db.query(models.Usuario).filter(models.Usuario.id == int(dueno_id)).first()
+            query = query.filter(models.Producto.dueno_id == int(dueno_id))
+            nombre_archivo, titulo_reporte = f"Inventario_Socio_{dueno_id}.xlsx", f"INVENTARIO AFILIADO: {(socio.nombre if socio else dueno_id).upper()}"
+        else:
+            nombre_archivo, titulo_reporte = "Inventario_General_AutoStock.xlsx", "INVENTARIO GENERAL DE BODEGA"
+
+        productos = query.order_by(models.Producto.id).all()
+        usuarios_map = {u.id: u.nombre for u in db.query(models.Usuario).all()}
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Inventario"
+        ws.append([f"AUTOSTOCK MAYAB — {titulo_reporte} ({formatear_cancun(ahora_utc())})"])
+        ws.append(["ID", "Categoría", "Refacción", "Marca", "Modelo", "Años", "Etiquetas", "Ubicación", "Dueño", "Cant.", "Costo Unit.", "Público Unit."])
+        for cell in ws:
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+        for p in productos:
+            cat = p.categoria.value if hasattr(p.categoria, "value") else str(p.categoria)
+            ws.append([p.id, cat, p.nombre_refaccion, p.marca, p.modelo, p.ano_grupo, p.condicion, p.ubicacion_fisica, usuarios_map.get(p.dueno_id, "Bodega"), int(p.cantidad_disponible or 1), float(p.precio_real or 0), float(p.precio_sugerido or 0)])
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'})
+    finally:
+        db.close()
+
+@app.get("/inventario/reporte/pdf", response_class=HTMLResponse)
+def reporte_imprimible_pdf(request: Request, dueno_id: str = "todos"):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.PermisoRol(["Administrador", "Vendedor"])(security.obtener_usuario_actual(request, db))
+        rol_val = usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)
+        query = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0)
+        if rol_val != "Administrador" or dueno_id == "mio":
+            query = query.filter(models.Producto.dueno_id == usuario.id)
+            titulo = f"Inventario: {usuario.nombre}"
+        elif dueno_id.isdigit():
+            socio = db.query(models.Usuario).filter(models.Usuario.id == int(dueno_id)).first()
+            query = query.filter(models.Producto.dueno_id == int(dueno_id))
+            titulo = f"Inventario Afiliado: {socio.nombre if socio else dueno_id}"
+        else:
+            titulo = "Inventario General de Bodega"
+        productos = query.order_by(models.Producto.id).all()
+        usuarios_map = {u.id: u.nombre for u in db.query(models.Usuario).all()}
+        filas = "".join(f"<tr><td>#{p.id}</td><td><b>{p.nombre_refaccion}</b><br><small>{p.marca} {p.modelo} ({p.ano_grupo})</small></td><td>{p.ubicacion_fisica}</td><td>{usuarios_map.get(p.dueno_id, 'Bodega')}</td><td>{p.cantidad_disponible}</td><td>${p.precio_real:,.2f}</td><td>${p.precio_sugerido:,.2f}</td></tr>" for p in productos)
+        t_costo = sum(float(p.precio_real or 0) * int(p.cantidad_disponible or 1) for p in productos)
+        t_pub = sum(float(p.precio_sugerido or 0) * int(p.cantidad_disponible or 1) for p in productos)
+        return HTMLResponse(f'<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>{titulo}</title><style>body{{font-family:sans-serif;padding:15px}}table{{width:100%;border-collapse:collapse;font-size:11px}}th,td{{border-bottom:1px solid #ddd;padding:7px;text-align:left}}th{{background:#0f172a;color:#fff}}.btn{{background:#ea580c;color:#fff;border:none;padding:12px;width:100%;font-weight:bold;border-radius:8px;margin-bottom:15px;cursor:pointer}}@media print{{.btn{{display:none}}}}</style></head><body><button class="btn" onclick="window.print()">🖨️ Guardar PDF / Imprimir</button><h2>⚙️ AutoStock Mayab - {titulo}</h2><p>Fecha Cancún: {formatear_cancun(ahora_utc())} | Registros: {len(productos)}</p><table><thead><tr><th>ID</th><th>Refacción</th><th>Ubicación</th><th>Dueño</th><th>Cant.</th><th>Costo</th><th>Público</th></tr></thead><tbody>{filas}</tbody></table><h3 style="text-align:right">Total Costo: ${t_costo:,.2f} | Total Público: ${t_pub:,.2f}</h3></body></html>')
+    finally:
+        db.close()
+                        
