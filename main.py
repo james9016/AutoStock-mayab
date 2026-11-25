@@ -416,7 +416,7 @@ def vista_mostrador(request: Request):
         })
     finally:
         db.close()
-     @app.post("/auth/login")
+@app.post("/auth/login")
 def login(request: Request, usuario: str = Form(...), contrasena: str = Form(...)):
     import database, models, security
     db = next(database.get_db())
