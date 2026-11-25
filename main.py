@@ -754,7 +754,7 @@ def reporte_imprimible_pdf(request: Request, dueno_id: str = "todos"):
         return HTMLResponse(f'<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>{titulo}</title><style>body{{font-family:sans-serif;padding:15px}}table{{width:100%;border-collapse:collapse;font-size:11px}}th,td{{border-bottom:1px solid #ddd;padding:7px;text-align:left}}th{{background:#0f172a;color:#fff}}.btn{{background:#ea580c;color:#fff;border:none;padding:12px;width:100%;font-weight:bold;border-radius:8px;margin-bottom:15px;cursor:pointer}}@media print{{.btn{{display:none}}}}</style></head><body><button class="btn" onclick="window.print()">🖨️ Guardar PDF / Imprimir</button><h2>⚙️ AutoStock Mayab - {titulo}</h2><p>Fecha Cancún: {formatear_cancun(ahora_utc())} | Registros: {len(productos)}</p><table><thead><tr><th>ID</th><th>Refacción</th><th>Ubicación</th><th>Dueño</th><th>Cant.</th><th>Costo</th><th>Público</th></tr></thead><tbody>{filas}</tbody></table><h3 style="text-align:right">Total Costo: ${t_costo:,.2f} | Total Público: ${t_pub:,.2f}</h3></body></html>')
     finally:
         db.close()
-    @app.post("/garaje/agregar")
+@app.post("/garaje/agregar")
 def agregar_garaje(request: Request, marca: str = Form(...), modelo: str = Form(...), ano: str = Form(...), apodo: str = Form("")):
     import database, models, security
     db = next(database.get_db())
