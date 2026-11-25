@@ -1323,6 +1323,51 @@
         </div>
     </div>
     {% endif %}
+        <!-- MODAL PERFIL DE TALLER (MECÁNICOS) -->
+    {% if es_mecanico or es_admin %}
+    <div id="modal-perfil-taller" class="fixed inset-0 bg-slate-950/75 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm" onclick="if(event.target===this) cerrarModalActivo()">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border-t-4 border-emerald-500 p-5 max-h-[90vh] overflow-y-auto space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                <h3 class="text-sm font-extrabold uppercase text-slate-900">Configuración de Mi Taller</h3>
+                <button type="button" onclick="cerrarModalActivo()" class="text-slate-400 hover:text-red-500 text-xl font-black leading-none">&times;</button>
+            </div>
+            <form action="/taller/guardar-perfil" method="POST" class="space-y-2.5 form-con-carga">
+                <div>
+                    <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Nombre del Taller</label>
+                    <input type="text" name="nombre_taller" value="{{ mi_taller.nombre_taller if mi_taller else '' }}" placeholder="Ej: Servicio Automotriz Mayab" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Colonia / Región Cancún</label>
+                        <input type="text" name="colonia_region" value="{{ mi_taller.colonia_region if mi_taller else '' }}" placeholder="Ej: Región 95 / Kabah" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Especialidad</label>
+                        <select name="especialidad" class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                            {% set esp_act = mi_taller.especialidad if mi_taller else 'Mecánica General' %}
+                            <option value="Mecánica General" {{ 'selected' if esp_act == 'Mecánica General' else '' }}>Mecánica General</option>
+                            <option value="Transmisiones Automáticas" {{ 'selected' if esp_act == 'Transmisiones Automáticas' else '' }}>Transmisiones</option>
+                            <option value="Eléctrico y Escáner" {{ 'selected' if esp_act == 'Eléctrico y Escáner' else '' }}>Eléctrico y Escáner</option>
+                            <option value="Suspensión y Frenos" {{ 'selected' if esp_act == 'Suspensión y Frenos' else '' }}>Suspensión y Frenos</option>
+                            <option value="Aire Acondicionado" {{ 'selected' if esp_act == 'Aire Acondicionado' else '' }}>Aire Acondicionado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Margen Ganancia (%)</label>
+                        <input type="number" step="1" min="0" max="200" name="margen_porcentaje" value="{{ mi_taller.margen_porcentaje|int if mi_taller else 15 }}" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">PIN Vista Cliente (4 dígitos)</label>
+                        <input type="text" maxlength="4" pattern="\d{4}" name="pin_seguridad" value="{{ mi_taller.pin_seguridad if mi_taller else '1234' }}" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold text-center tracking-widest">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-xl text-xs uppercase shadow">Guardar Datos del Taller</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
      <!-- MODAL DETALLE DE REFACCIÓN (AL TOCAR TARJETA DEL CATÁLOGO) -->
     <div id="modal-detalle-pieza" class="fixed inset-0 bg-slate-950/80 hidden z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm" onclick="if(event.target===this) cerrarModalActivo()">
         <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
