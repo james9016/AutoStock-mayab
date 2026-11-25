@@ -2492,4 +2492,98 @@
             const inp = document.getElementById('input-foro-vehiculo');
             if (inp) inp.value = `${autoGarajeActivo.marca} ${autoGarajeActivo.modelo} ${autoGarajeActivo.ano}`;
         }
+         // --- FAVORITOS Y CARRITO SINCRONIZADOS ---
+        let favoritos = JSON.parse(localStorage.getItem('autostock_favoritos') || '[]').filter(id => PRODUCTOS_MAP[String(id)]);
+        let carrito = JSON.parse(localStorage.getItem('autostock_carrito') || '[]').filter(id => PRODUCTOS_MAP[String(id)]);
+        localStorage.setItem('autostock_favoritos', JSON.stringify(favoritos));
+        localStorage.setItem('autostock_carrito', JSON.stringify(carrito));
+
+        function actualizarBadges() {
+            const bCart = document.getElementById('badge-cart');
+            if (bCart) {
+                bCart.textContent = carrito.length;
+                bCart.classList.toggle('hidden', carrito.length === 0);
+            }
+            const bFav = document.getElementById('badge-fav-menu');
+            if (bFav) {
+                bFav.textContent = favoritos.length;
+                bFav.classList.toggle('hidden', favoritos.length === 0);
+            }
+            favoritos.forEach(id => {
+                const btn = document.getElementById(`fav-btn-${id}`);
+                if (btn) btn.innerHTML = '<i data-lucide="heart" class="w-3.5 h-3.5 text-red-500 fill-red-500"></i>';
+            });
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function toggleFavorito(id) {
+            id = String(id);
+            if (favoritos.includes(id)) {
+                favoritos = favoritos.filter(x => x !== id);
+                const btn = document.getElementById(`fav-btn-${id}`);
+                if (btn) btn.innerHTML = '<i data-lucide="heart" class="w-3.5 h-3.5 text-slate-500"></i>';
+                mostrarToast('Quitado de favoritos');
+            } else {
+                favoritos.push(id);
+                mostrarToast('Guardado en favoritos ❤️');
+            }
+            localStorage.setItem('autostock_favoritos', JSON.stringify(favoritos));
+            actualizarBadges();
+            if (vistaActual === 'favoritos') renderizarFavoritos();
+        }
+
+        function renderizarFavoritos() {
+            const cont = document.getElementById('contenedor-favoritos');
+            if (!cont) return;
+            if (!favoritos.length) {
+                cont.innerHTML = '<div class="col-span-full bg-white p-6 rounded-2xl border border-slate-200 text-center text-xs text-slate-500 font-bold">No tienes refacciones en favoritos.</div>';
+                return;
+            }
+            cont.innerHTML = favoritos.map(id => {
+                const p = PRODUCTOS_MAP[id];
+                if (!p) return '';
+                return `
+                    <div class="bg-white p-3 rounded-2xl border border-slate-200 flex items-center justify-between gap-3">
+                        <div class="cursor-pointer flex-1" onclick="abrirDetallePieza(${p.id})">
+                            <span class="text-[10px] font-black text-orange-600">#${p.id}</span>
+                            <h4 class="font-extrabold text-sm text-slate-900">${p.nombre_refaccion}</h4>
+                            <p class="text-xs text-slate-500">${p.marca} ${p.modelo} (${p.ano_grupo})</p>
+                            <p class="font-black text-emerald-700 text-sm mt-1">$${Number(p.precio_sugerido).toLocaleString('es-MX')}</p>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <button type="button" onclick="agregarAlCarrito('${p.id}', true)" class="bg-orange-500 text-slate-950 font-black text-[11px] px-3 py-1.5 rounded-xl">Carrito</button>
+                            <button type="button" onclick="toggleFavorito('${p.id}')" class="text-[11px] text-red-600 font-bold">Quitar</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function agregarAlCarrito(id, cerrarAntes = false) {
+            id = String(id);
+            if (!PRODUCTOS_MAP[id]) return;
+            if (!carrito.includes(id)) {
+                carrito.push(id);
+                localStorage.setItem('autostock_carrito', JSON.stringify(carrito));
+                actualizarBadges();
+                mostrarToast('Agregado al carrito 🛒');
+            } else {
+                mostrarToast('Ya está en tu carrito');
+            }
+            if (cerrarAntes) cerrarModalActivo();
+        }
+
+        function quitarDelCarrito(id) {
+            carrito = carrito.filter(x => x !== String(id));
+            localStorage.setItem('autostock_carrito', JSON.stringify(carrito));
+            actualizarBadges();
+            renderizarCarrito();
+        }
+
+        function vaciarCarrito() {
+            carrito = [];
+            localStorage.setItem('autostock_carrito', JSON.stringify(carrito));
+            actualizarBadges();
+            renderizarCarrito();
+        }
         
