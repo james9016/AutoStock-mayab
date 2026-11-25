@@ -947,4 +947,78 @@
             </div>
         </div>
         {% endif %}
+                <!-- MURO ¿QUIÉN LA TIENE? / SE BUSCA -->
+            <div id="panel-mercado-busco" class="hidden space-y-3">
+                {% if usuario %}
+                <form action="/urgente/crear" method="POST" class="bg-white p-4 rounded-2xl border-2 border-orange-500/40 shadow-sm space-y-2.5 form-con-carga">
+                    <h3 class="text-xs font-extrabold uppercase text-slate-900 flex items-center gap-1.5">
+                        <i data-lucide="megaphone" class="w-4 h-4 text-orange-500"></i> Publicar Búsqueda Urgente en Cancún
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" id="input-urgente-titulo" name="titulo" placeholder="¿Qué pieza o herramienta buscas?" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                        <input type="text" id="input-urgente-vehiculo" name="vehiculo" placeholder="Auto / Año (Ej: Nissan Tsuru 2012)" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" name="detalles" placeholder="Detalles (Ej: 1.6L, lado derecho, urgente...)" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs">
+                        <input type="text" name="zona_cancun" placeholder="Tu zona (Ej: Región 95, Kabah...)" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                    </div>
+                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-2.5 rounded-xl text-xs uppercase shadow">
+                        Preguntar a Talleres y Usuarios
+                    </button>
+                </form>
+                {% endif %}
+
+                <div class="space-y-3">
+                    {% for s in solicitudes_urgentes %}
+                        <div class="bg-white p-4 rounded-2xl border {{ 'border-emerald-300 bg-emerald-50/20' if s.resuelto else 'border-slate-200' }} shadow-sm space-y-2.5">
+                            <div class="flex justify-between items-start gap-2">
+                                <div>
+                                    <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded {{ 'bg-emerald-100 text-emerald-800' if s.resuelto else 'bg-red-100 text-red-700' }}">
+                                        {{ 'Conseguido' if s.resuelto else 'Se Busca Urgente' }}
+                                    </span>
+                                    <h4 class="font-extrabold text-slate-900 text-sm mt-1">{{ s.titulo }}</h4>
+                                    <p class="text-xs font-bold text-orange-700">{{ s.vehiculo }} • <span class="text-slate-500 font-normal">{{ s.zona_cancun }} (Por {{ s.autor }})</span></p>
+                                </div>
+                                {% if usuario and (usuario.id == s.usuario_id or es_admin) and not s.resuelto %}
+                                    <form action="/urgente/cerrar/{{ s.id }}" method="POST" class="form-con-carga">
+                                        <button type="submit" class="bg-emerald-600 text-white text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg">Ya la conseguí</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                            <p class="text-xs text-slate-600">{{ s.detalles }}</p>
+
+                            {% if s.respuestas %}
+                                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+                                    {% for r in s.respuestas %}
+                                        {% set r_tel = (r.telefono or '')|replace('+','')|replace(' ','')|replace('-','') %}
+                                        <div class="text-xs flex justify-between items-center gap-2 border-b last:border-b-0 border-slate-200 pb-1 last:pb-0">
+                                            <div>
+                                                <span class="font-extrabold text-slate-800">{{ r.autor }}:</span>
+                                                <span class="text-slate-600">{{ r.mensaje }}</span>
+                                                {% if r.precio_ofrecido %}<span class="font-black text-emerald-700"> (${{ "{:,.0f}".format(r.precio_ofrecido) }})</span>{% endif %}
+                                            </div>
+                                            {% if r_tel %}
+                                                <a href="https://wa.me{{ r_tel }}?text={{ ('Hola ' ~ r.autor ~ ', vi tu respuesta sobre: ' ~ s.titulo)|urlencode }}" target="_blank" class="bg-emerald-500 text-slate-950 text-[10px] font-black px-2 py-1 rounded-lg shrink-0">WhatsApp</a>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {% if usuario and not s.resuelto %}
+                                <form action="/urgente/responder/{{ s.id }}" method="POST" class="flex gap-1.5 pt-1 form-con-carga">
+                                    <input type="text" name="mensaje" placeholder="Yo la tengo / Te consigo..." required class="flex-1 bg-slate-50 border border-slate-300 px-2.5 py-1.5 rounded-xl text-xs">
+                                    <input type="number" step="0.01" min="0" name="precio_ofrecido" placeholder="$ Precio" class="w-20 bg-slate-50 border border-slate-300 px-2 py-1.5 rounded-xl text-xs font-bold">
+                                    <button type="submit" class="bg-slate-900 text-orange-400 font-extrabold text-xs px-3 py-1.5 rounded-xl">Responder</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 text-center text-xs text-slate-500 font-bold">
+                            No hay solicitudes urgentes activas en este momento.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+    </div>
           
