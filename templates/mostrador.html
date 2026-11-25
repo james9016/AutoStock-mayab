@@ -2698,4 +2698,94 @@
             lineas.push(`\n*TOTAL A PAGAR: $${(sub + envio).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN*`);
             window.open(`https://wa.me{WHATSAPP_MOSTRADOR}?text=${encodeURIComponent(lineas.join('\n'))}`, '_blank');
         }
+              // --- MODAL COTIZADOR DE TALLER ---
+        let extrasCotizacion = [];
+
+        function abrirModalCotizador() {
+            const hoy = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const elFecha = document.getElementById('export-fecha');
+            if (elFecha) elFecha.textContent = hoy;
+            abrirModalPorId('modal-cotizador-taller');
+            recalcularCotizadorModal();
+        }
+
+        function agregarConceptoExtraCotiz() {
+            const desc = (document.getElementById('cotiz-extra-desc')?.value || '').trim();
+            const monto = parseFloat(document.getElementById('cotiz-extra-monto')?.value || '0');
+            if (!desc || isNaN(monto) || monto < 0) return;
+            extrasCotizacion.push({ desc, monto });
+            document.getElementById('cotiz-extra-desc').value = '';
+            document.getElementById('cotiz-extra-monto').value = '';
+            renderizarExtrasCotiz();
+            recalcularCotizadorModal();
+        }
+
+        function quitarExtraCotiz(idx) {
+            extrasCotizacion.splice(idx, 1);
+            renderizarExtrasCotiz();
+            recalcularCotizadorModal();
+        }
+
+        function renderizarExtrasCotiz() {
+            const cont = document.getElementById('cotiz-lista-extras');
+            if (!cont) return;
+            cont.innerHTML = extrasCotizacion.map((ex, idx) => `
+                <div class="flex justify-between items-center bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-[11px]">
+                    <span class="font-semibold text-slate-700">${ex.desc}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-900">$${ex.monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                        <button type="button" onclick="quitarExtraCotiz(${idx})" class="text-red-600 font-black">&times;</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function recalcularCotizadorModal() {
+            const clienteAuto = (document.getElementById('cotiz-cliente-auto')?.value || '').trim();
+            const garantia = (document.getElementById('cotiz-garantia')?.value || '').trim();
+            const manoObra = parseFloat(document.getElementById('cotiz-mano-obra')?.value || '0') || 0;
+            const insumos = parseFloat(document.getElementById('cotiz-insumos')?.value || '0') || 0;
+
+            const infoCli = document.getElementById('export-info-cliente');
+            if (infoCli) {
+                if (clienteAuto) { infoCli.textContent = `Cliente / Unidad: ${clienteAuto}`; infoCli.classList.remove('hidden'); }
+                else infoCli.classList.add('hidden');
+            }
+
+            let subPiezas = 0;
+            let htmlItems = '';
+            carrito.forEach(id => {
+                const p = PRODUCTOS_MAP[id];
+                if (p) {
+                    const precioCliente = Number(p.precio_sugerido) * (1 + MARGEN_TALLER / 100);
+                    subPiezas += precioCliente;
+                    htmlItems += `<div class="flex justify-between"><span>• ${p.nombre_refaccion} (${p.marca})</span><span class="font-bold">$${precioCliente.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span></div>`;
+                }
+            });
+            extrasCotizacion.forEach(ex => {
+                subPiezas += ex.monto;
+                htmlItems += `<div class="flex justify-between"><span>• ${ex.desc}</span><span class="font-bold">$${ex.monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span></div>`;
+            });
+
+            const listaEl = document.getElementById('export-lista-items');
+            if (listaEl) listaEl.innerHTML = htmlItems || '<p class="text-slate-400 italic">Sin refacciones agregadas</p>';
+
+            document.getElementById('cotiz-sub-piezas').textContent = `$${subPiezas.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+
+            const rowMO = document.getElementById('row-mano-obra');
+            if (manoObra > 0) {
+                rowMO?.classList.remove('hidden');
+                document.getElementById('subtotal-mano-obra').textContent = `$${manoObra.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+            } else rowMO?.classList.add('hidden');
+
+            const rowIns = document.getElementById('row-insumos');
+            if (insumos > 0) {
+                rowIns?.classList.remove('hidden');
+                document.getElementById('subtotal-insumos').textContent = `$${insumos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+            } else rowIns?.classList.add('hidden');
+
+            document.getElementById('row-garantia').textContent = garantia ? `Garantía: ${garantia}` : '';
+            const total = subPiezas + manoObra + insumos;
+            document.getElementById('cotiz-total-final').textContent = `$${total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+        }
         
