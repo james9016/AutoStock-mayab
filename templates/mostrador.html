@@ -2128,4 +2128,82 @@
             abrirModalPorId('modal-detalle-pieza');
             activarSpinnersFormularios();
         }
+           function toggleChipEtiqueta(inputId, etiqueta, btn) {
+            const inp = document.getElementById(inputId);
+            if (!inp) return;
+            let actuales = inp.value.split('•').map(x => x.trim()).filter(Boolean);
+            if (actuales.includes(etiqueta)) {
+                actuales = actuales.filter(x => x !== etiqueta);
+                btn.classList.remove('bg-orange-500', 'text-white', 'border-orange-600');
+                btn.classList.add('bg-white', 'text-slate-700');
+            } else {
+                actuales.push(etiqueta);
+                btn.classList.remove('bg-white', 'text-slate-700');
+                btn.classList.add('bg-orange-500', 'text-white', 'border-orange-600');
+            }
+            inp.value = actuales.join(' • ');
+        }
+
+        let idsFotosEliminarEdit = [];
+        function abrirModalEditarPieza(idPieza) {
+            const p = PRODUCTOS_MAP[String(idPieza)];
+            if (!p) return;
+            cerrarModalActivo();
+
+            idsFotosEliminarEdit = [];
+            document.getElementById('edit-fotos-eliminar').value = '';
+            document.getElementById('edit-nuevas-fotos-hidden').value = '';
+            document.getElementById('edit-contador-nuevas').textContent = '';
+            document.getElementById('edit-procedencia-hidden').value = '';
+            document.getElementById('edit-procedencia-status').textContent = '';
+
+            document.getElementById('titulo-modal-editar').textContent = `Editar Refacción #${p.id}`;
+            document.getElementById('form-editar-pieza').action = `/productos/editar/${p.id}`;
+            document.getElementById('form-eliminar-pieza-admin').action = `/productos/eliminar/${p.id}`;
+
+            document.getElementById('edit-categoria').value = p.categoria;
+            document.getElementById('edit-nombre').value = p.nombre_refaccion;
+            document.getElementById('edit-marca').value = p.marca;
+            document.getElementById('edit-modelo').value = p.modelo;
+            document.getElementById('edit-ano').value = p.ano_grupo;
+            document.getElementById('edit-compatibilidad').value = p.compatibilidad || '';
+            document.getElementById('edit-condicion').value = p.condicion || 'Original Usada';
+            document.getElementById('edit-ubicacion').value = p.ubicacion_fisica;
+            document.getElementById('edit-dueno').value = String(p.dueno_id);
+            document.getElementById('edit-cantidad').value = p.cantidad_disponible;
+            document.getElementById('edit-real').value = p.precio_real || 0;
+            document.getElementById('edit-sugerido').value = p.precio_publico_original || p.precio_sugerido;
+            document.getElementById('edit-procedencia-nota').value = p.procedencia_nota || '';
+
+            const linkProc = document.getElementById('edit-link-procedencia');
+            if (p.procedencia_url) {
+                linkProc.href = p.procedencia_url;
+                linkProc.classList.remove('hidden');
+            } else {
+                linkProc.classList.add('hidden');
+            }
+
+            const contFotos = document.getElementById('edit-fotos-actuales');
+            contFotos.innerHTML = '';
+            (p.imagenes_objs || []).forEach(imgObj => {
+                const wrap = document.createElement('div');
+                wrap.className = 'relative w-16 h-16 rounded-xl overflow-hidden border border-slate-300';
+                wrap.innerHTML = `
+                    <img src="${imgObj.url}" class="w-full h-full object-cover">
+                    <button type="button" class="absolute top-0.5 right-0.5 bg-red-600 text-white w-5 h-5 rounded-full text-xs font-black flex items-center justify-center shadow">&times;</button>
+                `;
+                wrap.querySelector('button').onclick = () => {
+                    idsFotosEliminarEdit.push(imgObj.id);
+                    document.getElementById('edit-fotos-eliminar').value = idsFotosEliminarEdit.join(',');
+                    wrap.remove();
+                    mostrarToast('Foto marcada para eliminar al guardar');
+                };
+                contFotos.appendChild(wrap);
+            });
+            if (!p.imagenes_objs || !p.imagenes_objs.length) {
+                contFotos.innerHTML = '<span class="text-[11px] text-slate-400">Sin fotos cargadas</span>';
+            }
+
+            abrirModalPorId('modal-editar-pieza');
+        }
         
