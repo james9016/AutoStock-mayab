@@ -2388,4 +2388,108 @@
             rec.onend = () => btnVoz.classList.remove('text-red-600', 'animate-pulse');
             rec.onerror = () => btnVoz.classList.remove('text-red-600', 'animate-pulse');
         }
+            // --- MI GARAJE ---
+        let autoGarajeActivo = JSON.parse(localStorage.getItem('autostock_garaje_activo') || 'null');
+
+        function actualizarPillGaraje() {
+            const lbl = document.getElementById('label-garaje-top');
+            if (!lbl) return;
+            lbl.textContent = autoGarajeActivo ? `${autoGarajeActivo.modelo} ${autoGarajeActivo.ano}` : 'Mi Garaje';
+        }
+
+        function seleccionarAutoGaraje(marca, modelo, ano) {
+            autoGarajeActivo = { marca, modelo, ano };
+            localStorage.setItem('autostock_garaje_activo', JSON.stringify(autoGarajeActivo));
+            actualizarPillGaraje();
+            renderizarVistaGaraje();
+            mostrarToast(`Auto activo: ${marca} ${modelo} ${ano}`);
+        }
+
+        function guardarAutoGarajeLocal(e) {
+            const marca = document.getElementById('garaje-marca')?.value || '';
+            const modelo = document.getElementById('garaje-modelo')?.value || '';
+            const ano = document.getElementById('garaje-ano')?.value || '';
+            if (marca && modelo && ano) {
+                autoGarajeActivo = { marca, modelo, ano };
+                localStorage.setItem('autostock_garaje_activo', JSON.stringify(autoGarajeActivo));
+                actualizarPillGaraje();
+            }
+            if (!USUARIO_ID) {
+                e.preventDefault();
+                renderizarVistaGaraje();
+                mostrarToast(`Vehículo guardado en este celular: ${marca} ${modelo}`);
+            }
+        }
+
+        function quitarAutoGarajeLocal() {
+            autoGarajeActivo = null;
+            localStorage.removeItem('autostock_garaje_activo');
+            actualizarPillGaraje();
+            renderizarVistaGaraje();
+        }
+
+        function renderizarVistaGaraje() {
+            const cardLocal = document.getElementById('garaje-local-card');
+            const titLocal = document.getElementById('garaje-local-titulo');
+            const grid = document.getElementById('grid-piezas-garaje');
+            const tituloPiezas = document.getElementById('titulo-piezas-garaje');
+
+            if (autoGarajeActivo && cardLocal && titLocal) {
+                cardLocal.classList.remove('hidden');
+                titLocal.textContent = `${autoGarajeActivo.marca} ${autoGarajeActivo.modelo} (${autoGarajeActivo.ano})`;
+            } else if (cardLocal) {
+                cardLocal.classList.add('hidden');
+            }
+
+            if (!grid) return;
+            if (!autoGarajeActivo) {
+                if (tituloPiezas) tituloPiezas.textContent = 'Piezas Compatibles';
+                grid.innerHTML = '<div class="col-span-full bg-white p-6 rounded-2xl border border-slate-200 text-center text-xs text-slate-500 font-bold">Selecciona o agrega un vehículo arriba para filtrar automáticamente las refacciones compatibles.</div>';
+                return;
+            }
+
+            if (tituloPiezas) tituloPiezas.textContent = `Compatibles con ${autoGarajeActivo.marca} ${autoGarajeActivo.modelo} ${autoGarajeActivo.ano}`;
+            const compatibles = PRODUCTOS_LISTA.filter(p => {
+                if (p.marca.toLowerCase() === 'universal') return true;
+                const matchBase = (p.marca === autoGarajeActivo.marca && p.modelo === autoGarajeActivo.modelo && coincideRangoAno(p.ano_grupo, autoGarajeActivo.ano));
+                const matchCruzada = (p.compatibilidad || '').toLowerCase().includes(autoGarajeActivo.modelo.toLowerCase());
+                return matchBase || matchCruzada;
+            });
+
+            if (!compatibles.length) {
+                grid.innerHTML = '<div class="col-span-full bg-white p-6 rounded-2xl border border-slate-200 text-center text-xs text-slate-500 font-bold">No hay refacciones en stock para este modelo ahora mismo. Usa el botón de arriba para pedirla en "¿Quién la tiene?".</div>';
+                return;
+            }
+
+            grid.innerHTML = compatibles.map(p => `
+                <div onclick="abrirDetallePieza(${p.id})" class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm cursor-pointer flex flex-col justify-between">
+                    <div class="aspect-[4/3] bg-slate-100 relative">
+                        ${p.imagenes?.length ? `<img src="${p.imagenes[0]}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">Sin foto</div>'}
+                        <span class="absolute top-2 left-2 bg-slate-900 text-orange-400 text-[10px] font-black px-2 py-0.5 rounded">#${p.id}</span>
+                    </div>
+                    <div class="p-2.5">
+                        <p class="font-extrabold text-xs text-slate-900 line-clamp-2">${p.nombre_refaccion}</p>
+                        <p class="font-black text-sm text-emerald-700 mt-1">$${Number(p.precio_sugerido).toLocaleString('es-MX')}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function pedirPiezaDeMiGaraje() {
+            cambiarVista('mercado');
+            activarSubtabMercado('busco');
+            if (autoGarajeActivo) {
+                const inpVeh = document.getElementById('input-urgente-vehiculo');
+                if (inpVeh) inpVeh.value = `${autoGarajeActivo.marca} ${autoGarajeActivo.modelo} ${autoGarajeActivo.ano}`;
+            }
+        }
+
+        function rellenarAutoEnForo() {
+            if (!autoGarajeActivo) {
+                mostrarToast('Primero guarda un auto en Mi Garaje', 'err');
+                return;
+            }
+            const inp = document.getElementById('input-foro-vehiculo');
+            if (inp) inp.value = `${autoGarajeActivo.marca} ${autoGarajeActivo.modelo} ${autoGarajeActivo.ano}`;
+        }
         
