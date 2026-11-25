@@ -2826,4 +2826,60 @@
             lineas.push(`\n*TOTAL PRESUPUESTO: ${total} MXN*`);
             window.open(`https://wa.me{encodeURIComponent(lineas.join('\n'))}`, '_blank');
         }
+          // --- MERCADO LOCAL Y SUBASTAS 24H ANTI-FANTASMAS ---
+        let subtabMercadoActual = 'todo';
+
+        function abrirFormMercado(tipo) {
+            const form = document.getElementById('form-nuevo-anuncio');
+            const titulo = document.getElementById('titulo-form-mercado');
+            const lblPrecio = document.getElementById('label-precio-mercado');
+            const inpSub = document.getElementById('input-es-subasta');
+            if (!form) return;
+            form.classList.remove('hidden');
+            if (tipo === 'subasta') {
+                inpSub.value = 'si';
+                titulo.textContent = 'Nueva Subasta Rápida 24h';
+                lblPrecio.textContent = 'Precio Inicial ($ MXN)';
+            } else {
+                inpSub.value = 'no';
+                titulo.textContent = 'Nueva Publicación en Cancún';
+                lblPrecio.textContent = 'Precio ($ MXN)';
+            }
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function activarSubtabMercado(tab, btn) {
+            subtabMercadoActual = tab;
+            document.querySelectorAll('.subtab-mercado').forEach(b => {
+                b.classList.remove('bg-slate-900', 'text-white');
+                b.classList.add('text-slate-600');
+            });
+            const btnObjetivo = btn || document.getElementById(`btn-subtab-${tab}`);
+            if (btnObjetivo) {
+                btnObjetivo.classList.add('bg-slate-900', 'text-white');
+                btnObjetivo.classList.remove('text-slate-600');
+            }
+            const panelGrid = document.getElementById('panel-mercado-grid');
+            const panelBusco = document.getElementById('panel-mercado-busco');
+            if (tab === 'busco') {
+                panelGrid?.classList.add('hidden');
+                panelBusco?.classList.remove('hidden');
+            } else {
+                panelGrid?.classList.remove('hidden');
+                panelBusco?.classList.add('hidden');
+                filtrarMercadoLocal();
+            }
+        }
+
+        function filtrarMercadoLocal() {
+            const q = (document.getElementById('filtro-texto-mercado')?.value || '').trim().toLowerCase();
+            document.querySelectorAll('.card-mercado').forEach(card => {
+                const esSub = card.dataset.subasta === '1';
+                const txt = (card.dataset.texto || '').toLowerCase();
+                let ok = true;
+                if (subtabMercadoActual === 'subastas' && !esSub) ok = false;
+                if (q && !txt.includes(q)) ok = false;
+                card.classList.toggle('hidden', !ok);
+            });
+        }
         
