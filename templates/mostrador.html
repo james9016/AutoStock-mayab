@@ -669,4 +669,62 @@
                 {% endif %}
             </div>
         </div>
-          
+           <!-- VISTA VENTAS, CORTE DE CAJA Y LIQUIDACIONES (OPERADORES) -->
+        {% if es_operador %}
+        <div id="vista-ventas" class="vista-seccion hidden space-y-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-900 uppercase">💰 Ventas y Liquidaciones</h2>
+                    <p class="text-xs text-slate-500">Control de salidas de inventario, corte del día y pagos a socios</p>
+                </div>
+                <button type="button" onclick="abrirModalPorId('modal-mi-inventario')" class="bg-slate-900 text-orange-400 text-[11px] font-extrabold px-3 py-2 rounded-xl uppercase">📦 Inventario</button>
+            </div>
+
+            {% if es_admin %}
+                <!-- RESUMEN DE CAJA HOY (CANCÚN) -->
+                <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-md border-b-4 border-emerald-500 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-extrabold uppercase text-slate-400 block">Ventas Completadas Hoy (Hora Cancún)</span>
+                        <span class="text-2xl font-black text-emerald-400">${{ "{:,.2f}".format(resumen_caja_hoy.total) }}</span>
+                    </div>
+                    <a href="/inventario/exportar/csv?dueno_id=todos" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl uppercase">
+                        📊 Excel Almacén
+                    </a>
+                </div>
+
+                <!-- SALDOS PENDIENTES POR LIQUIDAR A SOCIOS -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="border-b border-slate-100 pb-2 flex items-center justify-between">
+                        <h3 class="text-xs font-extrabold text-slate-800 uppercase">Cortes Pendientes por Liquidar</h3>
+                        <span class="text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">Admin</span>
+                    </div>
+                    {% if liquidaciones %}
+                        <div class="space-y-2.5">
+                            {% for d_id, data in liquidaciones.items() %}
+                                <div class="p-3.5 border border-slate-200 rounded-xl bg-slate-50 flex justify-between items-center gap-2">
+                                    <div>
+                                        <p class="font-extrabold text-slate-900 text-sm">{{ data.dueno }}</p>
+                                        <p class="text-xs text-slate-500 font-semibold">
+                                            Saldo Neto:
+                                            <span class="font-black {{ 'text-red-600' if data.saldo < 0 else 'text-emerald-700' }}">
+                                                ${{ "{:,.2f}".format(data.saldo) }}
+                                            </span>
+                                            {% if data.saldo < 0 %}
+                                                <span class="text-[10px] text-red-600 block font-bold">(Incluye cargo por pieza devuelta ya liquidada)</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <form action="/liquidaciones/procesar/{{ d_id }}" method="POST" class="form-con-carga" onsubmit="return confirm('¿Confirmar liquidación de corte para {{ data.dueno|e }}?');">
+                                        <input type="hidden" name="ids_ventas" value="{{ data.get('items', [])|join(',') }}">
+                                        <button type="submit" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3.5 py-2 rounded-xl uppercase shadow-sm">Liquidar</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="py-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                            <p class="text-xs text-slate-500 font-bold">Todas las liquidaciones están al corriente.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            
