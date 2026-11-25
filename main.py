@@ -203,7 +203,7 @@ def vista_mostrador(request: Request):
         for st in strikes_regs:
             strikes_map[st.usuario_id] = strikes_map.get(st.usuario_id, 0) + 1
         
-            productos_raw = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).order_by(models.Producto.id.desc()).all()
+        productos_raw = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).order_by(models.Producto.id.desc()).all()
         productos_sanitizados = []
         for prod in productos_raw:
             precio_final = float(prod.precio_sugerido)
