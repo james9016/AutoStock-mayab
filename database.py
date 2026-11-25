@@ -1,17 +1,24 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-servidor = "aws-1-us-west-2" + ".pooler" + ".supabase" + ".com"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-url_conexion = URL.create(
-    drivername="postgresql",
-    username="postgres.grnqhgctjjahvhkjckxa",
-    password="AutoStockMayab2026",
-    host=servidor,
-    port=5432,
-    database="postgres"
-)
+if DATABASE_URL:
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    url_conexion = DATABASE_URL
+else:
+    servidor = os.getenv("DB_HOST", "://supabase.com")
+    url_conexion = URL.create(
+        drivername="postgresql",
+        username=os.getenv("DB_USER", "postgres.grnqhgctjjahvhkjckxa"),
+        password=os.getenv("DB_PASSWORD", "AutoStockMayab2026"),
+        host=servidor,
+        port=int(os.getenv("DB_PORT", 5432)),
+        database=os.getenv("DB_NAME", "postgres")
+    )
 
 engine = create_engine(
     url_conexion,
@@ -32,3 +39,4 @@ def get_db():
         yield db
     finally:
         db.close()
+        
