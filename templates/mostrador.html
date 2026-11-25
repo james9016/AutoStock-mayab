@@ -2788,4 +2788,42 @@
             const total = subPiezas + manoObra + insumos;
             document.getElementById('cotiz-total-final').textContent = `$${total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
         }
+            async function exportarCotizacionImagen() {
+            const tarjeta = document.getElementById('tarjeta-cotizacion-export');
+            if (!tarjeta || !window.html2canvas) { mostrarToast('Cargando generador de imagen...', 'err'); return; }
+            const canvas = await html2canvas(tarjeta, { scale: 2, backgroundColor: '#0f172a' });
+            const link = document.createElement('a');
+            link.download = `Cotizacion_${NOMBRE_TALLER.replace(/\s+/g, '_')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            mostrarToast('Imagen descargada');
+        }
+
+        function exportarCotizacionPDF() {
+            window.print();
+        }
+
+        function enviarCotizacionClienteWhatsApp() {
+            const cliente = (document.getElementById('cotiz-cliente-auto')?.value || '').trim();
+            const total = document.getElementById('cotiz-total-final')?.textContent || '$0.00';
+            const garantia = (document.getElementById('cotiz-garantia')?.value || '').trim();
+            let lineas = [`*PRESUPUESTO - ${NOMBRE_TALLER.toUpperCase()}*`];
+            if (cliente) lineas.push(`Cliente / Auto: ${cliente}`);
+            lineas.push(`\n*Detalle:*`);
+            carrito.forEach(id => {
+                const p = PRODUCTOS_MAP[id];
+                if (p) {
+                    const pr = Number(p.precio_sugerido) * (1 + MARGEN_TALLER / 100);
+                    lineas.push(`• ${p.nombre_refaccion} — $${pr.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`);
+                }
+            });
+            extrasCotizacion.forEach(ex => lineas.push(`• ${ex.desc} — $${ex.monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`));
+            const mo = parseFloat(document.getElementById('cotiz-mano-obra')?.value || '0') || 0;
+            const ins = parseFloat(document.getElementById('cotiz-insumos')?.value || '0') || 0;
+            if (mo > 0) lineas.push(`• Mano de Obra — $${mo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`);
+            if (ins > 0) lineas.push(`• Insumos — $${ins.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`);
+            if (garantia) lineas.push(`\nGarantía: ${garantia}`);
+            lineas.push(`\n*TOTAL PRESUPUESTO: ${total} MXN*`);
+            window.open(`https://wa.me{encodeURIComponent(lineas.join('\n'))}`, '_blank');
+        }
         
