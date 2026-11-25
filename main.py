@@ -271,4 +271,73 @@ async def enviar_alerta_whatsapp_task(telefono: str, producto_id: int, nombre_pi
                         fotos_anuncio = [a.url_imagen]
                 else:
                     fotos_anuncio = [a.url_imagen]
-        
+                    fin_sub = a_utc_aware(a.subasta_fin)
+            subasta_expirada = bool(a.es_subasta and fin_sub and fin_sub <= ahora)
+
+            historial_pujas = []
+            if a.es_subasta:
+                pujas_ordenadas = sorted(a.pujas, key=lambda x: x.monto, reverse=True)[:5]
+                for pj in pujas_ordenadas:
+                    u_pj = usuarios_map.get(pj.usuario_id)
+                    historial_pujas.append({
+                        "usuario_id": pj.usuario_id,
+                        "nombre": u_pj.nombre if u_pj else "Postor",
+                        "monto": float(pj.monto),
+                        "strikes": strikes_map.get(pj.usuario_id, 0),
+                        "hora": formatear_cancun(pj.fecha_puja, "%d/%m %H:%M")
+                    })
+
+            anuncios_mercado.append({
+                "id": a.id,
+                "titulo": a.titulo,
+                "categoria": cat_texto,
+                "precio": float(a.precio or 0),
+                "imagenes": fotos_anuncio,
+                "descripcion": a.descripcion,
+                "zona_cancun": a.zona_cancun,
+                "vendido": bool(a.vendido),
+                "es_subasta": bool(a.es_subasta),
+                "subasta_fin": fin_sub.isoformat() if fin_sub else None,
+                "subasta_expirada": subasta_expirada,
+                "puja_actual": float(a.puja_actual or a.precio or 0),
+                "ganador_id": a.ganador_id,
+                "ganador_nombre": ganador.nombre if ganador else None,
+                "ganador_telefono": (ganador.telefono_celular if (ganador and usuario and (usuario.id == a.usuario_id or es_admin)) else ""),
+                "historial_pujas": historial_pujas,
+                "usuario_id": a.usuario_id,
+                "autor_nombre": autor.nombre if autor else "Usuario Cancún",
+                "autor_telefono": (autor.telefono_celular if (autor and usuario) else ""),
+                "autor_rol": rol_autor,
+                "fecha": formatear_cancun(a.fecha_publicacion, "%d/%m/%Y")
+            })
+
+        liquidaciones_pendientes = {}
+        ventas_detalle = []
+        mis_ventas_socio = []
+        resumen_caja_hoy = {"efectivo": 0.0, "transferencia": 0.0, "total": 0.0}
+        hoy_cancun_str = ahora.astimezone(TZ_CANCUN).strftime("%d/%m/%Y")
+
+        if es_operador:
+            pendientes_raw = db.query(models.HistorialVenta).filter(models.HistorialVenta.liquidado_al_dueno == False).all()
+            prods_todos_map = {p.id: p for p in db.query(models.Producto).all()}
+
+            for v in pendientes_raw:
+                prod = prods_todos_map.get(v.producto_id)
+                dueno = usuarios_map.get(prod.dueno_id) if prod else None
+                if prod and dueno:
+                    if dueno.id not in liquidaciones_pendientes:
+                        liquidaciones_pendientes[dueno.id] = {"dueno": dueno.nombre, "saldo": 0.0, "items": []}
+                    liquidaciones_pendientes[dueno.id]["saldo"] += float(v.saldo_por_cobrar or 0)
+                    liquidaciones_pendientes[dueno.id]["items"].append(v.id)
+
+            ultimas_ventas = db.query(models.HistorialVenta).order_by(models.HistorialVenta.id.desc()).limit(60).all()
+            for v in ultimas_ventas:
+                prod = prods_todos_map.get(v.producto_id)
+                vendedor = usuarios_map.get(v.vendedor_id)
+                dueno = usuarios_map.get(prod.dueno_id) if prod else None
+                estado_val = v.estado_venta.value if hasattr(v.estado_venta, "value") else str(v.estado_venta)
+                fecha_str = formatear_cancun(v.fecha_venta)
+
+                if estado_val == "Completada" and fecha_str.startswith(hoy_cancun_str):
+                    resumen_caja_hoy["total"] += float(v.precio_venta_publico or 0)
+
