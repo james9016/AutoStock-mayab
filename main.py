@@ -910,4 +910,104 @@ def eliminar_anuncio_mercado(anuncio_id: int, request: Request):
         return RedirectResponse(url="/mostrador?tab=mercado&msg=Publicación+eliminada", status_code=status.HTTP_303_SEE_OTHER)
     finally:
         db.close()
+@app.post("/urgente/crear")
+def crear_solicitud_urgente(request: Request, titulo: str = Form(...), vehiculo: str = Form(...), detalles: str = Form(...), zona_cancun: str = Form("Cancún")):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if usuario:
+            db.add(models.SolicitudUrgente(usuario_id=usuario.id, titulo=titulo.strip(), vehiculo=vehiculo.strip(), detalles=detalles.strip(), zona_cancun=zona_cancun.strip()))
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=mercado&sub=busco&msg=Solicitud+publicada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
 
+@app.post("/urgente/responder/{sol_id}")
+def responder_solicitud_urgente(sol_id: int, mensaje: str = Form(...), precio_ofrecido: float = Form(None), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if usuario:
+            db.add(models.RespuestaUrgente(solicitud_id=sol_id, usuario_id=usuario.id, mensaje=mensaje.strip(), precio_ofrecido=precio_ofrecido))
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=mercado&sub=busco&msg=Respuesta+enviada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/urgente/cerrar/{sol_id}")
+def cerrar_solicitud_urgente(sol_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        sol = db.query(models.SolicitudUrgente).filter(models.SolicitudUrgente.id == sol_id).first()
+        rol_val = (usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)) if usuario else ""
+        if usuario and sol and (sol.usuario_id == usuario.id or rol_val == "Administrador"):
+            sol.resuelto = True
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=mercado&sub=busco&msg=Solicitud+cerrada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/diagnostico/crear")
+def crear_diagnostico(request: Request, vehiculo: str = Form(...), sintoma: str = Form(...), descripcion: str = Form(...)):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if usuario:
+            db.add(models.DiagnosticoForo(usuario_id=usuario.id, vehiculo=vehiculo.strip(), sintoma=sintoma.strip(), descripcion=descripcion.strip()))
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=comunidad&msg=Consulta+publicada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/diagnostico/comentar/{foro_id}")
+def comentar_diagnostico(foro_id: int, comentario: str = Form(...), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if usuario:
+            db.add(models.ComentarioDiagnostico(diagnostico_id=foro_id, usuario_id=usuario.id, comentario=comentario.strip()))
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=comunidad&msg=Aporte+publicado", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/diagnostico/solucionado/{foro_id}")
+def solucionar_diagnostico(foro_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        foro = db.query(models.DiagnosticoForo).filter(models.DiagnosticoForo.id == foro_id).first()
+        rol_val = (usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)) if usuario else ""
+        if usuario and foro and (foro.usuario_id == usuario.id or rol_val == "Administrador"):
+            foro.solucionado = True
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=comunidad&msg=Marcado+como+solucionado", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/diagnostico/eliminar/{foro_id}")
+def eliminar_diagnostico_admin(foro_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        foro = db.query(models.DiagnosticoForo).filter(models.DiagnosticoForo.id == foro_id).first()
+        if foro:
+            db.delete(foro)
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[MODERACIÓN] Consulta #{foro_id} eliminada"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=comunidad&msg=Consulta+eliminada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.get("/ping")
+def mantener_despierto():
+    return {"estado": "activo", "hora_cancun": formatear_cancun(ahora_utc())}
+        
