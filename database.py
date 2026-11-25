@@ -10,7 +10,7 @@ if DATABASE_URL:
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
     url_conexion = DATABASE_URL
 else:
-    servidor = os.getenv("DB_HOST", "://supabase.com")
+    servidor = "aws-1-us-west-2" + ".pooler" + ".supabase" + ".com"
     url_conexion = URL.create(
         drivername="postgresql",
         username=os.getenv("DB_USER", "postgres.grnqhgctjjahvhkjckxa"),
