@@ -340,4 +340,80 @@ async def enviar_alerta_whatsapp_task(telefono: str, producto_id: int, nombre_pi
 
                 if estado_val == "Completada" and fecha_str.startswith(hoy_cancun_str):
                     resumen_caja_hoy["total"] += float(v.precio_venta_publico or 0)
+                item_venta = {
+                    "id": v.id,
+                    "producto_id": v.producto_id,
+                    "pieza": prod.nombre_refaccion if prod else f"Pieza #{v.producto_id}",
+                    "vehiculo": f"{prod.marca} {prod.modelo}" if prod else "",
+                    "vendedor": vendedor.nombre if vendedor else "Sistema",
+                    "vendedor_id": v.vendedor_id,
+                    "dueno": dueno.nombre if dueno else "Bodega",
+                    "dueno_id": prod.dueno_id if prod else None,
+                    "precio_venta": float(v.precio_venta_publico or 0),
+                    "costo_dueno": float(v.precio_costo_dueno or 0),
+                    "saldo_por_cobrar": float(v.saldo_por_cobrar or 0),
+                    "estado": estado_val,
+                    "fecha": fecha_str,
+                    "liquidado": bool(v.liquidado_al_dueno)
+                }
+                ventas_detalle.append(item_venta)
+                if usuario and prod and prod.dueno_id == usuario.id:
+                    mis_ventas_socio.append(item_venta)
 
+        mi_garaje = db.query(models.GarajeUsuario).filter(models.GarajeUsuario.usuario_id == usuario.id).all() if usuario else []
+        mi_taller = db.query(models.PerfilTaller).filter(models.PerfilTaller.usuario_id == usuario.id).first() if usuario else None
+
+        talleres_directorio = []
+        for t in db.query(models.PerfilTaller).all():
+            u_taller = usuarios_map.get(t.usuario_id)
+            if u_taller:
+                talleres_directorio.append({
+                    "id": t.id, "nombre_taller": t.nombre_taller, "colonia_region": t.colonia_region,
+                    "especialidad": t.especialidad, "telefono": u_taller.telefono_celular if usuario else "",
+                    "encargado": u_taller.nombre
+                })
+
+        solicitudes_raw = db.query(models.SolicitudUrgente).order_by(models.SolicitudUrgente.id.desc()).limit(40).all()
+        solicitudes_urgentes = []
+        for s in solicitudes_raw:
+            u_sol = usuarios_map.get(s.usuario_id)
+            resps = [{"id": r.id, "autor": usuarios_map[r.usuario_id].nombre if r.usuario_id in usuarios_map else "Usuario",
+                      "telefono": (usuarios_map[r.usuario_id].telefono_celular if (r.usuario_id in usuarios_map and usuario) else ""),
+                      "mensaje": r.mensaje, "precio_ofrecido": r.precio_ofrecido} for r in s.respuestas]
+            solicitudes_urgentes.append({
+                "id": s.id, "usuario_id": s.usuario_id, "autor": u_sol.nombre if u_sol else "Usuario",
+                "titulo": s.titulo, "vehiculo": s.vehiculo, "detalles": s.detalles,
+                "zona_cancun": s.zona_cancun, "resuelto": bool(s.resuelto), "respuestas": resps
+            })
+
+        foros_raw = db.query(models.DiagnosticoForo).order_by(models.DiagnosticoForo.id.desc()).limit(40).all()
+        diagnosticos_foro = []
+        for f in foros_raw:
+            u_foro = usuarios_map.get(f.usuario_id)
+            coms = []
+            for c in f.comentarios:
+                u_com = usuarios_map.get(c.usuario_id)
+                rol_com = (u_com.rol.value if hasattr(u_com.rol, "value") else str(u_com.rol)) if u_com else ""
+                coms.append({"id": c.id, "autor": u_com.nombre if u_com else "Usuario", "es_mecanico": rol_com in ["Mecanico", "Administrador"], "comentario": c.comentario})
+            diagnosticos_foro.append({
+                "id": f.id, "usuario_id": f.usuario_id, "autor": u_foro.nombre if u_foro else "Usuario",
+                "vehiculo": f.vehiculo, "sintoma": f.sintoma, "descripcion": f.descripcion,
+                "solucionado": bool(f.solucionado), "comentarios": coms
+            })
+
+        return templates.TemplateResponse("mostrador.html", {
+            "request": request, "usuario": usuario, "productos": productos_sanitizados,
+            "usuarios": usuarios_admin_lista, "solicitudes_ids": solicitudes_ids,
+            "anuncios_mercado": anuncios_mercado, "anuncios_json": json.dumps(anuncios_mercado, ensure_ascii=False),
+            "dict_vehiculos": json.dumps(seed.DICCIONARIO_VEHICULOS, ensure_ascii=False),
+            "rangos_modelos": json.dumps(seed.RANGOS_MODELOS_MX, ensure_ascii=False),
+            "liquidaciones": liquidaciones_pendientes, "ventas_detalle": ventas_detalle,
+            "mis_ventas_socio": mis_ventas_socio, "resumen_caja_hoy": resumen_caja_hoy,
+            "bitacora": bitacora_lista, "mi_garaje": mi_garaje, "mi_taller": mi_taller,
+            "talleres_directorio": talleres_directorio, "solicitudes_urgentes": solicitudes_urgentes,
+            "diagnosticos_foro": diagnosticos_foro, "whatsapp_mostrador": WHATSAPP_MOSTRADOR,
+            "mis_strikes": strikes_map.get(usuario.id, 0) if usuario else 0
+        })
+    finally:
+        db.close()
+            
