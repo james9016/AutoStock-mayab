@@ -132,7 +132,58 @@ def subir_archivo_a_storage(data_url: str, carpeta: str) -> str | None:
     if data_url.startswith("data:image/") and len(data_url) < 450_000:
         return data_url
     return None
+@app.get("/", response_class=HTMLResponse)
+@app.get("/mostrador", response_class=HTMLResponse)
+def vista_mostrador(request: Request):
+    import database
+    import models
+    import security
+    import seed
 
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        ahora = ahora_utc()
+
+        rol_str = (usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)) if usuario else "Publico"
+        es_admin = (rol_str == "Administrador")
+        es_vendedor = (rol_str == "Vendedor")
+        es_mecanico = (rol_str == "Mecanico")
+        es_operador = (es_admin or es_vendedor)
+
+        todos_usuarios = db.query(models.Usuario).all()
+        usuarios_map = {u.id: u for u in todos_usuarios}
+        usuarios_admin_lista = todos_usuarios if es_admin else []
+
+        bitacora_lista = []
+        procedencias_map = {}
+        if es_admin:
+            regs_bitacora = db.query(models.BitacoraAuditoria).order_by(models.BitacoraAuditoria.id.desc()).limit(150).all()
+            for b in regs_bitacora:
+                u_b = usuarios_map.get(b.usuario_id)
+                bitacora_lista.append({
+                    "id": b.id,
+                    "usuario": u_b.nombre if u_b else "Sistema",
+                    "accion": b.accion_realizada,
+                    "fecha": formatear_cancun(b.fecha_hora)
+                })
+                if b.accion_realizada.startswith("[PROCEDENCIA #"):
+                    try:
+                        cabecera, resto = b.accion_realizada.split("]", 1)
+                        pid = int(cabecera.replace("[PROCEDENCIA #", "").strip())
+                        if pid not in procedencias_map:
+                            nota_p, url_p = (resto.split("| URL:", 1) + [""])[:2]
+                            procedencias_map[pid] = {"nota": nota_p.strip(), "url": url_p.strip()}
+                    except Exception:
+                        pass
+
+        strikes_regs = db.query(models.BitacoraAuditoria).filter(
+            models.BitacoraAuditoria.accion_realizada == "INCUMPLIMIENTO_SUBASTA"
+        ).all()
+        strikes_map = {}
+        for st in strikes_regs:
+            strikes_map[st.usuario_id] = strikes_map.get(st.usuario_id, 0) + 1
+        
 def subir_fotos_a_storage(url_imagen_raw: str | None, carpeta: str, limite: int) -> list[str]:
     if not url_imagen_raw:
         return []
