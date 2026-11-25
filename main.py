@@ -132,7 +132,7 @@ def subir_archivo_a_storage(data_url: str, carpeta: str) -> str | None:
     if data_url.startswith("data:image/") and len(data_url) < 450_000:
         return data_url
     return None
-    def subir_fotos_a_storage(url_imagen_raw: str | None, carpeta: str, limite: int) -> list[str]:
+def subir_fotos_a_storage(url_imagen_raw: str | None, carpeta: str, limite: int) -> list[str]:
     if not url_imagen_raw:
         return []
     try:
