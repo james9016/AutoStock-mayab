@@ -562,4 +562,111 @@
             </div>
             <div id="contenedor-favoritos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
-                    
+        <!-- VISTA CARRITO LIMPIA (SOLO COMPRA DIRECTA + ACCESO A MODAL COTIZADOR) -->
+        <div id="vista-carrito" class="vista-seccion hidden space-y-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-900 uppercase flex items-center gap-1.5">
+                        <i data-lucide="shopping-cart" class="w-5 h-5 text-orange-500"></i> Mi Carrito
+                    </h2>
+                    <p class="text-xs text-slate-500">Revisa tus piezas y confirma tu pedido en Cancún</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    {% if es_mecanico or es_admin %}
+                    <button type="button" onclick="abrirModalCotizador()" class="bg-slate-900 hover:bg-slate-800 text-orange-400 text-xs font-extrabold px-3 py-2 rounded-xl shadow-sm flex items-center gap-1.5 transition">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Armar Cotización Cliente
+                    </button>
+                    {% endif %}
+                    <button type="button" onclick="vaciarCarrito()" class="text-xs font-extrabold text-red-600 hover:underline px-2">Vaciar</button>
+                </div>
+            </div>
+
+            <div id="contenedor-carrito" class="space-y-2.5"></div>
+
+            <div id="resumen-carrito" class="hidden space-y-4">
+                <!-- CHECKOUT DIRECTO CANCÚN -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Nombre / Referencia de quien recibe</label>
+                        <input type="text" id="carrito-cliente-nombre" oninput="recalcularCarrito()" placeholder="Ej: Juan Pérez / Taller Los Pinos" class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                    </div>
+
+                    <h3 class="text-xs font-extrabold uppercase text-slate-800 flex items-center gap-1.5 pt-1">
+                        <i data-lucide="truck" class="w-4 h-4 text-orange-500"></i> Modalidad de Entrega (Cancún)
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label class="border-2 border-slate-200 has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50/40 p-3 rounded-xl cursor-pointer flex items-start gap-2.5 transition">
+                            <input type="radio" name="modalidad_entrega" value="patio" checked onchange="recalcularCarrito()" class="mt-1 accent-orange-600">
+                            <div>
+                                <span class="text-xs font-extrabold text-slate-900 block">Recoger en Patio ($0.00)</span>
+                                <span class="text-[10px] text-slate-500">A 1 calle de Ruta 5 y Av. Tulum, Cancún</span>
+                            </div>
+                        </label>
+                        <label class="border-2 border-slate-200 has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50/40 p-3 rounded-xl cursor-pointer flex items-start gap-2.5 transition">
+                            <input type="radio" name="modalidad_entrega" value="domicilio" onchange="recalcularCarrito()" class="mt-1 accent-orange-600">
+                            <div>
+                                <span class="text-xs font-extrabold text-slate-900 block">Envío a Domicilio / Taller</span>
+                                <span class="text-[10px] text-slate-500">Tarifa local calculada desde Ruta 5</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="box-zona-envio" class="hidden bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                        <label class="block text-[10px] font-extrabold text-slate-600 uppercase">Selecciona tu Zona / Región en Cancún</label>
+                        <select id="select-zona-envio" onchange="recalcularCarrito()" class="w-full bg-white border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                            <option value="45|Zona Centro / Crucero / Ruta 5 / Av. Tulum (0-4 km)">Zona Centro / Crucero / Ruta 5 / Av. Tulum (0-4 km) — +$45 MXN</option>
+                            <option value="70|Zona Intermedia / Kabah / Reg. 95-103 / 200-239 (4-8 km)">Zona Intermedia / Kabah / Reg. 95-103 / 200-239 (4-8 km) — +$70 MXN</option>
+                            <option value="105|Zona Sur-Norte / Huayacán / Las Torres / Polígono Sur / Prado Norte">Zona Sur-Norte / Huayacán / Las Torres / Polígono Sur / Prado Norte (8-14 km) — +$105 MXN</option>
+                            <option value="145|Zona Periferia / Bonfil / Zona Hotelera / Punta Sam (+14 km)">Zona Periferia / Bonfil / Zona Hotelera / Punta Sam (+14 km) — +$145 MXN</option>
+                        </select>
+                        <input type="text" id="direccion-envio-texto" placeholder="Calle, Supermanzana/Región, Manzana, Lote o Taller..." class="w-full bg-white border border-slate-300 p-2 rounded-xl text-xs font-bold">
+                    </div>
+
+                    <h3 class="text-xs font-extrabold uppercase text-slate-800 flex items-center gap-1.5 pt-2 border-t border-slate-100">
+                        <i data-lucide="wallet" class="w-4 h-4 text-emerald-600"></i> Forma de Pago
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="border-2 border-slate-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/40 p-3 rounded-xl cursor-pointer flex items-center gap-2 transition">
+                            <input type="radio" name="forma_pago" value="Efectivo" checked class="accent-emerald-600">
+                            <span class="text-xs font-extrabold text-slate-900">Efectivo</span>
+                        </label>
+                        <label class="border-2 border-slate-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/40 p-3 rounded-xl cursor-pointer flex items-center gap-2 transition">
+                            <input type="radio" name="forma_pago" value="Transferencia SPEI" class="accent-emerald-600">
+                            <span class="text-xs font-extrabold text-slate-900">Transferencia</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- RESUMEN Y CONFIRMACIÓN DE COMPRA -->
+                <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-lg space-y-2.5 border-t-4 border-orange-500">
+                    <div class="flex justify-between text-xs text-slate-300">
+                        <span>Subtotal Refacciones:</span>
+                        <span id="carrito-sub-piezas" class="font-bold">$0.00</span>
+                    </div>
+                    <div id="carrito-row-envio" class="hidden flex justify-between text-xs text-orange-300">
+                        <span>Envío Local Cancún:</span>
+                        <span id="carrito-sub-envio" class="font-bold">$0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-700">
+                        <span class="text-xs uppercase font-extrabold text-slate-300">Total a Pagar</span>
+                        <span id="carrito-total-final" class="text-2xl font-black text-orange-400">$0.00</span>
+                    </div>
+                    <button type="button" onclick="enviarPedidoWhatsApp()" class="w-full mt-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3.5 rounded-xl shadow-lg uppercase text-xs tracking-wider transition flex items-center justify-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        <span>Confirmar Pedido por WhatsApp</span>
+                    </button>
+                </div>
+
+                {% if talleres_directorio %}
+                <div class="bg-orange-50 border border-orange-200 p-3.5 rounded-2xl space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-orange-900 flex items-center gap-1.5">
+                            <i data-lucide="wrench" class="w-4 h-4 text-orange-600"></i> ¿Necesitas instalación en Cancún?
+                        </span>
+                        <button type="button" onclick="cambiarVista('comunidad'); activarSubtabComunidad('talleres')" class="text-[11px] font-extrabold text-orange-700 underline">Ver talleres</button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+          
