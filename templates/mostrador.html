@@ -1709,4 +1709,113 @@
             <button type="button" onclick="navegarLightbox(1)" class="bg-slate-800 hover:bg-slate-700 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs">Siguiente</button>
         </div>
     </div>
-    
+     <!-- BLOQUES DE DATOS SEGUROS ANTI-XSS -->
+    <script id="data-productos" type="application/json">{{ productos|tojson|safe }}</script>
+    <script id="data-anuncios" type="application/json">{{ anuncios_json|safe }}</script>
+
+    <script>
+        const VEHICULOS = {{ dict_vehiculos|safe }};
+        const RANGOS_MODELOS = {{ rangos_modelos|safe }};
+        const PRODUCTOS_LISTA = JSON.parse(document.getElementById('data-productos')?.textContent || '[]');
+        const PRODUCTOS_MAP = Object.fromEntries(PRODUCTOS_LISTA.map(p => [String(p.id), p]));
+        const ANUNCIOS_LISTA = JSON.parse(document.getElementById('data-anuncios')?.textContent || '[]');
+        const ANUNCIOS_MAP = Object.fromEntries(ANUNCIOS_LISTA.map(a => [String(a.id), a]));
+
+        const USUARIO_ID = {{ usuario.id if usuario else 'null' }};
+        const ROL_USUARIO = "{{ rol_actual }}";
+        const ES_ADMIN = {{ 'true' if es_admin else 'false' }};
+        const ES_OPERADOR = {{ 'true' if es_operador else 'false' }};
+        const ES_MECANICO = {{ 'true' if es_mecanico else 'false' }};
+        const WHATSAPP_MOSTRADOR = "{{ whatsapp_mostrador }}";
+        const STRIKES_USUARIO = {{ mis_strikes }};
+        const NOMBRE_TALLER = {{ (mi_taller.nombre_taller if mi_taller else 'AutoStock Mayab')|tojson|safe }};
+        const MARGEN_TALLER = {{ mi_taller.margen_porcentaje if mi_taller else 15 }};
+
+        // --- BARRA DE PROGRESO SUPERIOR Y SPINNERS ANTI-DOBLE CLIC ---
+        let timerProgreso = null;
+        function iniciarCargaGlobal() {
+            const bar = document.getElementById('top-progress-bar');
+            if (!bar) return;
+            clearInterval(timerProgreso);
+            bar.style.opacity = '1';
+            bar.style.width = '18%';
+            let avance = 18;
+            timerProgreso = setInterval(() => {
+                if (avance < 92) {
+                    avance += (92 - avance) * 0.14;
+                    bar.style.width = `${avance.toFixed(1)}%`;
+                }
+            }, 220);
+        }
+
+        function finalizarCargaGlobal() {
+            const bar = document.getElementById('top-progress-bar');
+            if (!bar) return;
+            clearInterval(timerProgreso);
+            bar.style.width = '100%';
+            setTimeout(() => { bar.style.opacity = '0'; bar.style.width = '0%'; }, 350);
+        }
+
+        function activarSpinnersFormularios() {
+            document.querySelectorAll('form.form-con-carga').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    if (e.defaultPrevented) return;
+                    const btn = form.querySelector('button[type="submit"]');
+                    if (btn && !btn.disabled) {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-75', 'cursor-not-allowed');
+                        btn.innerHTML = `<span class="spinner-ring mr-1.5"></span><span>Procesando...</span>`;
+                    }
+                    iniciarCargaGlobal();
+                });
+            });
+        }
+
+        // --- TOAST FLOTANTE SUAVE ---
+        function mostrarToast(mensaje, tipo = 'ok') {
+            const prev = document.getElementById('toast-autostock');
+            if (prev) prev.remove();
+            const el = document.createElement('div');
+            el.id = 'toast-autostock';
+            const borde = tipo === 'err' ? 'border-red-500 text-red-200' : 'border-orange-500 text-white';
+            el.className = `fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900 ${borde} text-xs font-extrabold px-4 py-2.5 rounded-full shadow-xl z-50 border transition-opacity duration-200`;
+            el.textContent = mensaje;
+            document.body.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 220); }, 2200);
+        }
+
+        function limpiarQueryURL() {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('msg');
+            url.searchParams.delete('error');
+            window.history.replaceState({}, '', url.toString());
+        }
+
+        // --- OJITO DE CONTRASEÑA CON AUTO-OCULTADO DE 4 SEGUNDOS ---
+        const timersClave = {};
+        function toggleVisibilidadClave(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            clearTimeout(timersClave[inputId]);
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerHTML = '<i data-lucide="eye" class="w-4 h-4 text-orange-500"></i>';
+                if (window.lucide) lucide.createIcons();
+                timersClave[inputId] = setTimeout(() => {
+                    input.type = 'password';
+                    btn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i>';
+                    if (window.lucide) lucide.createIcons();
+                }, 4000);
+            } else {
+                input.type = 'password';
+                btn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i>';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        function ocultarTodasLasClaves() {
+            Object.keys(timersClave).forEach(id => clearTimeout(timersClave[id]));
+            document.querySelectorAll('.input-clave-segura').forEach(inp => inp.type = 'password');
+        }
+        
