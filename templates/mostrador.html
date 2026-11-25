@@ -1494,4 +1494,71 @@
                     </div>
                     <input type="text" id="edit-condicion" name="condicion" required class="w-full bg-white border border-slate-300 p-2 rounded-lg text-xs font-bold">
                             </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Ubicación</label>
+                        <input type="text" id="edit-ubicacion" name="ubicacion_fisica" required class="w-full bg-slate-50 border border-slate-300 p-2 rounded-xl text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Dueño / Socio</label>
+                        <select id="edit-dueno" name="dueno_id" required class="w-full bg-slate-50 border border-slate-300 p-2 rounded-xl text-xs font-bold">
+                            {% for u in usuarios %}
+                                <option value="{{ u.id }}">{{ u.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Cantidad</label>
+                        <input type="number" id="edit-cantidad" name="cantidad_disponible" min="1" required class="w-full bg-slate-50 border border-slate-300 p-2 rounded-xl text-xs font-bold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Costo Dueño ($)</label>
+                        <input type="number" step="0.01" min="0" id="edit-real" name="precio_real" required class="w-full bg-slate-50 border border-slate-300 p-2 rounded-xl text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Precio Público ($)</label>
+                        <input type="number" step="0.01" min="1" id="edit-sugerido" name="precio_sugerido" required class="w-full bg-slate-50 border border-slate-300 p-2 rounded-xl text-xs font-bold">
+                    </div>
+                </div>
+
+                <!-- GESTIÓN DE FOTOS ACTUALES Y NUEVAS -->
+                <div class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl space-y-2">
+                    <label class="block text-[10px] font-extrabold text-slate-600 uppercase">Fotos Actuales (Toca × para quitar foto errónea)</label>
+                    <div id="edit-fotos-actuales" class="flex flex-wrap gap-2"></div>
+                    <input type="hidden" id="edit-fotos-eliminar" name="fotos_eliminar">
+
+                    <label class="block text-[10px] font-extrabold text-slate-600 uppercase pt-1">Agregar Nuevas Fotos</label>
+                    <input type="file" id="edit-nuevas-fotos-file" accept="image/*" multiple class="w-full text-[11px] bg-white p-1.5 border border-dashed border-slate-300 rounded-lg">
+                    <p id="edit-contador-nuevas" class="text-[10px] font-bold text-emerald-700"></p>
+                    <input type="hidden" id="edit-nuevas-fotos-hidden" name="nuevas_fotos">
+                </div>
+
+                <!-- PROCEDENCIA / RESPALDO LEGAL -->
+                <div class="bg-blue-50/60 border border-blue-200 p-2.5 rounded-xl space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="text-[10px] font-extrabold text-blue-900 uppercase">Procedencia / Factura (Solo Admin)</label>
+                        <a id="edit-link-procedencia" href="#" target="_blank" class="hidden text-[10px] font-black text-blue-700 underline">📄 Ver Documento Guardado</a>
+                    </div>
+                    <input type="text" id="edit-procedencia-nota" name="procedencia_nota" placeholder="Nota de procedencia, factura o VIN..." class="w-full bg-white border border-blue-200 p-2 rounded-lg text-xs">
+                    <input type="file" id="edit-procedencia-file" accept="image/*,application/pdf" class="w-full text-[11px]">
+                    <p id="edit-procedencia-status" class="text-[10px] font-bold text-blue-700"></p>
+                    <input type="hidden" id="edit-procedencia-hidden" name="procedencia_archivo">
+                </div>
+
+                <div class="flex gap-2 pt-1">
+                    <button type="submit" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-3 rounded-xl text-xs uppercase shadow">Guardar Cambios</button>
+                </div>
+            </form>
+
+            <form id="form-eliminar-pieza-admin" method="POST" class="pt-2 border-t border-slate-100 form-con-carga" onsubmit="return confirm('¿Dar de baja definitivamente esta refacción del inventario activo?');">
+                <button type="submit" class="w-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-extrabold py-2 rounded-xl text-[11px] uppercase">
+                    🗑️ Dar de Baja Refacción (Error de Captura)
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
     
