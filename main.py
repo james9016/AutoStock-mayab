@@ -132,6 +132,25 @@ def subir_archivo_a_storage(data_url: str, carpeta: str) -> str | None:
     if data_url.startswith("data:image/") and len(data_url) < 450_000:
         return data_url
     return None
+    def subir_fotos_a_storage(url_imagen_raw: str | None, carpeta: str, limite: int) -> list[str]:
+    if not url_imagen_raw:
+        return []
+    try:
+        lista_items = json.loads(url_imagen_raw) if url_imagen_raw.startswith("[") else [url_imagen_raw]
+    except Exception:
+        lista_items = [url_imagen_raw]
+
+    urls_finales = []
+    for item in lista_items[:limite]:
+        if not item:
+            continue
+        url_subida = subir_archivo_a_storage(str(item), carpeta)
+        if url_subida:
+            urls_finales.append(url_subida)
+    return urls_finales
+
+async def enviar_alerta_whatsapp_task(telefono: str, producto_id: int, nombre_pieza: str):
+    print(f"[NOTIFICACION] Afiliado ({telefono}): Refacción #{producto_id} ({nombre_pieza}) vendida.")
 @app.get("/", response_class=HTMLResponse)
 @app.get("/mostrador", response_class=HTMLResponse)
 def vista_mostrador(request: Request):
