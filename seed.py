@@ -16,7 +16,8 @@ CATALOGO_VEHICULOS_MX = {
     "Audi": {
         "A1":, "A3":, "A4":,
         "A5":, "A6":, "Q2":,
-        "Q3":, "Q5":, "Q7":, "TT": [1999, 2023]
+        "Q3":, "Q5":, "Q7":,
+        "TT": [1999, 2023]
     },
     "BMW": {
         "Serie 1":, "Serie 3":, "Serie 4":,
@@ -143,7 +144,7 @@ CATALOGO_VEHICULOS_MX = {
     },
     "Lexus": {
         "ES":, "IS":, "LX":,
-        "NX":, "RX":, "UX": [2019, 2026]
+        "NX":, "RX":, "UX": [2022, 2026]
     },
     "Lincoln": {
         "Aviator":, "Corsair":, "MKS":,
@@ -228,13 +229,13 @@ CATALOGO_VEHICULOS_MX = {
     },
     "Subaru": {
         "BRZ":, "Forester":, "Impreza":,
-        "Outback":, "WRX":, "XV": [2013, 2026]
+        "Outback":, "WRX":, "XV": [2013, 2023]
     },
     "Suzuki": {
         "Aerio":, "Ciaz":, "Ertiga":,
         "Grand Vitara":, "Ignis":, "Jimny":,
         "S-Cross":, "Swift":, "SX4":,
-        "Vitara": [1990, 2026]
+        "Vitara": [2016, 2026]
     },
     "Toyota": {
         "Avanza":, "Camry":, "Celica":,
@@ -260,6 +261,7 @@ CATALOGO_VEHICULOS_MX = {
         "XC90": [2003, 2026]
     }
 }
+
 
 # Diccionarios ordenados alfabéticamente (A-Z) listos para el frontend
 DICCIONARIO_VEHICULOS = {
