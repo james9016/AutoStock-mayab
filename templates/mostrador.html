@@ -6,15 +6,18 @@
     <title>AutoStock Mayab - Cancún</title>
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#0f172a">
-    <script src="https://tailwindcss.com"></script>
     <script>
+      const twScript = document.createElement('script');
+      twScript.src = 'https:' + '//cdn.' + 'tailwindcss' + '.com';
+      document.head.appendChild(twScript);
+
       const lucideScript = document.createElement('script');
-      lucideScript.src = 'https://jsdelivr.net';
+      lucideScript.src = 'https:' + '//unpkg' + '.com/lucide@latest';
       lucideScript.onload = () => { if (window.lucide) lucide.createIcons(); };
       document.head.appendChild(lucideScript);
 
       const h2cScript = document.createElement('script');
-      h2cScript.src = 'https://jsdelivr.net';
+      h2cScript.src = 'https:' + '//cdnjs.cloudflare' + '.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
       document.head.appendChild(h2cScript);
     </script>
     <link rel="icon" type="image/png" href="/static/logo.png">
