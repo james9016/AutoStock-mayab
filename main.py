@@ -620,7 +620,7 @@ def apartar_producto(prod_id: int, request: Request):
         return RedirectResponse(url="/mostrador", status_code=status.HTTP_303_SEE_OTHER)
     finally:
         db.close()
-   @app.post("/productos/vender/{id}")
+@app.post("/productos/vender/{id}")
 def marcar_como_vendido(id: int, request: Request, bg_tasks: BackgroundTasks, metodo_pago: str = Form("Efectivo"), tipo_cliente: str = Form("Publico")):
     import database, models, security
     db = next(database.get_db())
