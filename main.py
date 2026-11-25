@@ -815,4 +815,99 @@ async def verificar_pin_taller(request: Request):
         return JSONResponse({"ok": str(data.get("pin", "")).strip() == (perfil.pin_seguridad if perfil else "1234")})
     finally:
         db.close()
-        
+  @app.post("/mercado/publicar")
+def publicar_anuncio_mercado(request: Request, titulo: str = Form(...), categoria: str = Form(...), precio: float = Form(0.0), descripcion: str = Form(...), zona_cancun: str = Form("Cancún Centro"), es_subasta: str = Form("no"), url_imagen: str = Form(None)):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario or precio < 0:
+            return RedirectResponse(url="/mostrador?tab=mercado&error=Verifica+tu+sesión+y+precio", status_code=status.HTTP_303_SEE_OTHER)
+        urls_mercado = subir_fotos_a_storage(url_imagen, "mercado", 10)
+        es_sub = (es_subasta == "si")
+        db.add(models.AnuncioMercado(titulo=titulo.strip(), categoria=categoria, precio=precio, descripcion=descripcion.strip(), zona_cancun=zona_cancun.strip(), url_imagen=json.dumps(urls_mercado) if urls_mercado else None, usuario_id=usuario.id, es_subasta=es_sub, subasta_fin=(ahora_utc() + timedelta(hours=24)) if es_sub else None, puja_actual=precio if es_sub else 0.0))
+        db.commit()
+        return RedirectResponse(url="/mostrador?tab=mercado&msg=Publicado+en+Mercado+Local", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/mercado/pujar/{anuncio_id}")
+def pujar_subasta(anuncio_id: int, monto: float = Form(...), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?tab=mercado&error=Inicia+sesión+para+pujar", status_code=status.HTTP_303_SEE_OTHER)
+        if db.query(models.BitacoraAuditoria).filter(models.BitacoraAuditoria.usuario_id == usuario.id, models.BitacoraAuditoria.accion_realizada == "INCUMPLIMIENTO_SUBASTA").count() >= 2:
+            return RedirectResponse(url="/mostrador?tab=mercado&error=Cuenta+bloqueada+en+subastas+por+incumplimientos", status_code=status.HTTP_303_SEE_OTHER)
+        anuncio = db.query(models.AnuncioMercado).filter(models.AnuncioMercado.id == anuncio_id).first()
+        ahora = ahora_utc()
+        fin_sub = a_utc_aware(anuncio.subasta_fin) if anuncio else None
+        if not anuncio or not anuncio.es_subasta or anuncio.vendido or (fin_sub and fin_sub <= ahora) or anuncio.usuario_id == usuario.id:
+            return RedirectResponse(url="/mostrador?tab=mercado&error=Subasta+no+disponible", status_code=status.HTTP_303_SEE_OTHER)
+        minimo = float(anuncio.puja_actual or anuncio.precio or 0) + 50.0
+        if monto < minimo:
+            return RedirectResponse(url=f"/mostrador?tab=mercado&error=Puja+mínima+\${int(minimo)}", status_code=status.HTTP_303_SEE_OTHER)
+        anuncio.puja_actual, anuncio.ganador_id = monto, usuario.id
+        if fin_sub and (fin_sub - ahora).total_seconds() <= 30:
+            anuncio.subasta_fin = fin_sub + timedelta(minutes=2)
+        db.add(models.PujaSubasta(anuncio_id=anuncio.id, usuario_id=usuario.id, monto=monto))
+        db.commit()
+        return RedirectResponse(url="/mostrador?tab=mercado&msg=Puja+registrada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/mercado/subasta-incumplida/{anuncio_id}")
+def reportar_ganador_incumplido(anuncio_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        anuncio = db.query(models.AnuncioMercado).filter(models.AnuncioMercado.id == anuncio_id).first()
+        rol_val = (usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)) if usuario else ""
+        if usuario and anuncio and (anuncio.usuario_id == usuario.id or rol_val == "Administrador") and anuncio.ganador_id:
+            ganador_fallido = anuncio.ganador_id
+            db.add(models.BitacoraAuditoria(usuario_id=ganador_fallido, accion_realizada="INCUMPLIMIENTO_SUBASTA"))
+            db.query(models.PujaSubasta).filter(models.PujaSubasta.anuncio_id == anuncio.id, models.PujaSubasta.usuario_id == ganador_fallido).delete()
+            db.flush()
+            sig = db.query(models.PujaSubasta).filter(models.PujaSubasta.anuncio_id == anuncio.id).order_by(models.PujaSubasta.monto.desc()).first()
+            if sig:
+                anuncio.ganador_id, anuncio.puja_actual = sig.usuario_id, sig.monto
+            else:
+                anuncio.ganador_id, anuncio.puja_actual, anuncio.subasta_fin = None, anuncio.precio, ahora_utc() + timedelta(hours=24)
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=mercado&msg=Strike+aplicado+y+subasta+actualizada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/mercado/vendido/{anuncio_id}")
+def marcar_anuncio_vendido(anuncio_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        anuncio = db.query(models.AnuncioMercado).filter(models.AnuncioMercado.id == anuncio_id).first()
+        rol_val = (usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)) if usuario else ""
+        if usuario and anuncio and (anuncio.usuario_id == usuario.id or rol_val == "Administrador"):
+            anuncio.vendido = True
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=mercado&msg=Marcado+como+vendido", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/mercado/eliminar/{anuncio_id}")
+def eliminar_anuncio_mercado(anuncio_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        anuncio = db.query(models.AnuncioMercado).filter(models.AnuncioMercado.id == anuncio_id).first()
+        rol_val = (usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)) if usuario else ""
+        if usuario and anuncio and (anuncio.usuario_id == usuario.id or rol_val == "Administrador"):
+            db.delete(anuncio)
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=mercado&msg=Publicación+eliminada", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
