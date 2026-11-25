@@ -815,7 +815,7 @@ async def verificar_pin_taller(request: Request):
         return JSONResponse({"ok": str(data.get("pin", "")).strip() == (perfil.pin_seguridad if perfil else "1234")})
     finally:
         db.close()
-  @app.post("/mercado/publicar")
+@app.post("/mercado/publicar")
 def publicar_anuncio_mercado(request: Request, titulo: str = Form(...), categoria: str = Form(...), precio: float = Form(0.0), descripcion: str = Form(...), zona_cancun: str = Form("Cancún Centro"), es_subasta: str = Form("no"), url_imagen: str = Form(None)):
     import database, models, security
     db = next(database.get_db())
