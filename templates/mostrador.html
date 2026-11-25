@@ -1648,4 +1648,65 @@
         </div>
     </div>
     {% endif %}
+     <!-- MODAL DETALLE DE PUBLICACIÓN MERCADO LOCAL + SUBASTAS ANTI-FANTASMAS -->
+    <div id="modal-detalle-mercado" class="fixed inset-0 bg-slate-950/80 hidden z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm" onclick="if(event.target===this) cerrarModalActivo()">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+            <div class="relative bg-slate-900">
+                <button type="button" onclick="cerrarModalActivo()" class="absolute top-3 right-3 z-10 bg-slate-900/80 text-white w-9 h-9 rounded-full font-black text-lg flex items-center justify-center border border-slate-700">&times;</button>
+                <div id="detalle-carrusel-fotos" class="flex overflow-x-auto snap-x snap-mandatory h-64 sm:h-72 scroll-smooth"></div>
+                <div id="detalle-puntos-indicadores" class="absolute bottom-3 inset-x-0 flex justify-center gap-1.5 pointer-events-none"></div>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-3 flex-1">
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <span id="detalle-categoria" class="text-[10px] font-extrabold uppercase bg-orange-100 text-orange-800 px-2 py-0.5 rounded-md"></span>
+                        <h3 id="detalle-titulo" class="text-lg font-black text-slate-900 mt-1"></h3>
+                    </div>
+                    <p id="detalle-precio" class="text-2xl font-black text-emerald-600 shrink-0"></p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-semibold border-y border-slate-100 py-2">
+                    <span id="detalle-zona" class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-orange-500"></i></span>
+                    <span id="detalle-autor" class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5 text-slate-400"></i></span>
+                    <span id="detalle-fecha" class="text-[11px] text-slate-400"></span>
+                </div>
+                <p id="detalle-descripcion" class="text-xs text-slate-700 leading-relaxed whitespace-pre-line"></p>
+
+                <!-- CAJA DE SUBASTA 24H + HISTORIAL DE PUJAS -->
+                <div id="detalle-box-subasta" class="hidden bg-amber-50 border border-amber-300 p-3.5 rounded-2xl space-y-2.5">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-black uppercase text-amber-900">Subasta Activa 24h</span>
+                        <span id="detalle-tiempo-subasta" class="text-xs font-black text-red-600"></span>
+                    </div>
+                    <p id="detalle-ganador-info" class="text-xs font-extrabold text-slate-800"></p>
+
+                    <form id="form-pujar-subasta" method="POST" class="flex gap-2 form-con-carga">
+                        <input type="number" step="50" name="monto" id="input-monto-puja" required class="flex-1 bg-white border border-amber-400 p-2.5 rounded-xl text-sm font-black">
+                        <button type="submit" class="bg-amber-400 hover:bg-amber-500 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs uppercase shadow">Pujar</button>
+                    </form>
+
+                    <div id="detalle-historial-pujas" class="space-y-1 pt-1 border-t border-amber-200/80 text-[11px]"></div>
+                </div>
+
+                <div id="detalle-acciones-usuario" class="space-y-2 pt-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX PANTALLA COMPLETA CON ZOOM -->
+    <div id="modal-lightbox" class="fixed inset-0 bg-black/95 hidden z-[60] flex flex-col justify-between p-4 select-none">
+        <div class="flex justify-between items-center text-white">
+            <span id="lightbox-contador" class="text-xs font-extrabold bg-slate-800 px-3 py-1 rounded-full">1 / 1</span>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="toggleZoomLightbox()" id="btn-zoom-lb" class="bg-slate-800 hover:bg-slate-700 text-xs font-extrabold px-3 py-1.5 rounded-full">🔍 Zoom</button>
+                <button type="button" onclick="cerrarModalActivo()" class="text-white text-3xl font-black leading-none px-2">&times;</button>
+            </div>
+        </div>
+        <div id="lightbox-contenedor-img" class="flex-1 flex items-center justify-center overflow-auto my-2" ondblclick="toggleZoomLightbox()">
+            <img id="lightbox-img" src="" alt="Vista previa" class="max-h-[82vh] max-w-full object-contain rounded-xl transition-transform duration-200 origin-center">
+        </div>
+        <div class="flex justify-center gap-6 pb-2">
+            <button type="button" onclick="navegarLightbox(-1)" class="bg-slate-800 hover:bg-slate-700 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs">Anterior</button>
+            <button type="button" onclick="navegarLightbox(1)" class="bg-slate-800 hover:bg-slate-700 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs">Siguiente</button>
+        </div>
+    </div>
     
