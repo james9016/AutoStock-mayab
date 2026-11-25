@@ -11,12 +11,12 @@ CATALOGO_VEHICULOS_MX = {
     },
     "Alfa Romeo": {
         "Giulia":, "Giulietta":,
-        "Mito":, "Stelvio": [2018, 2025]
+        "Mito":, "Stelvio": [2018, 2026]
     },
     "Audi": {
         "A1":, "A3":, "A4":,
         "A5":, "A6":, "Q2":,
-        "Q3":, "Q5":, "Q7":, "TT": [2000, 2023]
+        "Q3":, "Q5":, "Q7":, "TT": [1999, 2023]
     },
     "BMW": {
         "Serie 1":, "Serie 3":, "Serie 4":,
@@ -35,11 +35,11 @@ CATALOGO_VEHICULOS_MX = {
     "Cadillac": {
         "ATS":, "CTS":, "DeVille":,
         "Escalade":, "SRX":, "XT4":,
-        "XT5": [2017, 2025]
+        "XT5": [2017, 2026]
     },
     "Changan": {
         "Alsvin":, "CS15":, "CS35 Plus":,
-        "CS55 Plus":, "UNI-K": [2023, 2026]
+        "CS55 Plus":, "UNI-K": [2022, 2026]
     },
     "Chevrolet": {
         "Aveo":, "Beat":, "Captiva":,
@@ -54,7 +54,7 @@ CATALOGO_VEHICULOS_MX = {
     "Chrysler": {
         "300C":, "Cirrus":, "LeBaron":,
         "Neon":, "Pacifica":, "PT Cruiser":,
-        "Sebring":, "Town & Country":, "Voyager": [1995, 2022]
+        "Sebring":, "Town & Country":, "Voyager": [1988, 2022]
     },
     "Cupra": {
         "Ateca":, "Born":, "Formentor":,
@@ -62,7 +62,7 @@ CATALOGO_VEHICULOS_MX = {
     },
     "Dacia": {
         "Duster":, "Logan":, "Sandero":,
-        "Stepway": [2010, 2025]
+        "Stepway": [2010, 2026]
     },
     "Dodge": {
         "Atos":, "Attitude":, "Avenger":,
@@ -143,23 +143,23 @@ CATALOGO_VEHICULOS_MX = {
     },
     "Lexus": {
         "ES":, "IS":, "LX":,
-        "NX":, "RX":, "UX": [2022, 2026]
+        "NX":, "RX":, "UX": [2019, 2026]
     },
     "Lincoln": {
         "Aviator":, "Corsair":, "MKS":,
         "MKX":, "MKZ":, "Nautilus":,
-        "Navigator":, "Town Car": [1990, 2011]
+        "Navigator":, "Town Car": [1985, 2011]
     },
     "Mazda": {
         "CX-3":, "CX-30":, "CX-5":,
         "CX-50":, "CX-7":, "CX-9":,
         "Mazda 2":, "Mazda 3":, "Mazda 6":,
-        "MX-5":, "Protege": [1999, 2003]
+        "MX-5":, "Protege": [1995, 2003]
     },
     "Mercedes-Benz": {
         "Clase A":, "Clase B":, "Clase C":,
         "Clase E":, "GLA":, "GLC":,
-        "GLE":, "ML":, "Sprinter": [2003, 2026]
+        "GLE":, "ML":, "Sprinter": [2002, 2026]
     },
     "MG": {
         "GT":, "HS":, "MG3":,
@@ -173,7 +173,7 @@ CATALOGO_VEHICULOS_MX = {
     "Mitsubishi": {
         "Eclipse":, "Endeavor":, "Galant":,
         "L200":, "Lancer":, "Mirage":,
-        "Mirage G4":, "Montero Sport":, "Outlander": [2004, 2026]
+        "Mirage G4":, "Montero Sport":, "Outlander": [2003, 2026]
     },
     "Nissan": {
         "Altima":, "Aprio":, "Armada":,
@@ -213,7 +213,7 @@ CATALOGO_VEHICULOS_MX = {
         "Fluence":, "Kangoo":, "Koleos":,
         "Kwid":, "Logan":, "Megane":,
         "Oroch":, "Platina":, "Scenic":,
-        "Stepway": [2010, 2025]
+        "Stepway": [2010, 2026]
     },
     "Scion": {
         "tC":, "xA":, "xB": [2004, 2015]
@@ -228,13 +228,13 @@ CATALOGO_VEHICULOS_MX = {
     },
     "Subaru": {
         "BRZ":, "Forester":, "Impreza":,
-        "Outback":, "WRX":, "XV": [2012, 2023]
+        "Outback":, "WRX":, "XV": [2013, 2026]
     },
     "Suzuki": {
         "Aerio":, "Ciaz":, "Ertiga":,
         "Grand Vitara":, "Ignis":, "Jimny":,
         "S-Cross":, "Swift":, "SX4":,
-        "Vitara": [2016, 2026]
+        "Vitara": [1990, 2026]
     },
     "Toyota": {
         "Avanza":, "Camry":, "Celica":,
