@@ -1151,4 +1151,95 @@
             </div>
         </div>
       </main>
+      <!-- BARRA DE NAVEGACIÓN INFERIOR LIMPIA (5 BOTONES ESPACIADOS) -->
+    <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-40">
+        <div class="max-w-7xl mx-auto flex justify-around items-center h-16 px-1">
+            <button type="button" onclick="cambiarVista('inicio')" id="nav-inicio" class="nav-btn flex-1 flex flex-col items-center justify-center text-orange-600 font-extrabold transition">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-1">Inicio</span>
+            </button>
+            <button type="button" onclick="cambiarVista('garaje')" id="nav-garaje" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
+                <i data-lucide="car" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-1">Mi Garaje</span>
+            </button>
+            <button type="button" onclick="cambiarVista('mercado')" id="nav-mercado" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
+                <i data-lucide="store" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-1">Mercado</span>
+            </button>
+            <button type="button" onclick="cambiarVista('comunidad')" id="nav-comunidad" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition">
+                <i data-lucide="wrench" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-1">Talleres</span>
+            </button>
+            <button type="button" onclick="cambiarVista('carrito')" id="nav-carrito" class="nav-btn flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-600 font-bold transition relative">
+                <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                <span id="badge-cart" class="hidden absolute top-1.5 right-1/4 bg-orange-500 text-slate-950 text-[9px] font-black px-1.5 rounded-full">0</span>
+                <span class="text-[10px] mt-1">Carrito</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MODAL INICIAR SESIÓN (CON OJITO AUTO-OCULTADO 4S) -->
+    <div id="modal-login" class="fixed inset-0 bg-slate-950/75 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm" onclick="if(event.target===this) cerrarModalActivo()">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto space-y-4 relative">
+            <button type="button" onclick="cerrarModalActivo()" class="absolute right-4 top-3 text-slate-400 hover:text-slate-700 font-black text-2xl leading-none">&times;</button>
+            <h3 class="text-lg font-extrabold text-slate-900 border-b border-slate-100 pb-2">🔐 Iniciar Sesión</h3>
+            <form action="/auth/login" method="POST" class="space-y-4 form-con-carga" onsubmit="ocultarTodasLasClaves()">
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Usuario</label>
+                    <input type="text" name="usuario" autocomplete="username" autocapitalize="none" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-orange-500 focus:outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Contraseña</label>
+                    <div class="relative">
+                        <input type="password" id="input-pass-login" name="contrasena" autocomplete="current-password" placeholder="••••••••" class="input-clave-segura w-full p-3 pr-11 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-orange-500 focus:outline-none" required>
+                        <button type="button" onclick="toggleVisibilidadClave('input-pass-login', this)" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-slate-700" title="Mostrar contraseña por 4 segundos">
+                            <i data-lucide="eye-off" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-3.5 rounded-xl text-xs shadow uppercase tracking-wider">Entrar al Sistema</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL REGISTRO PÚBLICO (CON OJITO AUTO-OCULTADO 4S) -->
+    <div id="modal-registro" class="fixed inset-0 bg-slate-950/75 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm" onclick="if(event.target===this) cerrarModalActivo()">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto space-y-4 relative">
+            <button type="button" onclick="cerrarModalActivo()" class="absolute right-4 top-3 text-slate-400 hover:text-slate-700 font-black text-2xl leading-none">&times;</button>
+            <h3 class="text-lg font-extrabold text-slate-900 border-b border-slate-100 pb-2">📝 Registro Público</h3>
+            <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-xs text-emerald-900 font-medium">
+                Entrarás directo como <strong>Público General</strong> para comprar y publicar en el Mercado Local.
+            </div>
+            <form action="/auth/registro" method="POST" class="space-y-3 form-con-carga" onsubmit="ocultarTodasLasClaves()">
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Nombre Completo</label>
+                    <input type="text" name="nombre" autocomplete="name" placeholder="Ej: Juan Pérez" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Usuario Sugerido</label>
+                    <input type="text" name="usuario" autocomplete="username" autocapitalize="none" placeholder="Ej: juan99" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Celular WhatsApp (10 dígitos)</label>
+                    <input type="tel" name="telefono_celular" autocomplete="tel" placeholder="+529981234567" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase mb-1">Contraseña (Mínimo 8 caracteres)</label>
+                    <div class="relative">
+                        <input type="password" id="input-pass-registro" name="contrasena" minlength="8" autocomplete="new-password" placeholder="••••••••" class="input-clave-segura w-full p-2.5 pr-11 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold" required>
+                        <button type="button" onclick="toggleVisibilidadClave('input-pass-registro', this)" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-slate-700" title="Mostrar contraseña por 4 segundos">
+                            <i data-lucide="eye-off" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <label class="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer">
+                    <input type="checkbox" name="solicitar_especial" value="si" class="mt-0.5 rounded text-orange-600 focus:ring-orange-500">
+                    <span class="text-xs text-amber-950 font-semibold leading-tight">
+                        Soy <strong>Taller, Mecánico o Vendedor</strong> (Solicitar verificación para descuento preferencial)
+                    </span>
+                </label>
+                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl text-xs shadow uppercase tracking-wider">Crear Cuenta y Entrar</button>
+            </form>
+        </div>
+        </div>
     
