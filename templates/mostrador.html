@@ -2206,4 +2206,97 @@
 
             abrirModalPorId('modal-editar-pieza');
         }
+           // --- FILTRO MODAL INVENTARIO POR PROPIETARIO ---
+        function filtrarModalInventario() {
+            const filtro = document.getElementById('filtro-dueno-inventario')?.value || 'todos';
+            const linkExcel = document.getElementById('link-export-excel-inv');
+            const linkPdf = document.getElementById('link-export-pdf-inv');
+            if (linkExcel) linkExcel.href = `/inventario/exportar/csv?dueno_id=${filtro}`;
+            if (linkPdf) linkPdf.href = `/inventario/reporte/pdf?dueno_id=${filtro}`;
+
+            let totalPiezas = 0, totalCosto = 0, totalPublico = 0;
+            document.querySelectorAll('.item-inv-modal').forEach(el => {
+                const esMio = el.dataset.esMio === '1';
+                const duenoId = el.dataset.dueno;
+                let visible = false;
+                if (filtro === 'todos') visible = true;
+                else if (filtro === 'mio') visible = esMio;
+                else visible = (duenoId === filtro);
+
+                el.classList.toggle('hidden', !visible);
+                if (visible) {
+                    const cant = parseInt(el.dataset.cant || '1', 10);
+                    totalPiezas += cant;
+                    totalCosto += parseFloat(el.dataset.costo || '0') * cant;
+                    totalPublico += parseFloat(el.dataset.publico || '0') * cant;
+                }
+            });
+
+            document.getElementById('inv-resumen-cant').textContent = totalPiezas;
+            document.getElementById('inv-resumen-costo').textContent = `$${totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+            document.getElementById('inv-resumen-publico').textContent = `$${totalPublico.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+        }
+
+        // --- SELECTORES ALFABÉTICOS CON AÑOS REALES POR MODELO EN MÉXICO ---
+        function obtenerAnosDeModelo(marca, modelo) {
+            const rango = (RANGOS_MODELOS[marca] && RANGOS_MODELOS[marca][modelo]) ? RANGOS_MODELOS[marca][modelo] :;
+            const lista = [];
+            for (let y = rango[1]; y >= rango[0]; y--) lista.push(String(y));
+            return lista;
+        }
+
+        function poblarSelectMarcas(selectEl, textoVacio = 'Todas') {
+            if (!selectEl) return;
+            selectEl.innerHTML = `<option value="">${textoVacio}</option>`;
+            Object.keys(VEHICULOS).forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        function poblarSelectModelos(selectModelo, marca, textoVacio = 'Todos') {
+            if (!selectModelo) return;
+            selectModelo.innerHTML = `<option value="">${textoVacio}</option>`;
+            if (!marca || !VEHICULOS[marca]) {
+                selectModelo.disabled = true;
+                return;
+            }
+            VEHICULOS[marca].forEach(mod => {
+                const opt = document.createElement('option');
+                opt.value = mod;
+                opt.textContent = mod;
+                selectModelo.appendChild(opt);
+            });
+            selectModelo.disabled = false;
+        }
+
+        function poblarSelectAnos(selectAno, marca, modelo, textoVacio = 'Todos') {
+            if (!selectAno) return;
+            selectAno.innerHTML = `<option value="">${textoVacio}</option>`;
+            if (!marca || !modelo) {
+                selectAno.disabled = true;
+                return;
+            }
+            obtenerAnosDeModelo(marca, modelo).forEach(y => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                selectAno.appendChild(opt);
+            });
+            selectAno.disabled = false;
+        }
+
+        function coincideRangoAno(anoGrupoStr, anoBuscadoStr) {
+            if (!anoBuscadoStr) return true;
+            const target = parseInt(anoBuscadoStr, 10);
+            if (isNaN(target)) return true;
+            const nums = (anoGrupoStr || '').match(/\d{4}/g);
+            if (!nums || !nums.length) return (anoGrupoStr || '').includes(anoBuscadoStr);
+            if (nums.length === 1) return parseInt(nums[0], 10) === target;
+            const min = Math.min(parseInt(nums[0], 10), parseInt(nums[1], 10));
+            const max = Math.max(parseInt(nums[0], 10), parseInt(nums[1], 10));
+            return target >= min && target <= max;
+        }
         
