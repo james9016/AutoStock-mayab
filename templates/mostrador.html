@@ -291,4 +291,84 @@
                                     </div>
                                 </div>
                             </div>
-                            
+                              <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-2">
+                                <label class="block text-[10px] font-extrabold text-slate-600 uppercase">Compatibilidad Cruzada (Autos hermanos)</label>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <input type="text" id="input-compat-extra" placeholder="Ej: Fiat Idea 2006-2009 / Tornado 1.8" class="flex-1 min-w-[180px] bg-white border border-slate-300 p-2 rounded-lg text-xs font-bold">
+                                    <button type="button" onclick="agregarCompatibilidadExtra()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-extrabold px-3 py-2 rounded-lg">+ Agregar</button>
+                                </div>
+                                <div id="lista-tags-compat" class="flex flex-wrap gap-1.5"></div>
+                                <input type="hidden" name="compatibilidad" id="input-compat-final">
+                            </div>
+                        </div>
+
+                        <div id="bloque-medida-generica" class="hidden bg-slate-50 border border-slate-200 p-3 rounded-xl">
+                            <label class="block text-[10px] font-extrabold text-slate-600 uppercase mb-1">Medida, Voltaje o Especificación Técnica</label>
+                            <input type="text" id="input-medida-generica" oninput="document.getElementById('input-compat-final').value = this.value" placeholder="Ej: 12V 600A Grupo 24 / Rin 15 195-65" class="w-full bg-white border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-2">
+                            <label class="block text-[10px] font-extrabold text-slate-600 uppercase">Etiquetas de Condición (Toca para activar/desactivar o edita el texto)</label>
+                            <div class="flex flex-wrap gap-1.5" id="chips-condicion-alta">
+                                {% for tag in ['Pieza Probada', 'Original Usada', 'Garantía 30 días', 'Lista para instalar', 'Detalles estéticos', 'Reconstruida', 'Nueva / Genérica'] %}
+                                    <button type="button" onclick="toggleChipEtiqueta('alta-condicion-input', '{{ tag }}', this)" class="chip-tag px-2.5 py-1 rounded-lg text-[11px] font-extrabold border border-slate-300 bg-white text-slate-700 hover:border-orange-500 transition">
+                                        + {{ tag }}
+                                    </button>
+                                {% endfor %}
+                            </div>
+                            <input type="text" id="alta-condicion-input" name="condicion" value="Original Usada • Pieza Probada" required class="w-full bg-white border border-slate-300 p-2.5 rounded-xl text-xs font-bold text-slate-900">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Ubicación Bodega</label>
+                                <input type="text" name="ubicacion_fisica" placeholder="Ej: Pasillo B - Anaquel 4" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Afiliado Dueño</label>
+                                <select name="dueno_id" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                                    {% for u in usuarios %}
+                                        <option value="{{ u.id }}">{{ u.nombre }} ({{ u.rol.value if u.rol.value else u.rol }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Cantidad (Unidades)</label>
+                                <input type="number" name="cantidad_disponible" value="1" min="1" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Costo Dueño ($)</label>
+                                <input type="number" step="0.01" min="0" name="precio_real" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Precio Público ($)</label>
+                                <input type="number" step="0.01" min="1" name="precio_sugerido" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-sm font-bold">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Fotos Reales de la Pieza (Máximo 6)</label>
+                                <input type="file" id="foto-camara" accept="image/*" multiple class="w-full text-xs bg-slate-50 p-2 border border-dashed border-slate-400 rounded-xl">
+                                <p id="contador-fotos-pieza" class="text-[10px] font-bold text-emerald-700 mt-1"></p>
+                                <input type="hidden" name="url_imagen" id="url_imagen_string">
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+                                <label class="block text-[10px] font-extrabold text-slate-600 uppercase">Procedencia / Respaldo Legal (Solo Admin)</label>
+                                <input type="text" name="procedencia_nota" placeholder="Ej: Factura #402 / VIN auto donante..." class="w-full bg-white border border-slate-300 p-2 rounded-lg text-xs font-semibold">
+                                <input type="file" id="alta-procedencia-file" accept="image/*,application/pdf" class="w-full text-[11px]">
+                                <p id="alta-procedencia-status" class="text-[10px] font-bold text-blue-700"></p>
+                                <input type="hidden" name="procedencia_archivo" id="alta-procedencia-hidden">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-3 rounded-xl shadow-md uppercase text-xs flex items-center justify-center gap-1.5">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Registrar en Bodega Central
+                        </button>
+                    </form>
+                </section>
+            {% endif %}
+            
