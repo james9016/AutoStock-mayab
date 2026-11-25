@@ -203,4 +203,72 @@ def subir_fotos_a_storage(url_imagen_raw: str | None, carpeta: str, limite: int)
 
 async def enviar_alerta_whatsapp_task(telefono: str, producto_id: int, nombre_pieza: str):
     print(f"[NOTIFICACION] Afiliado ({telefono}): Refacción #{producto_id} ({nombre_pieza}) vendida.")
+          productos_raw = db.query(models.Producto).filter(models.Producto.cantidad_disponible > 0).order_by(models.Producto.id.desc()).all()
+        productos_sanitizados = []
+        for prod in productos_raw:
+            precio_final = float(prod.precio_sugerido)
+            tiene_descuento_taller = False
+
+            if es_mecanico:
+                ganancia = float(prod.precio_sugerido) - float(prod.precio_real)
+                if ganancia > 0:
+                    precio_final = round(float(prod.precio_sugerido) - (ganancia * 0.15), 2)
+                    tiene_descuento_taller = True
+
+            f_ing = a_utc_aware(prod.fecha_ingreso)
+            dias_almacen = max(0, (ahora - f_ing).days) if f_ing else 0
+            f_ap = a_utc_aware(prod.apartado_hasta)
+            dueno_obj = usuarios_map.get(prod.dueno_id)
+            cat_val = prod.categoria.value if hasattr(prod.categoria, "value") else str(prod.categoria)
+            proc_info = procedencias_map.get(prod.id, {"nota": "", "url": ""})
+
+            productos_sanitizados.append({
+                "id": prod.id,
+                "categoria": cat_val,
+                "nombre_refaccion": prod.nombre_refaccion,
+                "marca": prod.marca,
+                "modelo": prod.modelo,
+                "ano_grupo": prod.ano_grupo,
+                "compatibilidad": prod.compatibilidad or "",
+                "condicion": prod.condicion or "Original Usada - Excelente",
+                "cantidad_disponible": prod.cantidad_disponible,
+                "dias_almacen": dias_almacen,
+                "apartado": bool(f_ap and f_ap > ahora),
+                "precio_publico_original": float(prod.precio_sugerido),
+                "precio_sugerido": precio_final,
+                "tiene_descuento_taller": tiene_descuento_taller,
+                "dueno_id": prod.dueno_id,
+                "dueno_nombre": dueno_obj.nombre if dueno_obj else "Bodega",
+                "precio_real": float(prod.precio_real) if es_operador else None,
+                "ubicacion_fisica": prod.ubicacion_fisica if es_operador else "Disponible en Bodega Central",
+                "imagenes": [img.url_imagen for img in prod.imagenes] if prod.imagenes else [],
+                "imagenes_objs": [{"id": img.id, "url": img.url_imagen} for img in prod.imagenes] if es_admin else [],
+                "procedencia_nota": proc_info["nota"] if es_admin else "",
+                "procedencia_url": proc_info["url"] if es_admin else ""
+            })
+
+        solicitudes_ids = []
+        if es_admin:
+            regs = db.query(models.BitacoraAuditoria).filter(
+                models.BitacoraAuditoria.accion_realizada == "SOLICITUD_VERIFICACION_ESPECIAL"
+            ).all()
+            solicitudes_ids = [r.usuario_id for r in regs]
+
+        anuncios_raw = db.query(models.AnuncioMercado).order_by(models.AnuncioMercado.id.desc()).limit(60).all()
+        anuncios_mercado = []
+        for a in anuncios_raw:
+            autor = usuarios_map.get(a.usuario_id)
+            ganador = usuarios_map.get(a.ganador_id) if a.ganador_id else None
+            cat_texto = a.categoria.value if hasattr(a.categoria, "value") else str(a.categoria)
+            rol_autor = (autor.rol.value if hasattr(autor.rol, "value") else str(autor.rol)) if autor else "Publico_General"
+
+            fotos_anuncio = []
+            if a.url_imagen:
+                if a.url_imagen.startswith("["):
+                    try:
+                        fotos_anuncio = json.loads(a.url_imagen)
+                    except Exception:
+                        fotos_anuncio = [a.url_imagen]
+                else:
+                    fotos_anuncio = [a.url_imagen]
         
