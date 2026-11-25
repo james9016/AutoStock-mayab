@@ -754,4 +754,65 @@ def reporte_imprimible_pdf(request: Request, dueno_id: str = "todos"):
         return HTMLResponse(f'<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>{titulo}</title><style>body{{font-family:sans-serif;padding:15px}}table{{width:100%;border-collapse:collapse;font-size:11px}}th,td{{border-bottom:1px solid #ddd;padding:7px;text-align:left}}th{{background:#0f172a;color:#fff}}.btn{{background:#ea580c;color:#fff;border:none;padding:12px;width:100%;font-weight:bold;border-radius:8px;margin-bottom:15px;cursor:pointer}}@media print{{.btn{{display:none}}}}</style></head><body><button class="btn" onclick="window.print()">🖨️ Guardar PDF / Imprimir</button><h2>⚙️ AutoStock Mayab - {titulo}</h2><p>Fecha Cancún: {formatear_cancun(ahora_utc())} | Registros: {len(productos)}</p><table><thead><tr><th>ID</th><th>Refacción</th><th>Ubicación</th><th>Dueño</th><th>Cant.</th><th>Costo</th><th>Público</th></tr></thead><tbody>{filas}</tbody></table><h3 style="text-align:right">Total Costo: ${t_costo:,.2f} | Total Público: ${t_pub:,.2f}</h3></body></html>')
     finally:
         db.close()
-                        
+    @app.post("/garaje/agregar")
+def agregar_garaje(request: Request, marca: str = Form(...), modelo: str = Form(...), ano: str = Form(...), apodo: str = Form("")):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?tab=garaje&error=Inicia+sesión+para+guardar+en+tu+cuenta", status_code=status.HTTP_303_SEE_OTHER)
+        db.add(models.GarajeUsuario(usuario_id=usuario.id, marca=marca.strip(), modelo=modelo.strip(), ano=ano.strip(), apodo=apodo.strip()))
+        db.commit()
+        return RedirectResponse(url="/mostrador?tab=garaje&msg=Vehículo+guardado+en+Mi+Garaje", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/garaje/eliminar/{auto_id}")
+def eliminar_garaje(auto_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        auto = db.query(models.GarajeUsuario).filter(models.GarajeUsuario.id == auto_id).first()
+        if usuario and auto and auto.usuario_id == usuario.id:
+            db.delete(auto)
+            db.commit()
+        return RedirectResponse(url="/mostrador?tab=garaje&msg=Vehículo+eliminado", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/taller/guardar-perfil")
+def guardar_perfil_taller(request: Request, nombre_taller: str = Form(...), colonia_region: str = Form(...), especialidad: str = Form("Mecánica General"), margen_porcentaje: float = Form(15.0), pin_seguridad: str = Form("1234")):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return RedirectResponse(url="/mostrador?error=Inicia+sesión+primero", status_code=status.HTTP_303_SEE_OTHER)
+        pin_limpio = re.sub(r"\D", "", pin_seguridad)[:4] or "1234"
+        margen_seguro = max(0.0, min(200.0, margen_porcentaje))
+        perfil = db.query(models.PerfilTaller).filter(models.PerfilTaller.usuario_id == usuario.id).first()
+        if perfil:
+            perfil.nombre_taller, perfil.colonia_region, perfil.especialidad, perfil.margen_porcentaje, perfil.pin_seguridad = nombre_taller.strip(), colonia_region.strip(), especialidad.strip(), margen_seguro, pin_limpio
+        else:
+            db.add(models.PerfilTaller(usuario_id=usuario.id, nombre_taller=nombre_taller.strip(), colonia_region=colonia_region.strip(), especialidad=especialidad.strip(), margen_porcentaje=margen_seguro, pin_seguridad=pin_limpio))
+        db.commit()
+        return RedirectResponse(url="/mostrador?tab=comunidad&msg=Perfil+de+Taller+actualizado", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/taller/verificar-pin")
+async def verificar_pin_taller(request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        usuario = security.obtener_usuario_actual(request, db)
+        if not usuario:
+            return JSONResponse({"ok": False}, status_code=401)
+        data = await request.json()
+        perfil = db.query(models.PerfilTaller).filter(models.PerfilTaller.usuario_id == usuario.id).first()
+        return JSONResponse({"ok": str(data.get("pin", "")).strip() == (perfil.pin_seguridad if perfil else "1234")})
+    finally:
+        db.close()
+        
