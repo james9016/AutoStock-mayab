@@ -3103,4 +3103,174 @@
             const min = Math.min(a, b), max = Math.max(a, b);
             hid.value = (min === max) ? String(min) : `${min} - ${max}`;
         }
-        
+             // --- COMPRESOR SECUENCIAL DE IMÁGENES Y ARCHIVOS DE PROCEDENCIA ---
+        function comprimirImagenDataURL(file, maxAncho = 1280, calidad = 0.80) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let w = img.width, h = img.height;
+                        if (w > maxAncho) { h = Math.round((h * maxAncho) / w); w = maxAncho; }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', calidad));
+                    };
+                    img.onerror = () => resolve(null);
+                    img.src = ev.target.result;
+                };
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function conectarInputFotos(inputFileId, inputHiddenId, labelContadorId, maxFotos) {
+            const inp = document.getElementById(inputFileId);
+            const hid = document.getElementById(inputHiddenId);
+            const lbl = document.getElementById(labelContadorId);
+            if (!inp || !hid) return;
+
+            inp.addEventListener('change', async () => {
+                const archivos = Array.from(inp.files || []).slice(0, maxFotos);
+                if (!archivos.length) return;
+                const resultados = [];
+                for (let i = 0; i < archivos.length; i++) {
+                    if (lbl) lbl.textContent = `⏳ Optimizando foto ${i + 1} de ${archivos.length}...`;
+                    const b64 = await comprimirImagenDataURL(archivos[i]);
+                    if (b64) resultados.push(b64);
+                }
+                hid.value = JSON.stringify(resultados);
+                if (lbl) lbl.textContent = `✅ ${resultados.length} foto(s) lista(s) para subir`;
+            });
+        }
+
+        function conectarInputArchivoProcedencia(inputFileId, inputHiddenId, labelStatusId) {
+            const inp = document.getElementById(inputFileId);
+            const hid = document.getElementById(inputHiddenId);
+            const lbl = document.getElementById(labelStatusId);
+            if (!inp || !hid) return;
+
+            inp.addEventListener('change', async () => {
+                const file = inp.files?.[0];
+                if (!file) return;
+                if (file.type.startsWith('image/')) {
+                    if (lbl) lbl.textContent = '⏳ Optimizando imagen de factura...';
+                    const b64 = await comprimirImagenDataURL(file, 1400, 0.85);
+                    hid.value = b64 || '';
+                    if (lbl) lbl.textContent = b64 ? '✅ Imagen de respaldo lista' : '⚠️ Error al procesar imagen';
+                } else if (file.type === 'application/pdf') {
+                    if (file.size > 5 * 1024 * 1024) {
+                        if (lbl) lbl.textContent = '⚠️ El PDF supera 5 MB';
+                        inp.value = '';
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        hid.value = ev.target.result;
+                        if (lbl) lbl.textContent = `✅ PDF listo (${file.name})`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // --- CONTADOR REGRESIVO EN VIVO PARA SUBASTAS 24H ---
+        function actualizarCountdownsSubastas() {
+            const ahora = Date.now();
+            document.querySelectorAll('.countdown-subasta').forEach(el => {
+                const finStr = el.dataset.fin;
+                if (!finStr) return;
+                const diff = new Date(finStr).getTime() - ahora;
+                if (diff <= 0) {
+                    el.textContent = 'Finalizada';
+                    return;
+                }
+                const hrs = Math.floor(diff / 3600000);
+                const mins = Math.floor((diff % 3600000) / 60000);
+                const segs = Math.floor((diff % 60000) / 1000);
+                el.textContent = `${String(hrs).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m ${String(segs).padStart(2, '0')}s`;
+            });
+        }
+
+        // --- INICIALIZACIÓN GENERAL ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+
+            // Selectores principales de búsqueda
+            const fMarca = document.getElementById('filtro-marca');
+            const fModelo = document.getElementById('filtro-modelo');
+            const fAno = document.getElementById('filtro-ano');
+            poblarSelectMarcas(fMarca, 'Todas');
+            fMarca?.addEventListener('change', () => {
+                poblarSelectModelos(fModelo, fMarca.value, 'Todos');
+                poblarSelectAnos(fAno, '', '', '--');
+                filtrarProductos();
+            });
+            fModelo?.addEventListener('change', () => {
+                poblarSelectAnos(fAno, fMarca.value, fModelo.value, 'Todos');
+                filtrarProductos();
+            });
+            fAno?.addEventListener('change', filtrarProductos);
+
+            // Selectores de Mi Garaje
+            const gMarca = document.getElementById('garaje-marca');
+            const gModelo = document.getElementById('garaje-modelo');
+            const gAno = document.getElementById('garaje-ano');
+            poblarSelectMarcas(gMarca, 'Marca...');
+            gMarca?.addEventListener('change', () => {
+                poblarSelectModelos(gModelo, gMarca.value, 'Modelo...');
+                poblarSelectAnos(gAno, '', '', 'Año...');
+            });
+            gModelo?.addEventListener('change', () => {
+                poblarSelectAnos(gAno, gMarca.value, gModelo.value, 'Año...');
+            });
+
+            // Selectores de Alta Rápida Admin
+            const aMarca = document.getElementById('form-marca');
+            const aModelo = document.getElementById('form-modelo');
+            const aIni = document.getElementById('form-ano-inicio');
+            const aFin = document.getElementById('form-ano-fin');
+            poblarSelectMarcas(aMarca, 'Selecciona marca...');
+            aMarca?.addEventListener('change', () => {
+                poblarSelectModelos(aModelo, aMarca.value, 'Selecciona modelo...');
+            });
+            aModelo?.addEventListener('change', () => {
+                const anos = obtenerAnosDeModelo(aMarca.value, aModelo.value);
+                if (aIni && aFin) {
+                    aIni.innerHTML = anos.map(y => `<option value="${y}">${y}</option>`).join('');
+                    aFin.innerHTML = anos.map(y => `<option value="${y}">${y}</option>`).join('');
+                    sincronizarRangoAnosAlta();
+                }
+            });
+            aIni?.addEventListener('change', sincronizarRangoAnosAlta);
+            aFin?.addEventListener('change', sincronizarRangoAnosAlta);
+
+            // Compresores de fotos y documentos
+            conectarInputFotos('foto-camara', 'url_imagen_string', 'contador-fotos-pieza', 6);
+            conectarInputFotos('foto-mercado', 'url_imagen_mercado', 'contador-fotos-mercado', 10);
+            conectarInputFotos('edit-nuevas-fotos-file', 'edit-nuevas-fotos-hidden', 'edit-contador-nuevas', 6);
+            conectarInputArchivoProcedencia('alta-procedencia-file', 'alta-procedencia-hidden', 'alta-procedencia-status');
+            conectarInputArchivoProcedencia('edit-procedencia-file', 'edit-procedencia-hidden', 'edit-procedencia-status');
+
+            // Restaurar pestaña si viene en URL (?tab=mercado&sub=busco)
+            const params = new URLSearchParams(window.location.search);
+            const tabUrl = params.get('tab');
+            const subUrl = params.get('sub');
+            if (tabUrl && document.getElementById('vista-' + tabUrl)) {
+                cambiarVista(tabUrl, true);
+                if (tabUrl === 'mercado' && subUrl) activarSubtabMercado(subUrl);
+            }
+
+            actualizarPillGaraje();
+            actualizarBadges();
+            aplicarModoClienteVisual();
+            activarSpinnersFormularios();
+            actualizarCountdownsSubastas();
+            setInterval(actualizarCountdownsSubastas, 1000);
+        });
+    </script>
+</body>
+</html>
+
