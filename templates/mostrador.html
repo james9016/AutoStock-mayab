@@ -2299,4 +2299,93 @@
             const max = Math.max(parseInt(nums[0], 10), parseInt(nums[1], 10));
             return target >= min && target <= max;
         }
+              // --- BUSCADOR INTELIGENTE, DICTADO POR VOZ Y ORDENAMIENTO ---
+        function filtrarProductos() {
+            const q = (document.getElementById('buscador-principal')?.value || '').trim().toLowerCase();
+            const fMarca = document.getElementById('filtro-marca')?.value || '';
+            const fModelo = document.getElementById('filtro-modelo')?.value || '';
+            const fAno = document.getElementById('filtro-ano')?.value || '';
+
+            const esBusquedaId = /^#?\d+$/.test(q);
+            document.getElementById('badge-modo-id')?.classList.toggle('hidden', !esBusquedaId);
+
+            let visibles = 0;
+            document.querySelectorAll('.card-refaccion').forEach(card => {
+                const idCard = card.dataset.id || '';
+                const marca = card.dataset.marca || '';
+                const modelo = card.dataset.modelo || '';
+                const ano = card.dataset.ano || '';
+                const texto = (card.dataset.texto || '').toLowerCase();
+                const esUniv = card.dataset.universal === '1';
+
+                let ok = true;
+                if (esBusquedaId) {
+                    const numQ = q.replace('#', '');
+                    ok = (idCard === numQ);
+                } else {
+                    if (q && !texto.includes(q)) ok = false;
+                    if (ok && fMarca && !esUniv && marca !== fMarca) ok = false;
+                    if (ok && fModelo && !esUniv && modelo !== fModelo) ok = false;
+                    if (ok && fAno && !esUniv && !coincideRangoAno(ano, fAno)) ok = false;
+                }
+
+                card.classList.toggle('hidden', !ok);
+                if (ok) visibles++;
+            });
+
+            const cont = document.getElementById('contador-resultados');
+            if (cont) cont.textContent = `(${visibles})`;
+            document.getElementById('box-sin-resultados')?.classList.toggle('hidden', visibles > 0);
+        }
+
+        function limpiarFiltrosBusqueda() {
+            const inp = document.getElementById('buscador-principal');
+            const fMarca = document.getElementById('filtro-marca');
+            const fModelo = document.getElementById('filtro-modelo');
+            const fAno = document.getElementById('filtro-ano');
+            if (inp) inp.value = '';
+            if (fMarca) fMarca.value = '';
+            if (fModelo) { fModelo.innerHTML = '<option value="">--</option>'; fModelo.disabled = true; }
+            if (fAno) { fAno.innerHTML = '<option value="">--</option>'; fAno.disabled = true; }
+            filtrarProductos();
+        }
+
+        function ordenarCatalogo(criterio, btn) {
+            document.querySelectorAll('.btn-orden').forEach(b => {
+                b.classList.remove('bg-slate-900', 'text-white');
+                b.classList.add('text-slate-600');
+            });
+            if (btn) {
+                btn.classList.add('bg-slate-900', 'text-white');
+                btn.classList.remove('text-slate-600');
+            }
+            const grid = document.getElementById('grid-productos');
+            if (!grid) return;
+            const cards = Array.from(grid.querySelectorAll('.card-refaccion'));
+            cards.sort((a, b) => {
+                if (criterio === 'menor') return parseFloat(a.dataset.precio) - parseFloat(b.dataset.precio);
+                if (criterio === 'mayor') return parseFloat(b.dataset.precio) - parseFloat(a.dataset.precio);
+                return parseInt(b.dataset.id, 10) - parseInt(a.dataset.id, 10);
+            });
+            cards.forEach(c => grid.appendChild(c));
+        }
+
+        const btnVoz = document.getElementById('btn-voz');
+        if (btnVoz && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const rec = new SR();
+            rec.lang = 'es-MX';
+            btnVoz.onclick = () => {
+                btnVoz.classList.add('text-red-600', 'animate-pulse');
+                mostrarToast('🎙️ Escuchando... di la pieza o auto');
+                rec.start();
+            };
+            rec.onresult = (e) => {
+                const dicho = e.results?.[0]?.[0]?.transcript || '';
+                const inp = document.getElementById('buscador-principal');
+                if (inp) { inp.value = dicho; filtrarProductos(); }
+            };
+            rec.onend = () => btnVoz.classList.remove('text-red-600', 'animate-pulse');
+            rec.onerror = () => btnVoz.classList.remove('text-red-600', 'animate-pulse');
+        }
         
