@@ -271,7 +271,7 @@ def vista_mostrador(request: Request):
                         fotos_anuncio = [a.url_imagen]
                 else:
                     fotos_anuncio = [a.url_imagen]
-                    fin_sub = a_utc_aware(a.subasta_fin)
+            fin_sub = a_utc_aware(a.subasta_fin)
             subasta_expirada = bool(a.es_subasta and fin_sub and fin_sub <= ahora)
 
             historial_pujas = []
