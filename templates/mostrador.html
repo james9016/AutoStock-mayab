@@ -475,4 +475,91 @@
                 </div>
             </section>
         </div>
-          
+          <!-- VISTA MI GARAJE (DEDICADA A REFACCIONES COMPATIBLES) -->
+        <div id="vista-garaje" class="vista-seccion hidden space-y-4">
+            <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-md border-b-4 border-orange-500 flex items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-base font-extrabold uppercase flex items-center gap-1.5">
+                        <i data-lucide="car" class="w-5 h-5 text-orange-400"></i> Mi Garaje
+                    </h2>
+                    <p class="text-xs text-slate-300">Selecciona tu vehículo para ver refacciones compatibles al instante</p>
+                </div>
+                <button type="button" onclick="cambiarVista('inicio')" class="text-xs font-extrabold text-orange-400 hover:underline shrink-0">← Catálogo</button>
+            </div>
+
+            <!-- VEHÍCULOS GUARDADOS -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-extrabold uppercase text-slate-800">Mis Vehículos Guardados</h3>
+                    <button type="button" onclick="document.getElementById('form-nuevo-auto-garaje').classList.toggle('hidden')" class="bg-slate-900 text-orange-400 text-[11px] font-extrabold px-3 py-1.5 rounded-xl">
+                        + Agregar Auto
+                    </button>
+                </div>
+
+                {% if mi_garaje %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {% for g in mi_garaje %}
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                                <button type="button" onclick="seleccionarAutoGaraje('{{ g.marca|e }}', '{{ g.modelo|e }}', '{{ g.ano|e }}')" class="text-left flex-1">
+                                    <span class="text-xs font-extrabold text-slate-900 block">{{ g.marca }} {{ g.modelo }} ({{ g.ano }})</span>
+                                    {% if g.apodo %}<span class="text-[10px] text-slate-500 block">{{ g.apodo }}</span>{% endif %}
+                                    <span class="text-[10px] text-orange-600 font-bold">Tocar para ver sus piezas</span>
+                                </button>
+                                <form action="/garaje/eliminar/{{ g.id }}" method="POST" class="form-con-carga">
+                                    <button type="submit" class="text-red-500 hover:bg-red-50 text-xs font-bold px-2 py-1 rounded-lg">Quitar</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- CONTENEDOR PARA AUTO GUARDADO EN DISPOSITIVO (INVITADOS O SINCRONIZACIÓN) -->
+                <div id="garaje-local-card" class="hidden bg-orange-50 border border-orange-200 p-3 rounded-xl flex items-center justify-between gap-2">
+                    <div>
+                        <span class="text-[10px] font-extrabold uppercase text-orange-700 block">Vehículo Activo en este Dispositivo</span>
+                        <span id="garaje-local-titulo" class="text-sm font-black text-slate-900"></span>
+                    </div>
+                    <button type="button" onclick="quitarAutoGarajeLocal()" class="text-xs font-extrabold text-red-600 bg-white px-2.5 py-1.5 rounded-lg border border-red-200">Quitar</button>
+                </div>
+
+                <!-- FORMULARIO AGREGAR AUTO -->
+                <form id="form-nuevo-auto-garaje" onsubmit="guardarAutoGarajeLocal(event)" action="/garaje/agregar" method="POST" class="{{ 'hidden' if (mi_garaje) else '' }} space-y-2.5 pt-2 border-t border-slate-100 form-con-carga">
+                    <div class="grid grid-cols-3 gap-2">
+                        <select id="garaje-marca" name="marca" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold"></select>
+                        <select id="garaje-modelo" name="modelo" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold"><option value="">Modelo...</option></select>
+                        <select id="garaje-ano" name="ano" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold"><option value="">Año...</option></select>
+                    </div>
+                    <input type="text" name="apodo" placeholder="Alias opcional (Ej: Auto de trabajo / Sr. López)" class="w-full bg-slate-50 border border-slate-300 p-2 rounded-xl text-xs font-semibold">
+                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-2.5 rounded-xl text-xs uppercase shadow">
+                        Activar y Guardar Vehículo
+                    </button>
+                </form>
+            </div>
+
+            <!-- PIEZAS COMPATIBLES EN BODEGA PARA EL AUTO ACTIVO -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <h3 class="text-sm font-extrabold text-slate-800 uppercase flex items-center gap-1.5">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+                        <span id="titulo-piezas-garaje">Piezas Compatibles</span>
+                    </h3>
+                    <button type="button" onclick="pedirPiezaDeMiGaraje()" class="text-[11px] font-extrabold text-orange-600 hover:underline">
+                        ¿No está? Pedir en "¿Quién la tiene?" →
+                    </button>
+                </div>
+                <div id="grid-piezas-garaje" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+            </div>
+        </div>
+
+        <!-- VISTA FAVORITOS -->
+        <div id="vista-favoritos" class="vista-seccion hidden space-y-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-900 uppercase">❤️ Mis Favoritos</h2>
+                    <p class="text-xs text-slate-500">Refacciones guardadas en este dispositivo</p>
+                </div>
+                <button type="button" onclick="cambiarVista('inicio')" class="text-xs font-extrabold text-orange-600 hover:underline">← Volver</button>
+            </div>
+            <div id="contenedor-favoritos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+                    
