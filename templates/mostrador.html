@@ -2020,4 +2020,112 @@
                 el.textContent = `$${mostrado.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
             });
         }
+            // --- DETALLE DE REFACCIÓN Y CONTROL TOTAL ADMIN ---
+        function abrirDetallePieza(idPieza) {
+            const p = PRODUCTOS_MAP[String(idPieza)];
+            if (!p) return;
+
+            const carrusel = document.getElementById('pieza-carrusel-fotos');
+            const puntos = document.getElementById('pieza-puntos-indicadores');
+            carrusel.innerHTML = '';
+            puntos.innerHTML = '';
+
+            if (p.imagenes && p.imagenes.length) {
+                p.imagenes.forEach((src, idx) => {
+                    const img = document.createElement('img');
+                    img.src = src;
+                    img.alt = p.nombre_refaccion;
+                    img.className = 'w-full h-full object-cover snap-center shrink-0 cursor-zoom-in';
+                    img.onclick = () => abrirLightbox(p.imagenes, idx);
+                    carrusel.appendChild(img);
+
+                    if (p.imagenes.length > 1) {
+                        const dot = document.createElement('span');
+                        dot.className = 'w-2 h-2 rounded-full bg-white/80 shadow';
+                        puntos.appendChild(dot);
+                    }
+                });
+            } else {
+                carrusel.innerHTML = '<div class="w-full h-full flex flex-col items-center justify-center text-slate-500"><i data-lucide="package" class="w-12 h-12"></i><span class="text-xs font-bold mt-1">Sin fotos registradas</span></div>';
+            }
+
+            document.getElementById('pieza-det-id').textContent = `#${p.id}`;
+            document.getElementById('pieza-det-categoria').textContent = p.categoria;
+            document.getElementById('pieza-det-titulo').textContent = p.nombre_refaccion;
+            document.getElementById('pieza-det-auto').textContent = p.marca.toLowerCase() === 'universal'
+                ? 'Pieza Universal / Multimarca'
+                : `${p.marca} ${p.modelo} (${p.ano_grupo})`;
+
+            const precioMostrar = modoClienteActivo ? p.precio_sugerido * (1 + MARGEN_TALLER / 100) : p.precio_sugerido;
+            document.getElementById('pieza-det-precio').textContent = `$${precioMostrar.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+            document.getElementById('pieza-det-cant').textContent = `Existencia: ${p.cantidad_disponible} unidad(es)`;
+
+            const contEtiq = document.getElementById('pieza-det-etiquetas');
+            contEtiq.innerHTML = '';
+            (p.condicion || '').split('•').map(t => t.trim()).filter(Boolean).forEach(tag => {
+                const span = document.createElement('span');
+                span.className = 'text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 border border-blue-200';
+                span.textContent = `✓ ${tag}`;
+                contEtiq.appendChild(span);
+            });
+
+            const compatBox = document.getElementById('pieza-det-compat-box');
+            if (p.compatibilidad) {
+                compatBox.classList.remove('hidden');
+                document.getElementById('pieza-det-compat').textContent = p.compatibilidad;
+            } else {
+                compatBox.classList.add('hidden');
+            }
+
+            if (ES_OPERADOR) {
+                document.getElementById('pieza-det-ubicacion').textContent = p.ubicacion_fisica;
+                document.getElementById('pieza-det-dueno').textContent = p.dueno_nombre;
+                document.getElementById('pieza-det-costo').textContent = `$${Number(p.precio_real || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+            }
+
+            const acciones = document.getElementById('pieza-det-acciones');
+            let htmlAcc = `
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="agregarAlCarrito('${p.id}', true)" class="bg-orange-500 hover:bg-orange-600 text-slate-950 font-black py-3 rounded-xl text-xs uppercase shadow">
+                        + Agregar al Carrito
+                    </button>
+                    <button type="button" onclick="compartirPiezaWhatsApp('${p.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl text-xs uppercase shadow">
+                        Preguntar Mostrador
+                    </button>
+                </div>
+            `;
+
+            if (ES_OPERADOR) {
+                htmlAcc += `
+                    <form action="/productos/vender/${p.id}" method="POST" class="bg-slate-900 text-white p-3 rounded-2xl space-y-2 mt-2 form-con-carga" onsubmit="return confirm('¿Confirmar venta de refacción #${p.id}?');">
+                        <span class="text-[10px] font-extrabold uppercase text-orange-400 block">Registro de Venta en Mostrador</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <select name="metodo_pago" class="bg-slate-800 border border-slate-700 p-2 rounded-xl text-xs font-bold text-white">
+                                <option value="Efectivo">💵 Efectivo</option>
+                                <option value="Transferencia">🏦 Transferencia</option>
+                            </select>
+                            <select name="tipo_cliente" class="bg-slate-800 border border-slate-700 p-2 rounded-xl text-xs font-bold text-white">
+                                <option value="Publico">👤 Público General</option>
+                                <option value="Taller">🔧 Taller (-15% Gan.)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase">
+                            Confirmar Venta Directa
+                        </button>
+                    </form>
+                    <div class="grid grid-cols-${ES_ADMIN ? '2' : '1'} gap-2">
+                        <form action="/productos/apartar/${p.id}" method="POST" class="form-con-carga">
+                            <button type="submit" class="w-full bg-amber-100 hover:bg-amber-200 text-amber-900 font-extrabold py-2.5 rounded-xl text-xs uppercase border border-amber-300">
+                                ${p.apartado ? '🔓 Liberar Apartado' : '⏳ Apartar 2 Horas'}
+                            </button>
+                        </form>
+                        ${ES_ADMIN ? `<button type="button" onclick="abrirModalEditarPieza(${p.id})" class="w-full bg-slate-800 hover:bg-slate-700 text-orange-400 font-extrabold py-2.5 rounded-xl text-xs uppercase">✏️ Editar / Fotos</button>` : ''}
+                    </div>
+                `;
+            }
+
+            acciones.innerHTML = htmlAcc;
+            abrirModalPorId('modal-detalle-pieza');
+            activarSpinnersFormularios();
+        }
         
