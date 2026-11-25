@@ -818,4 +818,102 @@
             {% endif %}
         </div>
         {% endif %}
-          
+        <!-- VISTA ADMIN: AFILIADOS Y BITÁCORA DE MOVIMIENTOS -->
+        {% if es_admin %}
+        <div id="vista-afiliados" class="vista-seccion hidden space-y-4">
+            <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-md border-b-4 border-orange-500 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-extrabold uppercase">🛡️ Administración y Auditoría</h2>
+                    <p class="text-xs text-slate-300">Afiliados, permisos, claves y trazabilidad del almacén</p>
+                </div>
+                <span class="text-xs font-extrabold bg-orange-500 text-slate-950 px-3 py-1 rounded-full">{{ usuarios|length }} usuarios</span>
+            </div>
+
+            <!-- SUBPESTAÑAS ADMIN -->
+            <div class="flex gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                <button type="button" onclick="activarSubtabAdmin('directorio', this)" class="subtab-admin flex-1 py-2 px-3 rounded-xl text-xs font-extrabold bg-slate-900 text-white transition">Afiliados y Roles</button>
+                <button type="button" onclick="activarSubtabAdmin('bitacora', this)" class="subtab-admin flex-1 py-2 px-3 rounded-xl text-xs font-extrabold text-slate-600 hover:bg-slate-100 transition">Bitácora Movimientos</button>
+            </div>
+
+            <!-- PANEL 1: DIRECTORIO DE AFILIADOS -->
+            <div id="panel-admin-directorio" class="space-y-4">
+                {% set pendientes = [] %}
+                {% for u in usuarios %}
+                    {% if u.id in solicitudes_ids %}
+                        {% set _ = pendientes.append(u) %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if pendientes %}
+                    <div class="bg-amber-50 border border-amber-300 p-4 rounded-2xl space-y-3">
+                        <h3 class="text-xs font-extrabold text-amber-900 uppercase">⏳ Solicitudes de Verificación (Taller / Socio)</h3>
+                        <div class="space-y-2.5">
+                            {% for p_user in pendientes %}
+                                <div class="p-3 bg-white border border-amber-200 rounded-xl flex flex-wrap justify-between items-center gap-2">
+                                    <div>
+                                        <p class="font-extrabold text-slate-900 text-sm">{{ p_user.nombre }} <span class="text-xs text-slate-500">(@{{ p_user.usuario }})</span></p>
+                                        <p class="text-xs text-slate-600 font-semibold">📱 {{ p_user.telefono_celular }}</p>
+                                    </div>
+                                    <form action="/usuarios/aprobar/{{ p_user.id }}" method="POST" class="flex items-center space-x-2 form-con-carga">
+                                        <select name="nuevo_rol" class="p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold">
+                                            <option value="Mecanico">🔧 Mecánico / Taller (-15% Ganancia)</option>
+                                            <option value="Vendedor">Vendedor / Afiliado</option>
+                                            <option value="Administrador">Administrador</option>
+                                            <option value="Publico_General">Público General</option>
+                                        </select>
+                                        <button type="submit" class="text-xs bg-blue-600 text-white font-extrabold px-3 py-2 rounded-lg uppercase">Asignar</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <input type="text" id="filtro-usuarios-admin" oninput="filtrarUsuariosAdmin()" placeholder="Buscar afiliado por nombre, @usuario o rol..." class="w-full bg-white border border-slate-300 px-3.5 py-2.5 rounded-xl text-xs font-bold">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="grid-usuarios-admin">
+                    {% for u in usuarios %}
+                        {% set u_rol = (u.rol.value if u.rol.value else u.rol) %}
+                        {% set tel_wa = (u.telefono_celular or '')|replace('+','')|replace(' ','')|replace('-','') %}
+                        <div class="card-usuario-admin bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3" data-texto="{{ u.nombre }} {{ u.usuario }} {{ u_rol }} {{ u.telefono_celular }}">
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="space-y-1">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="font-extrabold text-slate-900 text-sm">{{ u.nombre }}</span>
+                                        <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded {{ 'bg-orange-100 text-orange-800' if u_rol == 'Administrador' else ('bg-emerald-100 text-emerald-800' if u_rol == 'Vendedor' else ('bg-blue-100 text-blue-800' if u_rol == 'Mecanico' else 'bg-slate-100 text-slate-600')) }}">
+                                            {{ '🔧 Mecánico' if u_rol == 'Mecanico' else u_rol }}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 font-semibold">@{{ u.usuario }} • 📱 {{ u.telefono_celular or 'Sin teléfono' }}</p>
+                                </div>
+                                {% if tel_wa %}
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <a href="tel:{{ u.telefono_celular }}" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs" title="Llamar">📞</a>
+                                        <a href="https://wa.me{{ tel_wa }}" target="_blank" class="p-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl text-xs" title="WhatsApp">💬</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <form action="/usuarios/aprobar/{{ u.id }}" method="POST" class="flex items-center gap-2 pt-2 border-t border-slate-100 form-con-carga">
+                                <select name="nuevo_rol" class="flex-1 p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700">
+                                    <option value="Publico_General" {{ 'selected' if u_rol == 'Publico_General' else '' }}>Público General</option>
+                                    <option value="Mecanico" {{ 'selected' if u_rol == 'Mecanico' else '' }}>🔧 Mecánico / Taller</option>
+                                    <option value="Vendedor" {{ 'selected' if u_rol == 'Vendedor' else '' }}>Vendedor / Afiliado</option>
+                                    <option value="Administrador" {{ 'selected' if u_rol == 'Administrador' else '' }}>Administrador</option>
+                                </select>
+                                <button type="submit" class="text-[11px] bg-slate-900 hover:bg-slate-800 text-orange-400 font-extrabold px-3 py-1.5 rounded-lg uppercase">Rol</button>
+                            </form>
+
+                            <form action="/usuarios/reset-password/{{ u.id }}" method="POST" class="flex items-center gap-1.5 pt-1 form-con-carga" onsubmit="return confirm('¿Asignar nueva clave temporal a @{{ u.usuario|e }}?');">
+                                <input type="text" name="nueva_clave" minlength="8" placeholder="Nueva clave (mín. 8 car.)" required class="flex-1 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold">
+                                <button type="submit" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold text-[10px] px-2.5 py-1.5 rounded-lg uppercase">Clave</button>
+                            </form>
+
+                            <form action="/usuarios/quitar-strikes/{{ u.id }}" method="POST" class="pt-1 form-con-carga">
+                                <button type="submit" class="text-[10px] font-bold text-blue-600 hover:underline">Limpiar strikes de subasta</button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
