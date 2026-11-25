@@ -514,4 +514,110 @@ def quitar_strikes_admin(user_id: int, request: Request):
         return RedirectResponse(url="/mostrador?tab=afiliados&msg=Strikes+restablecidos", status_code=status.HTTP_303_SEE_OTHER)
     finally:
         db.close()
+@app.post("/productos/crear")
+def registrar_producto(request: Request, categoria: str = Form(...), nombre_refaccion: str = Form(...), marca: str = Form(...), modelo: str = Form(...), ano_grupo: str = Form(...), compatibilidad: str = Form(None), condicion: str = Form("Original Usada • Pieza Probada"), cantidad_disponible: int = Form(1), ubicacion_fisica: str = Form(...), dueno_id: int = Form(...), precio_real: float = Form(...), precio_sugerido: float = Form(...), url_imagen: str = Form(None), procedencia_nota: str = Form(""), procedencia_archivo: str = Form("")):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        if precio_real < 0 or precio_sugerido <= 0 or cantidad_disponible < 1:
+            return RedirectResponse(url="/mostrador?error=Verifica+precios+y+cantidad+válidos", status_code=status.HTTP_303_SEE_OTHER)
+        nuevo_prod = models.Producto(categoria=categoria, nombre_refaccion=nombre_refaccion.strip(), marca=marca.strip(), modelo=modelo.strip(), ano_grupo=ano_grupo.strip(), compatibilidad=compatibilidad.strip() if compatibilidad else None, condicion=condicion.strip() or "Original Usada", cantidad_disponible=cantidad_disponible, ubicacion_fisica=ubicacion_fisica.strip(), dueno_id=dueno_id, precio_real=precio_real, precio_sugerido=precio_sugerido)
+        db.add(nuevo_prod)
+        db.commit()
+        db.refresh(nuevo_prod)
 
+        for u_img in subir_fotos_a_storage(url_imagen, "piezas", 6):
+            db.add(models.ImagenesPieza(producto_id=nuevo_prod.id, url_imagen=u_img))
+        url_doc = subir_archivo_a_storage(procedencia_archivo, "procedencia") if procedencia_archivo else ""
+        if procedencia_nota.strip() or url_doc:
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[PROCEDENCIA #{nuevo_prod.id}] {procedencia_nota.strip()} | URL:{url_doc or ''}"))
+        dueno = db.query(models.Usuario).filter(models.Usuario.id == dueno_id).first()
+        db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[ALTA] Pieza #{nuevo_prod.id} ({nuevo_prod.nombre_refaccion}) | Ubicación: {nuevo_prod.ubicacion_fisica} | Dueño: {dueno.nombre if dueno else dueno_id} | Costo: ${precio_real:,.0f} / Público: ${precio_sugerido:,.0f}"))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Refacción+registrada+en+bodega", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/productos/editar/{prod_id}")
+def editar_producto(prod_id: int, categoria: str = Form(...), nombre_refaccion: str = Form(...), marca: str = Form(...), modelo: str = Form(...), ano_grupo: str = Form(...), compatibilidad: str = Form(""), ubicacion_fisica: str = Form(...), condicion: str = Form("Original Usada"), cantidad_disponible: int = Form(1), dueno_id: int = Form(...), precio_real: float = Form(...), precio_sugerido: float = Form(...), fotos_eliminar: str = Form(""), nuevas_fotos: str = Form(""), procedencia_nota: str = Form(""), procedencia_archivo: str = Form(""), request: Request = None):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        prod = db.query(models.Producto).filter(models.Producto.id == prod_id).first()
+        if not prod:
+            return RedirectResponse(url="/mostrador?error=Pieza+no+encontrada", status_code=status.HTTP_303_SEE_OTHER)
+        cambios = []
+        if prod.ubicacion_fisica != ubicacion_fisica.strip():
+            cambios.append(f"Ubicación ({prod.ubicacion_fisica} -> {ubicacion_fisica.strip()})")
+        if float(prod.precio_sugerido) != float(precio_sugerido):
+            cambios.append(f"Precio (${prod.precio_sugerido:,.0f} -> ${precio_sugerido:,.0f})")
+        if float(prod.precio_real) != float(precio_real):
+            cambios.append(f"Costo (${prod.precio_real:,.0f} -> ${precio_real:,.0f})")
+
+        prod.categoria, prod.nombre_refaccion, prod.marca, prod.modelo, prod.ano_grupo = categoria, nombre_refaccion.strip(), marca.strip(), modelo.strip(), ano_grupo.strip()
+        prod.compatibilidad, prod.ubicacion_fisica, prod.condicion = compatibilidad.strip() or None, ubicacion_fisica.strip(), condicion.strip()
+        prod.cantidad_disponible, prod.dueno_id, prod.precio_real, prod.precio_sugerido = max(1, cantidad_disponible), dueno_id, max(0.0, precio_real), max(1.0, precio_sugerido)
+
+        if fotos_eliminar:
+            ids_borrar = [int(x) for x in fotos_eliminar.split(",") if x.strip().isdigit()]
+            if ids_borrar:
+                db.query(models.ImagenesPieza).filter(models.ImagenesPieza.producto_id == prod.id, models.ImagenesPieza.id.in_(ids_borrar)).delete(synchronize_session=False)
+                cambios.append(f"{len(ids_borrar)} foto(s) eliminada(s)")
+        if nuevas_fotos:
+            for u_img in subir_fotos_a_storage(nuevas_fotos, "piezas", 6):
+                db.add(models.ImagenesPieza(producto_id=prod.id, url_imagen=u_img))
+            cambios.append("Fotos nuevas agregadas")
+        url_doc = subir_archivo_a_storage(procedencia_archivo, "procedencia") if procedencia_archivo else ""
+        if procedencia_nota.strip() or url_doc:
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[PROCEDENCIA #{prod.id}] {procedencia_nota.strip()} | URL:{url_doc or ''}"))
+            cambios.append("Procedencia actualizada")
+        db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[EDICIÓN] Pieza #{prod.id} ({prod.nombre_refaccion}): {', '.join(cambios) if cambios else 'Actualización general'}"))
+        db.commit()
+        return RedirectResponse(url="/mostrador?msg=Refacción+actualizada+correctamente", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/productos/eliminar/{prod_id}")
+def eliminar_producto_admin(prod_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        prod = db.query(models.Producto).filter(models.Producto.id == prod_id).first()
+        if prod:
+            nombre_p = prod.nombre_refaccion
+            if db.query(models.HistorialVenta).filter(models.HistorialVenta.producto_id == prod.id).first():
+                prod.cantidad_disponible = 0
+            else:
+                db.delete(prod)
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[BAJA] Pieza #{prod_id} ({nombre_p}) dada de baja"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Refacción+dada+de+baja", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/productos/apartar/{prod_id}")
+def apartar_producto(prod_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        operador = security.PermisoRol(["Administrador", "Vendedor"])(security.obtener_usuario_actual(request, db))
+        prod = db.query(models.Producto).filter(models.Producto.id == prod_id).first()
+        if prod:
+            ahora = ahora_utc()
+            f_ap = a_utc_aware(prod.apartado_hasta)
+            if f_ap and f_ap > ahora:
+                prod.apartado_hasta = None
+                msg, accion_txt = "Apartado+liberado", f"[LIBERADO] Pieza #{prod.id} ({prod.nombre_refaccion}) disponible"
+            else:
+                prod.apartado_hasta = ahora + timedelta(hours=2)
+                msg, accion_txt = "Pieza+apartada+por+2+horas", f"[APARTADO] Pieza #{prod.id} ({prod.nombre_refaccion}) apartada 2h"
+            db.add(models.BitacoraAuditoria(usuario_id=operador.id, accion_realizada=accion_txt))
+            db.commit()
+            return RedirectResponse(url=f"/mostrador?msg={msg}", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/mostrador", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+                
