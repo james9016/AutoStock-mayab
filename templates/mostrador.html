@@ -2242,7 +2242,7 @@
 
         // --- SELECTORES ALFABÉTICOS CON AÑOS REALES POR MODELO EN MÉXICO ---
         function obtenerAnosDeModelo(marca, modelo) {
-            const rango = (RANGOS_MODELOS[marca] && RANGOS_MODELOS[marca][modelo]) ? RANGOS_MODELOS[marca][modelo] :;
+            const rango = (RANGOS_MODELOS[marca] && RANGOS_MODELOS[marca][modelo]) ? RANGOS_MODELOS[marca][modelo][1995, 2026] :;
             const lista = [];
             for (let y = rango[1]; y >= rango[0]; y--) lista.push(String(y));
             return lista;
