@@ -727,4 +727,95 @@
                         </div>
                     {% endif %}
                 </div>
-            
+                  <!-- HISTORIAL DE VENTAS CON OPCIÓN DE DEVOLUCIÓN -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <h3 class="text-xs font-extrabold text-slate-800 uppercase border-b border-slate-100 pb-2">Últimas Ventas Registradas</h3>
+                    {% if ventas_detalle %}
+                        <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
+                            {% for v in ventas_detalle %}
+                                <div class="p-3 rounded-xl border {{ 'border-red-200 bg-red-50/40' if v.estado != 'Completada' else 'border-slate-200 bg-slate-50' }} flex flex-wrap justify-between items-center gap-2 text-xs">
+                                    <div>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-black text-slate-900">Venta #{{ v.id }}</span>
+                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ 'bg-emerald-100 text-emerald-800' if v.estado == 'Completada' else 'bg-red-100 text-red-700' }}">
+                                                {{ v.estado }}
+                                            </span>
+                                            {% if v.liquidado %}
+                                                <span class="text-[10px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">Liquidada</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="font-bold text-slate-800 mt-1">#{{ v.producto_id }} • {{ v.pieza }} ({{ v.vehiculo }})</p>
+                                        <p class="text-[11px] text-slate-500">Vendió: {{ v.vendedor }} • Dueño: {{ v.dueno }} • {{ v.fecha }}</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-right">
+                                            <span class="font-black text-sm text-slate-900 block">${{ "{:,.2f}".format(v.precio_venta) }}</span>
+                                            <span class="text-[10px] text-slate-500">Costo: ${{ "{:,.2f}".format(v.costo_dueno) }}</span>
+                                        </div>
+                                        {% if v.estado == 'Completada' %}
+                                            <form action="/ventas/devolver/{{ v.id }}" method="POST" class="form-con-carga" onsubmit="return confirm('¿Procesar devolución de Venta #{{ v.id }} y reingresar pieza #{{ v.producto_id }} a bodega?');">
+                                                <button type="submit" class="bg-red-100 hover:bg-red-200 text-red-800 font-extrabold text-[10px] px-2.5 py-1.5 rounded-lg border border-red-300">
+                                                    ↩ Devolver
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-xs text-slate-500 text-center py-4">Aún no hay ventas registradas.</p>
+                    {% endif %}
+                </div>
+            {% else %}
+                <!-- PANEL FINANCIERO PARA VENDEDOR / DUEÑO DE PIEZA -->
+                {% set ns = namespace(pendiente=0.0, cobrado=0.0) %}
+                {% for mv in mis_ventas_socio %}
+                    {% if not mv.liquidado %}
+                        {% set ns.pendiente = ns.pendiente + mv.saldo_por_cobrar %}
+                    {% elif mv.estado == 'Completada' %}
+                        {% set ns.cobrado = ns.cobrado + mv.costo_dueno %}
+                    {% endif %}
+                {% endfor %}
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-900 text-white p-4 rounded-2xl border-b-4 border-orange-500">
+                        <span class="text-[10px] font-bold uppercase text-slate-400 block">Saldo Por Cobrar</span>
+                        <span class="text-xl font-black text-orange-400">${{ "{:,.2f}".format(ns.pendiente) }}</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200">
+                        <span class="text-[10px] font-bold uppercase text-slate-500 block">Ya Liquidado</span>
+                        <span class="text-xl font-black text-emerald-700">${{ "{:,.2f}".format(ns.cobrado) }}</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2.5">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                        <h3 class="text-xs font-extrabold uppercase text-slate-800">Mis Piezas Vendidas</h3>
+                        <a href="/inventario/reporte/pdf?dueno_id=mio" target="_blank" class="text-[11px] font-extrabold text-orange-600 underline">📄 Mi Stock PDF</a>
+                    </div>
+                    {% if mis_ventas_socio %}
+                        <div class="space-y-2">
+                            {% for mv in mis_ventas_socio %}
+                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
+                                    <div>
+                                        <p class="font-extrabold text-slate-900">#{{ mv.producto_id }} • {{ mv.pieza }}</p>
+                                        <p class="text-[11px] text-slate-500">{{ mv.fecha }} • {{ mv.estado }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="font-black text-emerald-700 block">${{ "{:,.2f}".format(mv.costo_dueno) }}</span>
+                                        <span class="text-[10px] font-bold {{ 'text-emerald-600' if mv.liquidado else 'text-amber-600' }}">
+                                            {{ 'Pagado' if mv.liquidado else 'Pendiente' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-xs text-slate-500 text-center py-6">Aún no se han registrado ventas de tus refacciones.</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+          
