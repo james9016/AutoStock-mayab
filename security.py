@@ -41,7 +41,7 @@ def obtener_usuario_actual(request: Request, db: Session = Depends(database.get_
     token = request.cookies.get("access_token")
     if not token:
         return None
-        try:
+    try:
         if token.startswith("Bearer "):
             token = token.split(" ", 1)[1]
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -70,4 +70,3 @@ class PermisoRol:
                 detail="Acceso denegado. Permisos insuficientes para esta operación comercial."
             )
         return usuario
-        
