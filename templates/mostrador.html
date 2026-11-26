@@ -950,6 +950,95 @@
             </div>
         </div>
         {% endif %}
+                  <!-- VISTA MERCADO LOCAL Y SUBASTAS -->
+        <div id="vista-mercado" class="vista-seccion hidden space-y-4">
+            <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-md border-b-4 border-orange-500 flex flex-wrap justify-between items-center gap-2">
+                <div>
+                    <h2 class="text-base font-extrabold uppercase flex items-center gap-1.5">
+                        <i data-lucide="store" class="w-5 h-5 text-orange-400"></i> Mercado Local Cancún
+                    </h2>
+                    <p class="text-xs text-slate-300">Compra, vende o subasta refacciones entre particulares y talleres</p>
+                </div>
+                {% if usuario %}
+                <div class="flex gap-1.5">
+                    <button type="button" onclick="abrirFormMercado('venta')" class="bg-orange-500 hover:bg-orange-600 text-slate-950 text-xs font-black px-3 py-2 rounded-xl uppercase">+ Publicar</button>
+                    <button type="button" onclick="abrirFormMercado('subasta')" class="bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-black px-3 py-2 rounded-xl uppercase">⚡ Subasta 24h</button>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- SUBPESTAÑAS MERCADO -->
+            <div class="flex gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                <button type="button" id="btn-subtab-todo" onclick="activarSubtabMercado('todo', this)" class="subtab-mercado flex-1 py-2 px-2 rounded-xl text-xs font-extrabold bg-slate-900 text-white transition">Todo</button>
+                <button type="button" id="btn-subtab-subastas" onclick="activarSubtabMercado('subastas', this)" class="subtab-mercado flex-1 py-2 px-2 rounded-xl text-xs font-extrabold text-slate-600 hover:bg-slate-100 transition">Subastas 24h</button>
+                <button type="button" id="btn-subtab-busco" onclick="activarSubtabMercado('busco', this)" class="subtab-mercado flex-1 py-2 px-2 rounded-xl text-xs font-extrabold text-slate-600 hover:bg-slate-100 transition">¿Quién la tiene?</button>
+            </div>
+
+            <!-- FORMULARIO NUEVA PUBLICACIÓN / SUBASTA -->
+            {% if usuario %}
+            <form id="form-nuevo-anuncio" action="/mercado/crear" method="POST" class="hidden bg-white p-4 rounded-2xl border-2 border-orange-500 shadow-sm space-y-3 form-con-carga">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <h3 id="titulo-form-mercado" class="text-xs font-extrabold uppercase text-slate-900">Nueva Publicación en Cancún</h3>
+                    <button type="button" onclick="document.getElementById('form-nuevo-anuncio').classList.add('hidden')" class="text-slate-400 hover:text-red-500 font-black text-xl leading-none">&times;</button>
+                </div>
+                <input type="hidden" name="es_subasta" id="input-es-subasta" value="no">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="text" name="titulo" placeholder="Título (Ej: Alternador Tsuru 16v)" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                    <select name="categoria" required class="bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                        <option value="Motor y Componentes">Motor y Componentes</option>
+                        <option value="Carrocería y Colisión">Carrocería y Colisión</option>
+                        <option value="Suspensión y Dirección">Suspensión y Dirección</option>
+                        <option value="Eléctrica y Módulos">Eléctrica y Módulos</option>
+                        <option value="Llantas y Rines">Llantas y Rines</option>
+                        <option value="Otros">Otros</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label id="label-precio-mercado" class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Precio ($ MXN)</label>
+                        <input type="number" step="0.01" min="1" name="precio" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Zona Cancún</label>
+                        <input type="text" name="zona_cancun" placeholder="Ej: Reg. 95 / Kabah" required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs font-bold">
+                    </div>
+                </div>
+                <textarea name="descripcion" rows="2" placeholder="Describe estado, compatibilidad o detalles..." required class="w-full bg-slate-50 border border-slate-300 p-2.5 rounded-xl text-xs"></textarea>
+                <div>
+                    <label class="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Fotos (Máx. 10)</label>
+                    <input type="file" id="foto-mercado" accept="image/*" multiple class="w-full text-xs bg-slate-50 p-2 border border-dashed border-slate-300 rounded-xl">
+                    <p id="contador-fotos-mercado" class="text-[10px] font-bold text-emerald-700 mt-1"></p>
+                    <input type="hidden" name="url_imagen" id="url_imagen_mercado">
+                </div>
+                <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-extrabold py-3 rounded-xl text-xs uppercase shadow">Publicar Ahora</button>
+            </form>
+            {% endif %}
+
+            <!-- PANEL GRID ANUNCIOS Y SUBASTAS -->
+            <div id="panel-mercado-grid" class="space-y-3">
+                <input type="text" id="filtro-texto-mercado" oninput="filtrarMercadoLocal()" placeholder="Buscar en Mercado Local..." class="w-full bg-white border border-slate-300 px-3.5 py-2.5 rounded-xl text-xs font-bold">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {% for a in anuncios %}
+                    <div onclick="abrirDetalleMercado({{ a.id }})" data-subasta="{{ '1' if a.es_subasta else '0' }}" data-texto="{{ a.titulo }} {{ a.categoria }} {{ a.zona_cancun }} {{ a.descripcion }}" class="card-mercado bg-white rounded-2xl border {{ 'border-amber-400' if a.es_subasta else 'border-slate-200' }} overflow-hidden shadow-sm cursor-pointer flex flex-col justify-between">
+                        <div class="aspect-[4/3] bg-slate-100 relative">
+                            {% if a.imagenes %}
+                                <img src="{{ a.imagenes[0] }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">Sin foto</div>
+                            {% endif %}
+                            {% if a.es_subasta %}
+                                <span class="countdown-subasta absolute bottom-2 left-2 bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded" data-fin="{{ a.fin_subasta }}">Subasta 24h</span>
+                            {% endif %}
+                        </div>
+                        <div class="p-2.5">
+                            <h4 class="font-extrabold text-xs text-slate-900 line-clamp-2">{{ a.titulo }}</h4>
+                            <p class="text-[10px] text-slate-500 mt-0.5">{{ a.zona_cancun }}</p>
+                            <p class="font-black text-sm text-emerald-700 mt-1">${{ "{:,.0f}".format(a.puja_actual if a.es_subasta else a.precio) }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
                 <!-- MURO ¿QUIÉN LA TIENE? / SE BUSCA -->
             <div id="panel-mercado-busco" class="hidden space-y-3">
                 {% if usuario %}
