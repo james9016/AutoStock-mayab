@@ -1017,29 +1017,10 @@
             <!-- PANEL GRID ANUNCIOS Y SUBASTAS -->
             <div id="panel-mercado-grid" class="space-y-3">
                 <input type="text" id="filtro-texto-mercado" oninput="filtrarMercadoLocal()" placeholder="Buscar en Mercado Local..." class="w-full bg-white border border-slate-300 px-3.5 py-2.5 rounded-xl text-xs font-bold">
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {% for a in anuncios %}
-                    <div onclick="abrirDetalleMercado({{ a.id }})" data-subasta="{{ '1' if a.es_subasta else '0' }}" data-texto="{{ a.titulo }} {{ a.categoria }} {{ a.zona_cancun }} {{ a.descripcion }}" class="card-mercado bg-white rounded-2xl border {{ 'border-amber-400' if a.es_subasta else 'border-slate-200' }} overflow-hidden shadow-sm cursor-pointer flex flex-col justify-between">
-                        <div class="aspect-[4/3] bg-slate-100 relative">
-                            {% if a.imagenes %}
-                                <img src="{{ a.imagenes[0] }}" class="w-full h-full object-cover">
-                            {% else %}
-                                <div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">Sin foto</div>
-                            {% endif %}
-                            {% if a.es_subasta %}
-                                <span class="countdown-subasta absolute bottom-2 left-2 bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded" data-fin="{{ a.fin_subasta }}">Subasta 24h</span>
-                            {% endif %}
-                        </div>
-                        <div class="p-2.5">
-                            <h4 class="font-extrabold text-xs text-slate-900 line-clamp-2">{{ a.titulo }}</h4>
-                            <p class="text-[10px] text-slate-500 mt-0.5">{{ a.zona_cancun }}</p>
-                            <p class="font-black text-sm text-emerald-700 mt-1">${{ "{:,.0f}".format(a.puja_actual if a.es_subasta else a.precio) }}</p>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
+                <div id="grid-anuncios-mercado" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
             </div>
-                <!-- MURO ¿QUIÉN LA TIENE? / SE BUSCA -->
+
+            <!-- MURO ¿QUIÉN LA TIENE? / SE BUSCA -->
             <div id="panel-mercado-busco" class="hidden space-y-3">
                 {% if usuario %}
                 <form action="/urgente/crear" method="POST" class="bg-white p-4 rounded-2xl border-2 border-orange-500/40 shadow-sm space-y-2.5 form-con-carga">
