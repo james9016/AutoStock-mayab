@@ -2827,7 +2827,7 @@
             if (ins > 0) lineas.push(`• Insumos — $${ins.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`);
             if (garantia) lineas.push(`\nGarantía: ${garantia}`);
             lineas.push(`\n*TOTAL PRESUPUESTO: ${total} MXN*`);
-            window.open(`https://wa.me{encodeURIComponent(lineas.join('\n'))}`, '_blank');
+            window.open(`https://wa.me/?text=${encodeURIComponent(lineas.join('\n'))}`, '_blank');
         }
           // --- MERCADO LOCAL Y SUBASTAS 24H ANTI-FANTASMAS ---
         let subtabMercadoActual = 'todo';
