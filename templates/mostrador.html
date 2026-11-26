@@ -1812,6 +1812,25 @@
             <button type="button" onclick="navegarLightbox(1)" class="bg-slate-800 hover:bg-slate-700 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs">Siguiente</button>
         </div>
     </div>
+        <!-- MODAL PIN VISTA TALLER -->
+    <div id="modal-pin-taller" class="fixed inset-0 bg-slate-950/80 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm" onclick="if(event.target===this) cerrarModalActivo()">
+        <div class="bg-white rounded-2xl shadow-2xl border-t-4 border-emerald-500 p-6 max-w-xs w-full space-y-4 text-center relative">
+            <button type="button" onclick="cerrarModalActivo()" class="absolute right-4 top-3 text-slate-400 hover:text-slate-700 font-black text-2xl leading-none">&times;</button>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                <i data-lucide="lock" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-black text-slate-900">Desbloquear Vista Taller</h3>
+                <p class="text-xs text-slate-500 mt-1">Ingresa tu PIN de 4 dígitos para mostrar costos y márgenes</p>
+            </div>
+            <input type="password" id="input-pin-verificacion" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••"
+                   onkeydown="if(event.key==='Enter') confirmarPinTaller()"
+                   class="w-full text-center text-2xl font-black tracking-[0.6em] py-3 bg-slate-100 border-2 border-slate-300 focus:border-emerald-500 focus:bg-white rounded-xl outline-none">
+            <button type="button" onclick="confirmarPinTaller()" id="btn-confirmar-pin" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-xl text-xs uppercase shadow">
+                Verificar PIN
+            </button>
+        </div>
+    </div>
      <!-- BLOQUES DE DATOS SEGUROS ANTI-XSS -->
     <script id="data-productos" type="application/json">{{ productos|tojson|safe }}</script>
     <script id="data-anuncios" type="application/json">{{ anuncios_json|safe }}</script>
