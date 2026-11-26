@@ -2699,7 +2699,7 @@
             }
 
             lineas.push(`\n*TOTAL A PAGAR: $${(sub + envio).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN*`);
-            window.open(`https://wa.me{WHATSAPP_MOSTRADOR}?text=${encodeURIComponent(lineas.join('\n'))}`, '_blank');
+            window.open(`https://wa.me/${WHATSAPP_MOSTRADOR}?text=${encodeURIComponent(lineas.join('\n'))}`, '_blank');
         }
               // --- MODAL COTIZADOR DE TALLER ---
         let extrasCotizacion = [];
