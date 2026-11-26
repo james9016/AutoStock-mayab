@@ -2090,33 +2090,68 @@
         // --- VISTA CLIENTE BLINDADA CON PIN EN SERVIDOR ---
         let modoClienteActivo = localStorage.getItem('autostock_modo_cliente') === '1';
 
-        async function toggleModoCliente() {
+        let categoriaSeleccionada = '';
+
+        function seleccionarCategoriaRapida(cat, btn) {
+            categoriaSeleccionada = cat;
+            document.querySelectorAll('.cat-pill').forEach(b => {
+                b.classList.remove('bg-slate-900', 'text-white', 'font-extrabold');
+                b.classList.add('bg-slate-100', 'text-slate-700', 'font-bold');
+            });
+            if (btn) {
+                btn.classList.remove('bg-slate-100', 'text-slate-700', 'font-bold');
+                btn.classList.add('bg-slate-900', 'text-white', 'font-extrabold');
+            }
+            filtrarProductos();
+        }
+
+        function toggleModoCliente() {
             if (!modoClienteActivo) {
                 modoClienteActivo = true;
                 localStorage.setItem('autostock_modo_cliente', '1');
                 aplicarModoClienteVisual();
                 mostrarToast('Vista Cliente activada (Márgenes ocultos)');
             } else {
-                const pin = prompt('Ingresa el PIN de 4 dígitos de tu taller para volver a Vista Taller:');
-                if (!pin) return;
-                try {
-                    const resp = await fetch('/taller/verificar-pin', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ pin: pin.trim() })
-                    });
-                    const data = await resp.json();
-                    if (data.ok) {
-                        modoClienteActivo = false;
-                        localStorage.setItem('autostock_modo_cliente', '0');
-                        aplicarModoClienteVisual();
-                        mostrarToast('Vista Taller desbloqueada');
-                    } else {
-                        mostrarToast('PIN incorrecto', 'err');
-                    }
-                } catch (_) {
-                    mostrarToast('Error al verificar PIN', 'err');
+                const inp = document.getElementById('input-pin-verificacion');
+                if (inp) inp.value = '';
+                abrirModalPorId('modal-pin-taller');
+                setTimeout(() => inp?.focus(), 120);
+            }
+        }
+
+        async function confirmarPinTaller() {
+            const inp = document.getElementById('input-pin-verificacion');
+            const btn = document.getElementById('btn-confirmar-pin');
+            const pin = (inp?.value || '').trim();
+            if (pin.length !== 4) {
+                mostrarToast('Ingresa los 4 dígitos del PIN', 'err');
+                return;
+            }
+            btn.disabled = true;
+            btn.textContent = 'Verificando...';
+            try {
+                const resp = await fetch('/taller/verificar-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin })
+                });
+                const data = await resp.json();
+                if (data.ok) {
+                    modoClienteActivo = false;
+                    localStorage.setItem('autostock_modo_cliente', '0');
+                    cerrarModalActivo();
+                    aplicarModoClienteVisual();
+                    mostrarToast('Vista Taller desbloqueada');
+                } else {
+                    inp.value = '';
+                    inp.focus();
+                    mostrarToast('PIN incorrecto', 'err');
                 }
+            } catch (_) {
+                mostrarToast('Error de conexión al verificar PIN', 'err');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Verificar PIN';
             }
         }
 
