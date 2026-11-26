@@ -2943,7 +2943,34 @@
                 filtrarMercadoLocal();
             }
         }
-
+        function renderizarMercadoLocal() {
+            const grid = document.getElementById('grid-anuncios-mercado');
+            if (!grid) return;
+            if (!ANUNCIOS_LISTA.length) {
+                grid.innerHTML = '<div class="col-span-full bg-white p-6 rounded-2xl border border-slate-200 text-center text-xs text-slate-500 font-bold">Aún no hay publicaciones en Mercado Local.</div>';
+                return;
+            }
+            grid.innerHTML = ANUNCIOS_LISTA.map(a => {
+                const precio = a.es_subasta ? a.puja_actual : a.precio;
+                const img = (a.imagenes && a.imagenes.length)
+                    ? `<img src="${a.imagenes}" class="w-full h-full object-cover">`
+                    : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">Sin foto</div>`;
+                const badge = a.es_subasta
+                    ? `<span class="countdown-subasta absolute bottom-2 left-2 bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded" data-fin="${a.fin_subasta || ''}">Subasta 24h</span>`
+                    : '';
+                return `
+                    <div onclick="abrirDetalleMercado(${a.id})" data-subasta="${a.es_subasta ? '1' : '0'}" data-texto="${a.titulo} ${a.categoria} ${a.zona_cancun} ${a.descripcion}" class="card-mercado bg-white rounded-2xl border ${a.es_subasta ? 'border-amber-400' : 'border-slate-200'} overflow-hidden shadow-sm cursor-pointer flex flex-col justify-between">
+                        <div class="aspect-[4/3] bg-slate-100 relative">${img}${badge}</div>
+                        <div class="p-2.5">
+                            <h4 class="font-extrabold text-xs text-slate-900 line-clamp-2">${a.titulo}</h4>
+                            <p class="text-[10px] text-slate-500 mt-0.5">${a.zona_cancun}</p>
+                            <p class="font-black text-sm text-emerald-700 mt-1">$${Number(precio).toLocaleString('es-MX')}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+                }
+        
         function filtrarMercadoLocal() {
             const q = (document.getElementById('filtro-texto-mercado')?.value || '').trim().toLowerCase();
             document.querySelectorAll('.card-mercado').forEach(card => {
