@@ -2962,7 +2962,7 @@
             const telAutor = (a.autor_telefono || '').replace(/\D/g, '');
             if (telAutor && !a.vendido) {
                 const msgWa = `Hola ${a.autor_nombre}, vi tu publicación "${a.titulo}" en AutoStock Mayab Cancún.`;
-                html += `<a href="https://wa.me{telAutor}?text=${encodeURIComponent(msgWa)}" target="_blank" class="block w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl text-center text-xs uppercase shadow">Contactar Vendedor por WhatsApp</a>`;
+                html += `<a href="https://wa.me/${telAutor}?text=${encodeURIComponent(msgWa)}" target="_blank" class="block w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl text-center text-xs uppercase shadow">Contactar Vendedor por WhatsApp</a>`;
             } else if (!USUARIO_ID) {
                 html += `<button type="button" onclick="cerrarModalActivo(); abrirModalPorId('modal-login')" class="w-full bg-slate-900 text-orange-400 font-extrabold py-3 rounded-xl text-xs uppercase">Inicia sesión para contactar o pujar</button>`;
             }
@@ -2971,7 +2971,7 @@
                 if (a.es_subasta && a.ganador_id && !a.vendido) {
                     const telGan = (a.ganador_telefono || '').replace(/\D/g, '');
                     if (telGan) {
-                        html += `<a href="https://wa.me{telGan}?text=${encodeURIComponent(`Hola ${a.ganador_nombre}, ganaste la subasta de "${a.titulo}" en AutoStock Mayab Cancún por $${Number(a.puja_actual).toLocaleString('es-MX')}.`)}" target="_blank" class="block w-full bg-blue-600 text-white font-extrabold py-2.5 rounded-xl text-center text-xs uppercase">💬 Contactar Ganador (${a.ganador_nombre})</a>`;
+                        html += `<a href="https://wa.me/${telGan}?text=${encodeURIComponent(`Hola ${a.ganador_nombre}, ganaste la subasta de "${a.titulo}" en AutoStock Mayab Cancún por $${Number(a.puja_actual).toLocaleString('es-MX')}.`)}" target="_blank" class="block w-full bg-blue-600 text-white font-extrabold py-2.5 rounded-xl text-center text-xs uppercase">💬 Contactar Ganador (${a.ganador_nombre})</a>`;
                     }
                     html += `
                         <form action="/mercado/subasta-incumplida/${a.id}" method="POST" class="form-con-carga" onsubmit="return confirm('¿Reportar que el ganador no concretó? Se le aplicará 1 strike y la subasta pasará al 2do postor o se reactivará 24h.');">
