@@ -2663,7 +2663,7 @@
             const p = PRODUCTOS_MAP[String(id)];
             if (!p) return;
             const msg = `Hola AutoStock Mayab Cancún, me interesa la pieza #${p.id}: ${p.nombre_refaccion} (${p.marca} ${p.modelo} ${p.ano_grupo}) en $${Number(p.precio_sugerido).toLocaleString('es-MX')}. ¿Sigue disponible?`;
-            window.open(`https://wa.me{WHATSAPP_MOSTRADOR}?text=${encodeURIComponent(msg)}`, '_blank');
+            window.open(`https://wa.me/${WHATSAPP_MOSTRADOR}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function enviarPedidoWhatsApp() {
