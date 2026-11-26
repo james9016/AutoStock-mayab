@@ -220,6 +220,17 @@
                         <select id="filtro-ano" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:ring-2 focus:ring-orange-500 disabled:opacity-50" disabled><option value="">--</option></select>
                     </div>
                 </div>
+                                <!-- PÍLDORAS RÁPIDAS DE CATEGORÍA -->
+                <div class="pt-1 border-t border-slate-100">
+                    <div id="barra-categorias-rapidas" class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                        <button type="button" onclick="seleccionarCategoriaRapida('', this)" class="cat-pill shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-extrabold bg-slate-900 text-white transition">Todas</button>
+                        {% for cat in ['Motor y Componentes', 'Suspensión y Dirección', 'Sistema de Frenos', 'Eléctrica y Módulos', 'Carrocería y Colisión', 'Iluminación', 'Enfriamiento y Calefacción', 'Transmisión y Tren Motriz', 'Llantas y Rines'] %}
+                            <button type="button" onclick="seleccionarCategoriaRapida('{{ cat }}', this)" class="cat-pill shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-orange-100 hover:text-orange-800 transition">
+                                {{ cat.split(' y ')[0] }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
             </section>
 
             <!-- NOTIFICACIONES DE SERVIDOR -->
