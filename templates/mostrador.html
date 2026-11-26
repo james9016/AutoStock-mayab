@@ -1090,7 +1090,7 @@
                                                 {% if r.precio_ofrecido %}<span class="font-black text-emerald-700"> (${{ "{:,.0f}".format(r.precio_ofrecido) }})</span>{% endif %}
                                             </div>
                                             {% if r_tel %}
-                                                <a href="https://wa.me{{ r_tel }}?text={{ ('Hola ' ~ r.autor ~ ', vi tu respuesta sobre: ' ~ s.titulo)|urlencode }}" target="_blank" class="bg-emerald-500 text-slate-950 text-[10px] font-black px-2 py-1 rounded-lg shrink-0">WhatsApp</a>
+                                                <a href="https://wa.me/{{ r_tel }}?text={{ ('Hola ' ~ r.autor ~ ', vi tu respuesta sobre: ' ~ s.titulo)|urlencode }}" target="_blank" class="bg-emerald-500 text-slate-950 text-[10px] font-black px-2 py-1 rounded-lg shrink-0">WhatsApp</a>
                                             {% endif %}
                                         </div>
                                     {% endfor %}
