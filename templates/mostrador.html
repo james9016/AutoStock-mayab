@@ -1235,7 +1235,7 @@
                                 </p>
                             </div>
                             {% if t_tel %}
-                                <a href="https://wa.me{{ t_tel }}?text={{ ('Hola ' ~ t.nombre_taller ~ ', los encontré en AutoStock Mayab Cancún y necesito cotizar un servicio.')|urlencode }}" target="_blank" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs py-2.5 rounded-xl text-center uppercase tracking-wider shadow-sm transition">
+                                <a href="https://wa.me/{{ t_tel }}?text={{ ('Hola ' ~ t.nombre_taller ~ ', los encontré en AutoStock Mayab Cancún y necesito cotizar un servicio.')|urlencode }}" target="_blank" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs py-2.5 rounded-xl text-center uppercase tracking-wider shadow-sm transition">
                                     Cotizar Instalación por WhatsApp
                                 </a>
                             {% else %}
