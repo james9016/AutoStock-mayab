@@ -3506,7 +3506,8 @@
                 cambiarVista(tabUrl, true);
                 if (tabUrl === 'mercado' && subUrl) activarSubtabMercado(subUrl);
             }
-
+            const piezaUrl = params.get('pieza');
+            if (piezaUrl && PRODUCTOS_MAP[piezaUrl]) abrirDetallePieza(piezaUrl);
             actualizarPillGaraje();
             actualizarBadges();
             aplicarModoClienteVisual();
