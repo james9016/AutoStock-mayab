@@ -313,24 +313,29 @@ def vista_mostrador(request: Request):
 
         liquidaciones_pendientes = {}
         ventas_detalle = []
+        ventas_pendientes = []
         mis_ventas_socio = []
         resumen_caja_hoy = {"efectivo": 0.0, "transferencia": 0.0, "total": 0.0}
         hoy_cancun_str = ahora.astimezone(TZ_CANCUN).strftime("%d/%m/%Y")
 
         if es_operador:
-            pendientes_raw = db.query(models.HistorialVenta).filter(models.HistorialVenta.liquidado_al_dueno == False).all()
             prods_todos_map = {p.id: p for p in db.query(models.Producto).all()}
 
-            for v in pendientes_raw:
-                prod = prods_todos_map.get(v.producto_id)
-                dueno = usuarios_map.get(prod.dueno_id) if prod else None
-                if prod and dueno:
-                    if dueno.id not in liquidaciones_pendientes:
-                        liquidaciones_pendientes[dueno.id] = {"dueno": dueno.nombre, "saldo": 0.0, "items": []}
-                    liquidaciones_pendientes[dueno.id]["saldo"] += float(v.saldo_por_cobrar or 0)
-                    liquidaciones_pendientes[dueno.id]["items"].append(v.id)
+            if es_admin:
+                pendientes_raw = db.query(models.HistorialVenta).filter(
+                    models.HistorialVenta.liquidado_al_dueno == False,
+                    models.HistorialVenta.estado_venta == models.EstadoVentaEnum.Completada
+                ).all()
+                for v in pendientes_raw:
+                    prod = prods_todos_map.get(v.producto_id)
+                    dueno = usuarios_map.get(prod.dueno_id) if prod else None
+                    if prod and dueno:
+                        if dueno.id not in liquidaciones_pendientes:
+                            liquidaciones_pendientes[dueno.id] = {"dueno": dueno.nombre, "saldo": 0.0, "items": []}
+                        liquidaciones_pendientes[dueno.id]["saldo"] += float(v.saldo_por_cobrar or 0)
+                        liquidaciones_pendientes[dueno.id]["items"].append(v.id)
 
-            ultimas_ventas = db.query(models.HistorialVenta).order_by(models.HistorialVenta.id.desc()).limit(60).all()
+            ultimas_ventas = db.query(models.HistorialVenta).order_by(models.HistorialVenta.id.desc()).limit(80).all()
             for v in ultimas_ventas:
                 prod = prods_todos_map.get(v.producto_id)
                 vendedor = usuarios_map.get(v.vendedor_id)
@@ -338,14 +343,17 @@ def vista_mostrador(request: Request):
                 estado_val = v.estado_venta.value if hasattr(v.estado_venta, "value") else str(v.estado_venta)
                 fecha_str = formatear_cancun(v.fecha_venta)
 
-                if estado_val == "Completada" and fecha_str.startswith(hoy_cancun_str):
+                if es_admin and estado_val == "Completada" and fecha_str.startswith(hoy_cancun_str):
                     resumen_caja_hoy["total"] += float(v.precio_venta_publico or 0)
+
                 item_venta = {
                     "id": v.id,
                     "producto_id": v.producto_id,
                     "pieza": prod.nombre_refaccion if prod else f"Pieza #{v.producto_id}",
                     "vehiculo": f"{prod.marca} {prod.modelo}" if prod else "",
+                    "ubicacion": prod.ubicacion_fisica if prod else "",
                     "vendedor": vendedor.nombre if vendedor else "Sistema",
+                    "vendedor_tel": vendedor.telefono_celular if vendedor else "",
                     "vendedor_id": v.vendedor_id,
                     "dueno": dueno.nombre if dueno else "Bodega",
                     "dueno_id": prod.dueno_id if prod else None,
@@ -356,8 +364,11 @@ def vista_mostrador(request: Request):
                     "fecha": fecha_str,
                     "liquidado": bool(v.liquidado_al_dueno)
                 }
-                ventas_detalle.append(item_venta)
-                if usuario and prod and prod.dueno_id == usuario.id:
+                if es_admin:
+                    ventas_detalle.append(item_venta)
+                    if estado_val == "Pendiente":
+                        ventas_pendientes.append(item_venta)
+                if usuario and ((prod and prod.dueno_id == usuario.id) or v.vendedor_id == usuario.id):
                     mis_ventas_socio.append(item_venta)
 
         mi_garaje = db.query(models.GarajeUsuario).filter(models.GarajeUsuario.usuario_id == usuario.id).all() if usuario else []
@@ -408,6 +419,7 @@ def vista_mostrador(request: Request):
             "dict_vehiculos": json.dumps(seed.DICCIONARIO_VEHICULOS, ensure_ascii=False),
             "rangos_modelos": json.dumps(seed.RANGOS_MODELOS_MX, ensure_ascii=False),
             "liquidaciones": liquidaciones_pendientes, "ventas_detalle": ventas_detalle,
+            "ventas_pendientes": ventas_pendientes,
             "mis_ventas_socio": mis_ventas_socio, "resumen_caja_hoy": resumen_caja_hoy,
             "bitacora": bitacora_lista, "mi_garaje": mi_garaje, "mi_taller": mi_taller,
             "talleres_directorio": talleres_directorio, "solicitudes_urgentes": solicitudes_urgentes,
