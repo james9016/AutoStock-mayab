@@ -2180,9 +2180,23 @@
             });
         }
             // --- DETALLE DE REFACCIÓN Y CONTROL TOTAL ADMIN ---
+        let idPiezaAbiertaActual = null;
+
+        function copiarEnlacePiezaActual() {
+            if (!idPiezaAbiertaActual) return;
+            const url = new URL(window.location.origin + window.location.pathname);
+            url.searchParams.set('pieza', idPiezaAbiertaActual);
+            navigator.clipboard.writeText(url.toString()).then(() => {
+                mostrarToast('🔗 Enlace de refacción copiado');
+            }).catch(() => {
+                mostrarToast('No se pudo copiar el enlace', 'err');
+            });
+        }
+
         function abrirDetallePieza(idPieza) {
             const p = PRODUCTOS_MAP[String(idPieza)];
             if (!p) return;
+            idPiezaAbiertaActual = String(idPieza);
 
             const carrusel = document.getElementById('pieza-carrusel-fotos');
             const puntos = document.getElementById('pieza-puntos-indicadores');
