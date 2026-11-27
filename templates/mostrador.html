@@ -2891,12 +2891,13 @@
             lineas.push(`\n*Refacciones:*`);
 
             let sub = 0;
-            carrito.forEach(id => {
-                const p = PRODUCTOS_MAP[id];
+                        carrito.forEach(item => {
+                const p = PRODUCTOS_MAP[item.id];
                 if (p) {
                     const pr = obtenerPrecioItemCarrito(p);
-                    sub += pr;
-                    lineas.push(`• #${p.id} ${p.nombre_refaccion} (${p.marca} ${p.modelo}) — $${pr.toLocaleString('es-MX')}`);
+                    const totItem = pr * item.qty;
+                    sub += totItem;
+                    lineas.push(`• (${item.qty}x) #${p.id} ${p.nombre_refaccion} (${p.marca} ${p.modelo}) — $${totItem.toLocaleString('es-MX')}`);
                 }
             });
 
