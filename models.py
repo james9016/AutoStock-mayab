@@ -29,6 +29,7 @@ class CategoriaEnum(str, enum.Enum):
     audio = "Audio e Infoentretenimiento"
 
 class EstadoVentaEnum(str, enum.Enum):
+    Pendiente = "Pendiente"
     Completada = "Completada"
     Cancelada_Devuelta = "Cancelada/Devuelta"
 
