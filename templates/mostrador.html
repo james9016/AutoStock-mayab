@@ -2667,18 +2667,31 @@
             const inp = document.getElementById('input-foro-vehiculo');
             if (inp) inp.value = `${autoGarajeActivo.marca} ${autoGarajeActivo.modelo} ${autoGarajeActivo.ano}`;
         }
-         // --- FAVORITOS Y CARRITO SINCRONIZADOS ---
+                 // --- FAVORITOS Y CARRITO SINCRONIZADOS ---
         let favoritos = JSON.parse(localStorage.getItem('autostock_favoritos') || '[]').filter(id => PRODUCTOS_MAP[String(id)]);
-        let carrito = JSON.parse(localStorage.getItem('autostock_carrito') || '[]').filter(id => PRODUCTOS_MAP[String(id)]);
         localStorage.setItem('autostock_favoritos', JSON.stringify(favoritos));
-        localStorage.setItem('autostock_carrito', JSON.stringify(carrito));
+
+        function cargarCarritoSeguro() {
+            const raw = JSON.parse(localStorage.getItem('autostock_carrito') || '[]');
+            let huboAgotados = false;
+            const limpio = [];
+            raw.forEach(item => {
+                const id = typeof item === 'object' ? String(item.id) : String(item);
+                const qty = typeof item === 'object' ? (parseInt(item.qty, 10) || 1) : 1;
+                const prod = PRODUCTOS_MAP[id];
+                if (!prod || prod.cantidad_disponible <= 0) { huboAgotados = true; }
+                else { limpio.push({ id, qty: Math.min(qty, prod.cantidad_disponible) }); }
+            });
+            localStorage.setItem('autostock_carrito', JSON.stringify(limpio));
+            if (huboAgotados) setTimeout(() => mostrarToast('⚠️ Una pieza de tu carrito se vendió y fue retirada', 'err'), 600);
+            return limpio;
+        }
+        let carrito = cargarCarritoSeguro();
 
         function actualizarBadges() {
+            const totalUnidades = carrito.reduce((acc, item) => acc + (item.qty || 1), 0);
             const bCart = document.getElementById('badge-cart');
-            if (bCart) {
-                bCart.textContent = carrito.length;
-                bCart.classList.toggle('hidden', carrito.length === 0);
-            }
+            if (bCart) { bCart.textContent = totalUnidades; bCart.classList.toggle('hidden', totalUnidades === 0); }l
             const bFav = document.getElementById('badge-fav-menu');
             if (bFav) {
                 bFav.textContent = favoritos.length;
