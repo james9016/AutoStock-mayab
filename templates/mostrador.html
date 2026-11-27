@@ -2636,18 +2636,21 @@
                 return;
             }
 
-            grid.innerHTML = compatibles.map(p => `
-                <div onclick="abrirDetallePieza(${p.id})" class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm cursor-pointer flex flex-col justify-between">
-                    <div class="aspect-[4/3] bg-slate-100 relative">
-                        ${p.imagenes?.length ? `<img src="${p.imagenes[0]}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">Sin foto</div>'}
-                        <span class="absolute top-2 left-2 bg-slate-900 text-orange-400 text-[10px] font-black px-2 py-0.5 rounded">#${p.id}</span>
+                grid.innerHTML = compatibles.map(p => {
+                const precioMostrar = obtenerPrecioItemCarrito(p);
+                return `
+                    <div onclick="abrirDetallePieza(${p.id})" class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm cursor-pointer">
+                        <div class="aspect-[4/3] bg-slate-100 relative">
+                            ${p.imagenes?.length ? `<img src="${escaparHTML(p.imagenes)}" class="w-full h-full object-cover">` : ''}
+                            <span class="absolute top-1.5 left-1.5 bg-slate-900/85 text-white text-[9px] font-black px-1.5 py-0.5 rounded">#${p.id}</span>
+                        </div>
+                        <div class="p-2.5">
+                            <p class="font-extrabold text-xs text-slate-900 truncate">${escaparHTML(p.nombre_refaccion)}</p>
+                            <p class="font-black text-emerald-700 text-sm mt-1">$${Number(precioMostrar || 0).toLocaleString('es-MX')}</p>
+                        </div>
                     </div>
-                    <div class="p-2.5">
-                        <p class="font-extrabold text-xs text-slate-900 line-clamp-2">${p.nombre_refaccion}</p>
-                        <p class="font-black text-sm text-emerald-700 mt-1">$${Number(p.precio_sugerido).toLocaleString('es-MX')}</p>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function pedirPiezaDeMiGaraje() {
