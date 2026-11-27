@@ -3174,17 +3174,22 @@
             const formPujar = document.getElementById('form-pujar-subasta');
             const histPujas = document.getElementById('detalle-historial-pujas');
 
-            if (a.es_subasta) {
+                if (a.es_subasta) {
                 boxSub.classList.remove('hidden');
-                document.getElementById('detalle-tiempo-subasta').textContent = a.subasta_expirada ? 'FINALIZADA' : 'Activa (24h)';
-                document.getElementById('detalle-ganador-info').textContent = a.ganador_nombre
-                    ? `Postor líder: ${a.ganador_nombre} ($${Number(a.puja_actual).toLocaleString('es-MX')})`
+                const tiempoEl = document.getElementById('det-subasta-tiempo');
+                tiempoEl.classList.add('countdown-subasta');
+                tiempoEl.dataset.fin = a.fin_subasta || '';
+                tiempoEl.textContent = a.subasta_expirada ? 'Finalizada' : 'Calculando...';
+
+                document.getElementById('det-subasta-lider').textContent = a.ganador_nombre
+                    ? `Postor líder: ${a.ganador_nombre}`
                     : 'Sin pujas todavía — ¡Sé el primero!';
 
-                if (!a.vendido && !a.subasta_expirada && USUARIO_ID && USUARIO_ID !== a.usuario_id) {
+                const expirada = a.subasta_expirada || (a.fin_subasta && new Date(a.fin_subasta) <= new Date());
+                if (!a.vendido && !expirada) {
                     formPujar.classList.remove('hidden');
                     formPujar.action = `/mercado/pujar/${a.id}`;
-                    const minPuja = Number(a.puja_actual) + 50;
+                    const minPuja = Number(a.puja_actual || a.precio_salida) + 50;
                     const inpPuja = document.getElementById('input-monto-puja');
                     inpPuja.min = minPuja;
                     inpPuja.value = minPuja;
@@ -3193,19 +3198,19 @@
                 }
 
                 if (a.historial_pujas && a.historial_pujas.length) {
-                    histPujas.innerHTML = `<p class="font-extrabold text-amber-900 uppercase text-[10px]">Últimas pujas:</p>` +
-                        a.historial_pujas.map((pj, idx) => `
-                            <div class="flex justify-between items-center text-slate-700">
-                                <span>${idx === 0 ? '👑' : '•'} ${pj.nombre} ${pj.strikes > 0 ? `<span class="text-red-600 font-bold">(⚠️ ${pj.strikes} strike)</span>` : ''}</span>
-                                <span class="font-black">$${Number(pj.monto).toLocaleString('es-MX')} <span class="text-slate-400 font-normal">(${pj.hora})</span></span>
-                            </div>
-                        `).join('');
+                    histPujas.innerHTML = a.historial_pujas.map((pj, idx) => `
+                        <div class="flex justify-between items-center py-1 border-b border-purple-200/60 last:border-0 ${idx === 0 ? 'font-black text-purple-950' : 'text-purple-800'}">
+                            <span>${idx === 0 ? '👑 ' : ''}${escaparHTML(pj.nombre)}</span>
+                            <span class="font-extrabold">$${Number(pj.monto).toLocaleString('es-MX')}</span>
+                        </div>
+                    `).join('');
                 } else {
-                    histPujas.innerHTML = '<p class="text-slate-500 italic">Sin historial de pujas.</p>';
+                    histPujas.innerHTML = '<p class="text-[11px] text-purple-700 italic">Aún no hay pujas registradas.</p>';
                 }
+                actualizarCountdownsSubastas();
             } else {
                 boxSub.classList.add('hidden');
-            }
+                        }
 
             const acc = document.getElementById('detalle-acciones-usuario');
             let html = '';
