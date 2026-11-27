@@ -638,24 +638,89 @@ def marcar_como_vendido(id: int, request: Request, bg_tasks: BackgroundTasks, me
     db = next(database.get_db())
     try:
         usuario = security.PermisoRol(["Administrador", "Vendedor"])(security.obtener_usuario_actual(request, db))
-        prod = db.query(models.Producto).filter(models.Producto.id == id).first()
+        rol_val = usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)
+        es_admin = (rol_val == "Administrador")
+
+        prod = db.query(models.Producto).filter(models.Producto.id == id).with_for_update().first()
         if not prod or prod.cantidad_disponible <= 0:
             return RedirectResponse(url="/mostrador?error=Stock+no+disponible", status_code=status.HTTP_303_SEE_OTHER)
+
         precio_cobrado = float(prod.precio_sugerido)
         ganancia_base = precio_cobrado - float(prod.precio_real)
         if tipo_cliente == "Taller" and ganancia_base > 0:
             precio_cobrado = round(precio_cobrado - (ganancia_base * 0.15), 2)
+
         prod.cantidad_disponible -= 1
         if prod.cantidad_disponible == 0:
             prod.apartado_hasta = None
-        venta = models.HistorialVenta(producto_id=prod.id, vendedor_id=usuario.id, estado_venta=models.EstadoVentaEnum.Completada, precio_costo_dueno=prod.precio_real, precio_venta_publico=precio_cobrado, ganancia_comision=round(precio_cobrado - float(prod.precio_real), 2), liquidado_al_dueno=False, saldo_por_cobrar=prod.precio_real)
+
+        estado_inicial = models.EstadoVentaEnum.Completada if es_admin else models.EstadoVentaEnum.Pendiente
+        saldo_dueno = float(prod.precio_real) if es_admin else 0.0
+
+        venta = models.HistorialVenta(
+            producto_id=prod.id,
+            vendedor_id=usuario.id,
+            estado_venta=estado_inicial,
+            precio_costo_dueno=prod.precio_real,
+            precio_venta_publico=precio_cobrado,
+            ganancia_comision=round(precio_cobrado - float(prod.precio_real), 2),
+            liquidado_al_dueno=False,
+            saldo_por_cobrar=saldo_dueno
+        )
         db.add(venta)
-        dueno = db.query(models.Usuario).filter(models.Usuario.id == prod.dueno_id).first()
-        if dueno and dueno.telefono_celular:
-            bg_tasks.add_task(enviar_alerta_whatsapp_task, dueno.telefono_celular, prod.id, prod.nombre_refaccion)
-        db.add(models.BitacoraAuditoria(usuario_id=usuario.id, accion_realizada=f"[VENTA] Pieza #{prod.id} ({prod.nombre_refaccion}) vendida en ${precio_cobrado:,.2f} ({metodo_pago} / {tipo_cliente})"))
+
+        if es_admin:
+            dueno = db.query(models.Usuario).filter(models.Usuario.id == prod.dueno_id).first()
+            if dueno and dueno.telefono_celular:
+                bg_tasks.add_task(enviar_alerta_whatsapp_task, dueno.telefono_celular, prod.id, prod.nombre_refaccion)
+            db.add(models.BitacoraAuditoria(usuario_id=usuario.id, accion_realizada=f"[VENTA] Pieza #{prod.id} ({prod.nombre_refaccion}) vendida en ${precio_cobrado:,.2f} ({metodo_pago} / {tipo_cliente})"))
+            msg_resp = "Venta+registrada+en+caja"
+        else:
+            db.add(models.BitacoraAuditoria(usuario_id=usuario.id, accion_realizada=f"[SOLICITUD VENTA] @{usuario.usuario} solicitó salida de Pieza #{prod.id} ({prod.nombre_refaccion}) por ${precio_cobrado:,.2f} ({metodo_pago})"))
+            msg_resp = "Solicitud+de+venta+enviada+al+Administrador+para+confirmar"
+
         db.commit()
-        return RedirectResponse(url="/mostrador?msg=Venta+registrada+en+caja", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url=f"/mostrador?msg={msg_resp}", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/ventas/confirmar/{venta_id}")
+def confirmar_venta_admin(venta_id: int, request: Request, bg_tasks: BackgroundTasks):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        venta = db.query(models.HistorialVenta).filter(models.HistorialVenta.id == venta_id).with_for_update().first()
+        if venta and venta.estado_venta == models.EstadoVentaEnum.Pendiente:
+            venta.estado_venta = models.EstadoVentaEnum.Completada
+            venta.saldo_por_cobrar = float(venta.precio_costo_dueno or 0)
+            prod = db.query(models.Producto).filter(models.Producto.id == venta.producto_id).first()
+            if prod:
+                dueno = db.query(models.Usuario).filter(models.Usuario.id == prod.dueno_id).first()
+                if dueno and dueno.telefono_celular:
+                    bg_tasks.add_task(enviar_alerta_whatsapp_task, dueno.telefono_celular, prod.id, prod.nombre_refaccion)
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[VENTA CONFIRMADA] Solicitud #{venta.id} aprobada — Pieza #{venta.producto_id} (${venta.precio_venta_publico:,.2f})"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Venta+confirmada+y+agregada+a+caja", status_code=status.HTTP_303_SEE_OTHER)
+    finally:
+        db.close()
+
+@app.post("/ventas/rechazar/{venta_id}")
+def rechazar_venta_admin(venta_id: int, request: Request):
+    import database, models, security
+    db = next(database.get_db())
+    try:
+        admin = security.PermisoRol(["Administrador"])(security.obtener_usuario_actual(request, db))
+        venta = db.query(models.HistorialVenta).filter(models.HistorialVenta.id == venta_id).with_for_update().first()
+        if venta and venta.estado_venta == models.EstadoVentaEnum.Pendiente:
+            venta.estado_venta = models.EstadoVentaEnum.Cancelada_Devuelta
+            venta.saldo_por_cobrar = 0.0
+            prod = db.query(models.Producto).filter(models.Producto.id == venta.producto_id).first()
+            if prod:
+                prod.cantidad_disponible = (prod.cantidad_disponible or 0) + 1
+            db.add(models.BitacoraAuditoria(usuario_id=admin.id, accion_realizada=f"[VENTA RECHAZADA] Solicitud #{venta.id} rechazada — Pieza #{venta.producto_id} reingresada a stock"))
+            db.commit()
+        return RedirectResponse(url="/mostrador?msg=Solicitud+rechazada+y+pieza+devuelta+al+stock", status_code=status.HTTP_303_SEE_OTHER)
     finally:
         db.close()
 
