@@ -3087,6 +3087,15 @@
                 filtrarMercadoLocal();
             }
         }
+        function escaparHTML(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+                }
+        
         function renderizarMercadoLocal() {
             const grid = document.getElementById('grid-anuncios-mercado');
             if (!grid) return;
