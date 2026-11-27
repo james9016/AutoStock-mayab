@@ -248,7 +248,49 @@
                     <button type="button" onclick="this.parentElement.remove(); limpiarQueryURL();" class="text-emerald-900 font-black text-lg leading-none px-1">&times;</button>
                 </div>
             {% endif %}
-
+            <!-- NOTIFICACIONES DE VENTAS DE SOCIOS POR CONFIRMAR (SOLO ADMIN) -->
+            {% if es_admin and ventas_pendientes %}
+            <section class="bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 shadow-md space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black uppercase text-amber-900 flex items-center gap-1.5">
+                        <i data-lucide="bell-ring" class="w-4 h-4 text-amber-600 animate-bounce"></i>
+                        Solicitudes de Venta por Confirmar ({{ ventas_pendientes|length }})
+                    </h3>
+                    <span class="text-[10px] font-bold text-amber-700 bg-amber-200/70 px-2 py-0.5 rounded-full">Stock descontado</span>
+                </div>
+                <div class="space-y-2">
+                    {% for vp in ventas_pendientes %}
+                    <div class="bg-white p-3 rounded-xl border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-sm">
+                        <div class="space-y-0.5">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-[10px] font-black bg-slate-900 text-white px-1.5 py-0.5 rounded">#{{ vp.producto_id }}</span>
+                                <span class="font-extrabold text-xs text-slate-900">{{ vp.pieza }}</span>
+                                <span class="text-[10px] font-bold text-slate-500">({{ vp.vehiculo }})</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600">
+                                Vende: <b class="text-slate-900">{{ vp.vendedor }}</b> • Dueño pieza: <b>{{ vp.dueno }}</b>
+                            </p>
+                            <p class="text-[11px] text-emerald-700 font-black">
+                                Cobro: ${{ "%.2f"|format(vp.precio_venta) }} <span class="text-[10px] font-semibold text-slate-500">(Costo dueño: ${{ "%.2f"|format(vp.costo_dueno) }}) • Ubic: {{ vp.ubicacion }}</span>
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <form action="/ventas/confirmar/{{ vp.id }}" method="POST" class="inline">
+                                <button type="submit" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold flex items-center gap-1 shadow-sm transition">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i> Confirmar
+                                </button>
+                            </form>
+                            <form action="/ventas/rechazar/{{ vp.id }}" method="POST" onsubmit="return confirm('¿Rechazar solicitud y devolver la pieza al inventario?')" class="inline">
+                                <button type="submit" class="px-3 py-2 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 text-[11px] font-extrabold flex items-center gap-1 transition">
+                                    <i data-lucide="x" class="w-3.5 h-3.5"></i> Rechazar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
             <div id="badge-modo-id" class="hidden bg-amber-100 border border-amber-400 text-amber-900 px-4 py-2 rounded-xl font-extrabold text-xs text-center">
                 🔎 BÚSQUEDA DIRECTA POR FOLIO #ID ACTIVA
             </div>
