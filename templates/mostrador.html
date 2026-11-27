@@ -2749,20 +2749,41 @@
 
         function agregarAlCarrito(id, cerrarAntes = false) {
             id = String(id);
-            if (!PRODUCTOS_MAP[id]) return;
-            if (!carrito.includes(id)) {
-                carrito.push(id);
-                localStorage.setItem('autostock_carrito', JSON.stringify(carrito));
-                actualizarBadges();
-                mostrarToast('Agregado al carrito 🛒');
+            const prod = PRODUCTOS_MAP[id];
+            if (!prod) return;
+            const existente = carrito.find(x => x.id === id);
+            if (existente) {
+                if (existente.qty < prod.cantidad_disponible) {
+                    existente.qty += 1;
+                    mostrarToast(`Cantidad actualizada (${existente.qty} uds) 🛒`);
+                } else {
+                    mostrarToast(`Máximo disponible: ${prod.cantidad_disponible} unidad(es)`, 'err');
+                }
             } else {
-                mostrarToast('Ya está en tu carrito');
+                carrito.push({ id, qty: 1 });
+                mostrarToast('Agregado al carrito 🛒');
             }
+            localStorage.setItem('autostock_carrito', JSON.stringify(carrito));
+            actualizarBadges();
             if (cerrarAntes) cerrarModalActivo();
         }
 
+        function cambiarCantidadCarrito(id, delta) {
+            id = String(id);
+            const prod = PRODUCTOS_MAP[id];
+            const idx = carrito.findIndex(x => x.id === id);
+            if (idx === -1 || !prod) return;
+            const nuevaQty = carrito[idx].qty + delta;
+            if (nuevaQty <= 0) carrito.splice(idx, 1);
+            else if (nuevaQty > prod.cantidad_disponible) { mostrarToast(`Solo hay ${prod.cantidad_disponible} en bodega`, 'err'); return; }
+            else carrito[idx].qty = nuevaQty;
+            localStorage.setItem('autostock_carrito', JSON.stringify(carrito));
+            actualizarBadges();
+            renderizarCarrito();
+        }
+
         function quitarDelCarrito(id) {
-            carrito = carrito.filter(x => x !== String(id));
+            carrito = carrito.filter(x => x.id !== String(id));
             localStorage.setItem('autostock_carrito', JSON.stringify(carrito));
             actualizarBadges();
             renderizarCarrito();
