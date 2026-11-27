@@ -2471,6 +2471,7 @@
             let visibles = 0;
             document.querySelectorAll('.card-refaccion').forEach(card => {
                 const idCard = card.dataset.id || '';
+                const catCard = card.dataset.categoria || '';
                 const marca = card.dataset.marca || '';
                 const modelo = card.dataset.modelo || '';
                 const ano = card.dataset.ano || '';
