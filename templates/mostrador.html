@@ -101,7 +101,7 @@
                 <!-- MENÚ LATERAL -->
                 <button type="button" onclick="toggleMenuLateral()" class="relative p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white transition" aria-label="Menú">
                     <i data-lucide="menu" class="w-5 h-5"></i>
-                    {% if es_admin and solicitudes_ids %}
+                    {% if es_admin and (solicitudes_ids or ventas_pendientes) %}
                         <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-orange-500 rounded-full animate-pulse"></span>
                     {% endif %}
                 </button>
