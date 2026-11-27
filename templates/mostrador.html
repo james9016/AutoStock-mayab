@@ -2487,6 +2487,7 @@
                     if (ok && fMarca && !esUniv && marca !== fMarca) ok = false;
                     if (ok && fModelo && !esUniv && modelo !== fModelo) ok = false;
                     if (ok && fAno && !esUniv && !coincideRangoAno(ano, fAno)) ok = false;
+                    if (ok && categoriaSeleccionada && catCard !== categoriaSeleccionada) ok = false;
                 }
 
                 card.classList.toggle('hidden', !ok);
