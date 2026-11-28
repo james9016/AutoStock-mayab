@@ -53,7 +53,7 @@ def obtener_usuario_actual(request: Request, db: Session = Depends(database.get_
         return None
     try:
         if token.startswith("Bearer "):
-            token = token.split(" ", 1).strip()
+            token = token.split(" ", 1)[1].strip()
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str | None = payload.get("sub")
         sig_token: str | None = payload.get("sig")
