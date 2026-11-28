@@ -3077,11 +3077,11 @@
             let lineas = [`*PRESUPUESTO - ${NOMBRE_TALLER.toUpperCase()}*`];
             if (cliente) lineas.push(`Cliente / Auto: ${cliente}`);
             lineas.push(`\n*Detalle:*`);
-            carrito.forEach(id => {
-                const p = PRODUCTOS_MAP[id];
+                carrito.forEach(item => {
+                const p = PRODUCTOS_MAP[item.id];
                 if (p) {
-                    const pr = Number(p.precio_sugerido) * (1 + MARGEN_TALLER / 100);
-                    lineas.push(`• ${p.nombre_refaccion} — $${pr.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`);
+                    const pr = Number(p.precio_sugerido) * (1 + MARGEN_TALLER / 100) * item.qty;
+                    lineas.push(`• (${item.qty}x) ${p.nombre_refaccion} — $${pr.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`);
                 }
             });
             extrasCotizacion.forEach(ex => lineas.push(`• ${ex.desc} — $${ex.monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`));
