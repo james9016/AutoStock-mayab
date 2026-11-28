@@ -2869,7 +2869,7 @@
                 return `
                     <div class="bg-white p-3 rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2.5 min-w-0">
-                            ${p.imagenes?.length ? `<img src="${p.imagenes}" class="w-12 h-12 rounded-xl object-cover bg-slate-100 shrink-0">` : '<div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-xs text-slate-400 shrink-0">#</div>'}
+                            ${p.imagenes?.length ? `<img src="${p.imagenes[0]}" class="w-12 h-12 rounded-xl object-cover bg-slate-100 shrink-0">` : '<div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-xs text-slate-400 shrink-0">#</div>'}
                             <div class="min-w-0">
                                 <span class="text-[10px] font-black text-orange-600">#${p.id}</span>
                                 <h4 class="font-extrabold text-xs text-slate-900 truncate">${p.nombre_refaccion}</h4>
