@@ -435,7 +435,7 @@ def login(request: Request, usuario: str = Form(...), contrasena: str = Form(...
     try:
         user = db.query(models.Usuario).filter(models.Usuario.usuario == usuario.strip().lower()).first()
         if not user or not security.verificar_password(contrasena, user.contrasena_hash):
-        return RedirectResponse(url="/mostrador?error=Usuario+o+clave+incorrectos", status_code=status.HTTP_303_SEE_OTHER)
+            return RedirectResponse(url="/mostrador?error=Usuario+o+clave+incorrectos", status_code=status.HTTP_303_SEE_OTHER)
         token = security.crear_token_acceso(data={"sub": user.usuario})
         response = RedirectResponse(url="/mostrador?msg=Bienvenido+de+nuevo", status_code=status.HTTP_303_SEE_OTHER)
         response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True, secure=security.es_entorno_seguro(request), samesite="lax", max_age=security.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
