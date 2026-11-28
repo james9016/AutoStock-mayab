@@ -2688,7 +2688,7 @@
                 return `
                     <div onclick="abrirDetallePieza(${p.id})" class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm cursor-pointer">
                         <div class="aspect-[4/3] bg-slate-100 relative">
-                            ${p.imagenes?.length ? `<img src="${escaparHTML(p.imagenes)}" class="w-full h-full object-cover">` : ''}
+                            ${p.imagenes?.length ? `<img src="${escaparHTML(p.imagenes[0])}" class="w-full h-full object-cover">` : ''}
                             <span class="absolute top-1.5 left-1.5 bg-slate-900/85 text-white text-[9px] font-black px-1.5 py-0.5 rounded">#${p.id}</span>
                         </div>
                         <div class="p-2.5">
