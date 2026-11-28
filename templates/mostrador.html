@@ -2739,7 +2739,7 @@
         function actualizarBadges() {
             const totalUnidades = carrito.reduce((acc, item) => acc + (item.qty || 1), 0);
             const bCart = document.getElementById('badge-cart');
-            if (bCart) { bCart.textContent = totalUnidades; bCart.classList.toggle('hidden', totalUnidades === 0); }l
+            if (bCart) { bCart.textContent = totalUnidades; bCart.classList.toggle('hidden', totalUnidades === 0)
             const bFav = document.getElementById('badge-fav-menu');
             if (bFav) {
                 bFav.textContent = favoritos.length;
