@@ -3232,7 +3232,7 @@
                 tiempoEl.dataset.fin = a.fin_subasta || '';
                 tiempoEl.textContent = a.subasta_expirada ? 'Finalizada' : 'Calculando...';
 
-                document.getElementById('det-subasta-lider').textContent = a.ganador_nombre
+                document.getElementById('detalle-ganador-info').textContent = a.ganador_nombre
                     ? `Postor líder: ${a.ganador_nombre}`
                     : 'Sin pujas todavía — ¡Sé el primero!';
 
