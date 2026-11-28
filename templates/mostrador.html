@@ -6,22 +6,25 @@
     <title>AutoStock Mayab - Cancún</title>
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#0f172a">
-    <script>
-      const twScript = document.createElement('script');
-      twScript.src = 'https:' + '//cdn.' + 'tailwindcss' + '.com';
-      document.head.appendChild(twScript);
-
-      const lucideScript = document.createElement('script');
-      lucideScript.src = 'https:' + '//unpkg' + '.com/lucide@latest';
-      lucideScript.onload = () => { if (window.lucide) lucide.createIcons(); };
-      document.head.appendChild(lucideScript);
-
-      const h2cScript = document.createElement('script');
-      h2cScript.src = 'https:' + '//cdnjs.cloudflare' + '.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      document.head.appendChild(h2cScript);
-    </script>
     <link rel="icon" type="image/png" href="/static/logo.png">
     <link rel="apple-touch-icon" href="/static/logo.png">
+
+    <!-- ESCUDO ANTI-PARPADEO: Oculta la pantalla hasta que Tailwind cargue y limita el tamaño del logo -->
+    <style>
+      html { background-color: #0f172a; }
+      body { opacity: 0; transition: opacity 0.15s ease-in; background-color: #f1f5f9; margin: 0; }
+      header img, header svg { max-width: 40px; max-height: 40px; }
+      .hidden { display: none !important; }
+    </style>
+    <script>
+      setTimeout(() => { if (document.body) document.body.style.opacity = '1'; }, 700);
+    </script>
+
+    <!-- CARGA DIRECTA DE TAILWIND E ICONOS -->
+    <script src="https://tailwindcss.com"></script>
+    <script src="https://unpkg.com"></script>
+    <script src="https://cloudflare.com" defer></script>
+
     <style>
       @keyframes spinRing { to { transform: rotate(360deg); } }
       .spinner-ring {
@@ -41,8 +44,8 @@
           print-color-adjust: exact;
         }
       }
-             .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 font-sans min-h-screen pb-24">
