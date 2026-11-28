@@ -3021,14 +3021,15 @@
 
             let subPiezas = 0;
             let htmlItems = '';
-            carrito.forEach(id => {
-                const p = PRODUCTOS_MAP[id];
+            carrito.forEach(item => {
+                const p = PRODUCTOS_MAP[item.id];
                 if (p) {
-                    const precioCliente = Number(p.precio_sugerido) * (1 + MARGEN_TALLER / 100);
+                    const precioCliente = Number(p.precio_sugerido) * (1 + MARGEN_TALLER / 100) * item.qty;
                     subPiezas += precioCliente;
-                    htmlItems += `<div class="flex justify-between"><span>• ${p.nombre_refaccion} (${p.marca})</span><span class="font-bold">$${precioCliente.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span></div>`;
+                    htmlItems += `<div class="flex justify-between"><span>• (${item.qty}x) ${p.nombre_refaccion} (${p.marca})</span><span class="font-bold">$${precioCliente.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span></div>`;
                 }
             });
+            
             extrasCotizacion.forEach(ex => {
                 subPiezas += ex.monto;
                 htmlItems += `<div class="flex justify-between"><span>• ${ex.desc}</span><span class="font-bold">$${ex.monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span></div>`;
