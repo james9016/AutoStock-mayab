@@ -3227,7 +3227,7 @@
 
                 if (a.es_subasta) {
                 boxSub.classList.remove('hidden');
-                const tiempoEl = document.getElementById('det-subasta-tiempo');
+                const tiempoEl = document.getElementById('detalle-tiempo-subasta');
                 tiempoEl.classList.add('countdown-subasta');
                 tiempoEl.dataset.fin = a.fin_subasta || '';
                 tiempoEl.textContent = a.subasta_expirada ? 'Finalizada' : 'Calculando...';
