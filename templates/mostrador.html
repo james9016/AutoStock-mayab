@@ -3148,14 +3148,14 @@
                 }
         
         function renderizarMercadoLocal() {
-            const grid = document.getElementById('grid-mercado-local');
+            const grid = document.getElementById('grid-anuncios-mercado');
             if (!grid) return;
             if (!ANUNCIOS_LISTA.length) {
                 grid.innerHTML = '<div class="col-span-full bg-white p-6 rounded-2xl border border-slate-200 text-center text-xs text-slate-500 font-bold">Aún no hay anuncios publicados en Mercado Local.</div>';
                 return;
             }
             grid.innerHTML = ANUNCIOS_LISTA.map(a => {
-                const precio = a.es_subasta ? (a.puja_actual || a.precio_salida) : a.precio;
+                const precio = a.es_subasta ? a.puja_actual : a.precio;
                 const img = (a.imagenes && a.imagenes.length)
                     ? `<img src="${escaparHTML(a.imagenes)}" class="w-full h-full object-cover">`
                     : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">Sin foto</div>`;
@@ -3163,18 +3163,18 @@
                     ? `<span class="countdown-subasta absolute top-1.5 left-1.5 bg-purple-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded" data-fin="${escaparHTML(a.fin_subasta)}">Subasta 24h</span>`
                     : '';
                 return `
-                    <div onclick="abrirDetalleMercado(${a.id})" class="card-mercado bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm cursor-pointer" data-subasta="${a.es_subasta ? '1' : '0'}" data-txt="${escaparHTML((a.titulo + ' ' + (a.zona || '')).toLowerCase())}">
+                    <div onclick="abrirDetalleMercado(${a.id})" class="card-mercado bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm cursor-pointer" data-subasta="${a.es_subasta ? '1' : '0'}" data-texto="${escaparHTML((a.titulo + ' ' + (a.zona_cancun || '') + ' ' + (a.categoria || '')).toLowerCase())}">
                         <div class="aspect-[4/3] bg-slate-100 relative overflow-hidden">${img}${badge}</div>
                         <div class="p-2.5">
                             <h4 class="font-extrabold text-xs text-slate-900 truncate">${escaparHTML(a.titulo)}</h4>
-                            <p class="text-[10px] text-slate-500 truncate">${escaparHTML(a.zona || 'Cancún')}</p>
+                            <p class="text-[10px] text-slate-500 truncate">${escaparHTML(a.zona_cancun || 'Cancún')}</p>
                             <p class="font-black text-orange-600 text-sm mt-1">$${Number(precio || 0).toLocaleString('es-MX')}</p>
                         </div>
                     </div>
                 `;
             }).join('');
-                }
-        
+        }
+                                                                                          
         function filtrarMercadoLocal() {
             const q = (document.getElementById('filtro-texto-mercado')?.value || '').trim().toLowerCase();
             document.querySelectorAll('.card-mercado').forEach(card => {
