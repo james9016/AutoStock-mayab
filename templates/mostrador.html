@@ -3157,7 +3157,7 @@
             grid.innerHTML = ANUNCIOS_LISTA.map(a => {
                 const precio = a.es_subasta ? a.puja_actual : a.precio;
                 const img = (a.imagenes && a.imagenes.length)
-                    ? `<img src="${escaparHTML(a.imagenes)}" class="w-full h-full object-cover">`
+                    ? `<img src="${escaparHTML(a.imagenes[0])}" class="w-full h-full object-cover">`
                     : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">Sin foto</div>`;
                 const badge = a.es_subasta
                     ? `<span class="countdown-subasta absolute top-1.5 left-1.5 bg-purple-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded" data-fin="${escaparHTML(a.fin_subasta)}">Subasta 24h</span>`
